@@ -15,8 +15,18 @@ export async function createTestDb() {
   process.env.DB_PATH = testDbPath;
 
   vi.resetModules();
-  moduleExports = await import('../../src/server/db.js');
-  await moduleExports.getDb();
+
+  const dbModule = await import('../../src/server/db.js');
+  const spaceRepo = await import('../../src/server/repositories/space.js');
+  const backupRepo = await import('../../src/server/repositories/backup.js');
+
+  await dbModule.getDb();
+
+  moduleExports = {
+    ...dbModule,
+    ...spaceRepo,
+    ...backupRepo,
+  };
 
   return moduleExports;
 }

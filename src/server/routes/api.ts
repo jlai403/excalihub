@@ -1,17 +1,19 @@
 import { Hono } from 'hono';
 import { createHash } from 'crypto';
+import { getDb } from '../db.js';
 import {
-  getDb,
   createSpace,
   getAllSpaces,
   getSpaceById,
   getSpaceBySubdomain,
   deleteSpace,
+} from '../repositories/space.js';
+import {
   createBackup,
   getBackupsBySpaceId,
   getBackupById,
   getLatestBackupHash,
-} from '../db.js';
+} from '../repositories/backup.js';
 
 const api = new Hono();
 
