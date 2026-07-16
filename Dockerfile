@@ -7,7 +7,9 @@ RUN npm install
 
 COPY tsconfig.json ./
 COPY src ./src
+COPY astro.config.mjs ./
 
+RUN npx astro build
 RUN npm run build
 
 FROM node:20-slim AS runtime

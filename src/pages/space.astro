@@ -1,0 +1,97 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout title="Space">
+  <div id="space-container">
+    <p style="color: #888;">Loading space...</p>
+  </div>
+</Layout>
+
+<script>
+  const BASE_DOMAIN = window.location.hostname.split('.').slice(-2).join('.');
+  const params = new URLSearchParams(window.location.search);
+  const spaceId = params.get('id');
+  
+  if (!spaceId) {
+    window.location.href = '/';
+  }
+  
+  async function loadSpace() {
+    const container = document.getElementById('space-container');
+    
+    try {
+      const [spaceRes, backupsRes] = await Promise.all([
+        fetch(`/api/spaces/${spaceId}`),
+        fetch(`/api/spaces/${spaceId}/backups`),
+      ]);
+      
+      if (!spaceRes.ok) {
+        window.location.href = '/';
+        return;
+      }
+      
+      const space = await spaceRes.json();
+      const backups = await backupsRes.json();
+      
+      container.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 2rem;">
+          <div>
+            <h2 style="margin-bottom: 0.5rem;">${space.name}</h2>
+            <p style="color: #888;">
+              <a href="http://${space.subdomain}.${BASE_DOMAIN}">
+                ${space.subdomain}.${BASE_DOMAIN}
+              </a>
+            </p>
+          </div>
+          <button class="btn btn-danger" id="delete-btn">Delete Space</button>
+        </div>
+        
+        <div class="card" style="margin-bottom: 2rem;">
+          <h3 style="margin-bottom: 1rem;">Backups</h3>
+          
+          ${backups.length === 0 ? `
+            <p style="color: #666;">No backups yet. Backups are created automatically when you edit the whiteboard.</p>
+          ` : `
+            <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+              ${backups.map(backup => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #0f0f0f; border-radius: 6px;">
+                  <div>
+                    <span style="color: #888; font-size: 0.875rem;">
+                      ${new Date(backup.created_at).toLocaleString()}
+                    </span>
+                    <span style="color: #666; font-size: 0.75rem; margin-left: 1rem;">
+                      ${backup.file_hash.slice(0, 8)}...
+                    </span>
+                  </div>
+                  <a href="/api/backups/${backup.id}" class="btn" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">
+                    Download
+                  </a>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+        
+        <a href="/" style="color: #888;">← Back to dashboard</a>
+      `;
+      
+      document.getElementById('delete-btn')?.addEventListener('click', async () => {
+        if (confirm('Delete this space and all backups?')) {
+          const res = await fetch(`/api/spaces/${spaceId}`, { method: 'DELETE' });
+          if (res.ok) {
+            window.location.href = '/';
+          }
+        }
+      });
+    } catch (e) {
+      container.innerHTML = `
+        <div class="card" style="text-align: center; padding: 2rem;">
+          <p style="color: #ef4444;">Failed to load space</p>
+        </div>
+      `;
+    }
+  }
+  
+  loadSpace();
+</script>

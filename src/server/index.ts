@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { getDb } from './db.js';
 import { proxyMiddleware } from './proxy.js';
 import { injectionMiddleware } from './inject.js';
@@ -12,8 +13,11 @@ const app = new Hono();
 app.use('*', logger());
 app.use('*', cors());
 
-// API routes (must come before proxy)
-app.route('/', api);
+// API routes
+app.route('/api', api);
+
+// Serve static files from Astro build
+app.use('/*', serveStatic({ root: './dist/public' }));
 
 // Proxy to Excalidraw for space routes
 app.use('*', proxyMiddleware());

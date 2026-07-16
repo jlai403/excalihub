@@ -22,13 +22,13 @@ api.use('*', async (c, next) => {
 });
 
 // List all spaces
-api.get('/api/spaces', async (c) => {
+api.get('/spaces', async (c) => {
   const spaces = getAllSpaces();
   return c.json(spaces);
 });
 
 // Get single space
-api.get('/api/spaces/:id', async (c) => {
+api.get('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   const space = getSpaceById(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
@@ -36,7 +36,7 @@ api.get('/api/spaces/:id', async (c) => {
 });
 
 // Create space
-api.post('/api/spaces', async (c) => {
+api.post('/spaces', async (c) => {
   const body = await c.req.json();
   const { name } = body;
   
@@ -61,7 +61,7 @@ api.post('/api/spaces', async (c) => {
 });
 
 // Delete space
-api.delete('/api/spaces/:id', async (c) => {
+api.delete('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   const space = getSpaceById(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
@@ -71,7 +71,7 @@ api.delete('/api/spaces/:id', async (c) => {
 });
 
 // List backups for space
-api.get('/api/spaces/:id/backups', async (c) => {
+api.get('/spaces/:id/backups', async (c) => {
   const id = parseInt(c.req.param('id'));
   const space = getSpaceById(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
@@ -81,7 +81,7 @@ api.get('/api/spaces/:id/backups', async (c) => {
 });
 
 // Receive backup from injected script
-api.post('/api/backup', async (c) => {
+api.post('/backup', async (c) => {
   const body = await c.req.json();
   const { subdomain, elements, appState } = body;
   
@@ -112,7 +112,7 @@ api.post('/api/backup', async (c) => {
 });
 
 // Download backup
-api.get('/api/backups/:id', async (c) => {
+api.get('/backups/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   const backup = getBackupById(id);
   if (!backup) return c.json({ error: 'Backup not found' }, 404);

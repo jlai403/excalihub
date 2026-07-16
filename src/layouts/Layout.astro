@@ -1,0 +1,103 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title} | ExcaliHub</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        background: #0f0f0f;
+        color: #e0e0e0;
+        min-height: 100vh;
+      }
+      
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+      }
+      
+      header {
+        border-bottom: 1px solid #333;
+        padding-bottom: 1rem;
+        margin-bottom: 2rem;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+        font-weight: 600;
+      }
+      
+      a {
+        color: #60a5fa;
+        text-decoration: none;
+      }
+      
+      a:hover {
+        text-decoration: underline;
+      }
+      
+      .btn {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.875rem;
+      }
+      
+      .btn:hover {
+        background: #2563eb;
+      }
+      
+      .btn-danger {
+        background: #ef4444;
+      }
+      
+      .btn-danger:hover {
+        background: #dc2626;
+      }
+      
+      .card {
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1><a href="/" style="color: inherit; text-decoration: none;">ExcaliHub</a></h1>
+      </header>
+      <main>
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>
