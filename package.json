@@ -16,6 +16,7 @@
     "@hono/node-server": "^1.11.0",
     "astro": "^7.1.0",
     "consola": "^3.4.2",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.4.0",
     "sql.js": "^1.10.0",
     "zod": "^4.4.3"
@@ -23,6 +24,7 @@
   "devDependencies": {
     "@types/node": "^20.14.0",
     "concurrently": "^10.0.3",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.15.0",
     "typescript": "^6.0.0",
     "vitest": "^4.1.10"

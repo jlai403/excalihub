@@ -1,30 +1,39 @@
-import { queryAll, queryOne, run, saveDb } from '../db.js';
-import type { Backup } from '../db.js';
+import { eq, desc } from 'drizzle-orm';
+import { getDb, saveDb } from '../db.js';
+import { backups } from '../schema.js';
+import type { InferSelectModel } from 'drizzle-orm';
 
-export function createBackup(spaceId: number, fileData: string, fileHash: string): Backup {
-  run(
-    'INSERT INTO backups (space_id, file_data, file_hash) VALUES (?, ?, ?)',
-    [spaceId, fileData, fileHash]
-  );
+export type Backup = InferSelectModel<typeof backups>;
+
+export async function createBackup(spaceId: number, fileData: string, fileHash: string): Promise<Backup> {
+  const db = await getDb();
+  const result = db.insert(backups).values({ spaceId, fileData, fileHash }).returning().get();
   saveDb();
-  return queryOne('SELECT * FROM backups WHERE space_id = ? ORDER BY id DESC LIMIT 1', [spaceId]);
+  return result;
 }
 
-export function getBackupsBySpaceId(spaceId: number): Backup[] {
-  return queryAll(
-    'SELECT id, space_id, file_hash, created_at FROM backups WHERE space_id = ? ORDER BY created_at DESC',
-    [spaceId]
-  );
+export async function getBackupsBySpaceId(spaceId: number): Promise<Backup[]> {
+  const db = await getDb();
+  return db.select({
+    id: backups.id,
+    spaceId: backups.spaceId,
+    fileHash: backups.fileHash,
+    createdAt: backups.createdAt,
+  }).from(backups).where(eq(backups.spaceId, spaceId)).orderBy(desc(backups.createdAt)).all();
 }
 
-export function getBackupById(id: number): Backup | undefined {
-  return queryOne('SELECT * FROM backups WHERE id = ?', [id]);
+export async function getBackupById(id: number): Promise<Backup | undefined> {
+  const db = await getDb();
+  return db.select().from(backups).where(eq(backups.id, id)).get();
 }
 
-export function getLatestBackupHash(spaceId: number): string | undefined {
-  const result = queryOne(
-    'SELECT file_hash FROM backups WHERE space_id = ? ORDER BY created_at DESC LIMIT 1',
-    [spaceId]
-  );
-  return result?.file_hash;
+export async function getLatestBackupHash(spaceId: number): Promise<string | undefined> {
+  const db = await getDb();
+  const result = db.select({ fileHash: backups.fileHash })
+    .from(backups)
+    .where(eq(backups.spaceId, spaceId))
+    .orderBy(desc(backups.createdAt))
+    .limit(1)
+    .get();
+  return result?.fileHash;
 }

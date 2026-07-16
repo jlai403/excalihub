@@ -1,11 +1,16 @@
+import { drizzle } from 'drizzle-orm/sql-js';
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
 import { env } from '../env.js';
+import * as schema from './schema.js';
 
-let db: SqlJsDatabase;
+type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
 
-export async function getDb(): Promise<SqlJsDatabase> {
+let client: SqlJsDatabase;
+let db: DrizzleDb;
+
+export async function getDb(): Promise<DrizzleDb> {
   if (!db) {
     const SQL = await initSqlJs();
 
@@ -16,18 +21,19 @@ export async function getDb(): Promise<SqlJsDatabase> {
 
     if (existsSync(env.DB_PATH)) {
       const buffer = readFileSync(env.DB_PATH);
-      db = new SQL.Database(buffer);
+      client = new SQL.Database(buffer);
     } else {
-      db = new SQL.Database();
+      client = new SQL.Database();
     }
 
     initSchema();
+    db = drizzle(client, { schema });
   }
   return db;
 }
 
 function initSchema() {
-  db.run(`
+  client.run(`
     CREATE TABLE IF NOT EXISTS spaces (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -46,7 +52,7 @@ function initSchema() {
     );
   `);
 
-  db.run(`
+  client.run(`
     CREATE INDEX IF NOT EXISTS idx_backups_space_id ON backups(space_id);
     CREATE INDEX IF NOT EXISTS idx_backups_hash ON backups(file_hash);
   `);
@@ -55,43 +61,7 @@ function initSchema() {
 }
 
 export function saveDb() {
-  const data = db.export();
+  const data = client.export();
   const buffer = Buffer.from(data);
   writeFileSync(env.DB_PATH, buffer);
-}
-
-export interface Space {
-  id: number;
-  name: string;
-  subdomain: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Backup {
-  id: number;
-  space_id: number;
-  file_data: string;
-  file_hash: string;
-  created_at: string;
-}
-
-export function queryAll(sql: string, params: any[] = []): any[] {
-  const stmt = db.prepare(sql);
-  stmt.bind(params);
-  const results: any[] = [];
-  while (stmt.step()) {
-    results.push(stmt.getAsObject());
-  }
-  stmt.free();
-  return results;
-}
-
-export function queryOne(sql: string, params: any[] = []): any | undefined {
-  const results = queryAll(sql, params);
-  return results[0];
-}
-
-export function run(sql: string, params: any[] = []) {
-  db.run(sql, params);
 }

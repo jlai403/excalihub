@@ -1,25 +1,34 @@
-import { queryAll, queryOne, run, saveDb } from '../db.js';
-import type { Space } from '../db.js';
+import { eq } from 'drizzle-orm';
+import { getDb, saveDb } from '../db.js';
+import { spaces } from '../schema.js';
+import type { InferSelectModel } from 'drizzle-orm';
 
-export function createSpace(name: string, subdomain: string): Space {
-  run('INSERT INTO spaces (name, subdomain) VALUES (?, ?)', [name, subdomain]);
+export type Space = InferSelectModel<typeof spaces>;
+
+export async function createSpace(name: string, subdomain: string): Promise<Space> {
+  const db = await getDb();
+  const result = db.insert(spaces).values({ name, subdomain }).returning().get();
   saveDb();
-  return queryOne('SELECT * FROM spaces WHERE subdomain = ?', [subdomain]);
+  return result;
 }
 
-export function getSpaceBySubdomain(subdomain: string): Space | undefined {
-  return queryOne('SELECT * FROM spaces WHERE subdomain = ?', [subdomain]);
+export async function getSpaceBySubdomain(subdomain: string): Promise<Space | undefined> {
+  const db = await getDb();
+  return db.select().from(spaces).where(eq(spaces.subdomain, subdomain)).get();
 }
 
-export function getSpaceById(id: number): Space | undefined {
-  return queryOne('SELECT * FROM spaces WHERE id = ?', [id]);
+export async function getSpaceById(id: number): Promise<Space | undefined> {
+  const db = await getDb();
+  return db.select().from(spaces).where(eq(spaces.id, id)).get();
 }
 
-export function getAllSpaces(): Space[] {
-  return queryAll('SELECT * FROM spaces ORDER BY created_at DESC');
+export async function getAllSpaces(): Promise<Space[]> {
+  const db = await getDb();
+  return db.select().from(spaces).orderBy(spaces.createdAt).all();
 }
 
-export function deleteSpace(id: number): void {
-  run('DELETE FROM spaces WHERE id = ?', [id]);
+export async function deleteSpace(id: number): Promise<void> {
+  const db = await getDb();
+  db.delete(spaces).where(eq(spaces.id, id)).run();
   saveDb();
 }
