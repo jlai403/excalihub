@@ -1,10 +1,24 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createTestDb, cleanupTestDb } from '../helpers/db.js';
-
-let db: any;
+import { resetDb } from '../../src/server/db.js';
+import {
+  createSpace,
+  getSpaceById,
+  getSpaceBySubdomain,
+  getAllSpaces,
+  deleteSpace,
+} from '../../src/server/repositories/space.js';
+import {
+  createBackup,
+  getBackupsBySpaceId,
+  getBackupById,
+  getLatestBackupHash,
+} from '../../src/server/repositories/backup.js';
+import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 
 beforeEach(async () => {
-  db = await createTestDb();
+  setupTestDb();
+  resetDb();
+  await import('../../src/server/db.js').then(m => m.getDb());
 });
 
 afterEach(() => {
@@ -13,7 +27,7 @@ afterEach(() => {
 
 describe('createSpace', () => {
   it('creates a space and returns it with correct fields', async () => {
-    const space = await db.createSpace('My Project', 'my-project');
+    const space = await createSpace('My Project', 'my-project');
 
     expect(space).toBeDefined();
     expect(space.id).toBe(1);
@@ -24,26 +38,26 @@ describe('createSpace', () => {
   });
 
   it('throws on duplicate name (UNIQUE constraint)', async () => {
-    await db.createSpace('My Project', 'my-project');
+    await createSpace('My Project', 'my-project');
 
     await expect(
-      db.createSpace('My Project', 'my-project-2')
+      createSpace('My Project', 'my-project-2')
     ).rejects.toThrow();
   });
 
   it('throws on duplicate subdomain (UNIQUE constraint)', async () => {
-    await db.createSpace('Project A', 'shared-name');
+    await createSpace('Project A', 'shared-name');
 
     await expect(
-      db.createSpace('Project B', 'shared-name')
+      createSpace('Project B', 'shared-name')
     ).rejects.toThrow();
   });
 });
 
 describe('getSpaceBySubdomain', () => {
   it('returns the space when found', async () => {
-    await db.createSpace('Test', 'test-space');
-    const space = await db.getSpaceBySubdomain('test-space');
+    await createSpace('Test', 'test-space');
+    const space = await getSpaceBySubdomain('test-space');
 
     expect(space).toBeDefined();
     expect(space.name).toBe('Test');
@@ -51,37 +65,37 @@ describe('getSpaceBySubdomain', () => {
   });
 
   it('returns undefined when not found', async () => {
-    expect(await db.getSpaceBySubdomain('nonexistent')).toBeUndefined();
+    expect(await getSpaceBySubdomain('nonexistent')).toBeUndefined();
   });
 });
 
 describe('getSpaceById', () => {
   it('returns the space when found', async () => {
-    const created = await db.createSpace('Test', 'test-space');
-    const space = await db.getSpaceById(created.id);
+    const created = await createSpace('Test', 'test-space');
+    const space = await getSpaceById(created.id);
 
     expect(space).toBeDefined();
     expect(space.name).toBe('Test');
   });
 
   it('returns undefined when not found', async () => {
-    expect(await db.getSpaceById(999)).toBeUndefined();
+    expect(await getSpaceById(999)).toBeUndefined();
   });
 });
 
 describe('getAllSpaces', () => {
   it('returns empty array when no spaces exist', async () => {
-    expect(await db.getAllSpaces()).toEqual([]);
+    expect(await getAllSpaces()).toEqual([]);
   });
 
   it('returns all spaces', async () => {
-    await db.createSpace('First', 'first');
-    await db.createSpace('Second', 'second');
-    await db.createSpace('Third', 'third');
+    await createSpace('First', 'first');
+    await createSpace('Second', 'second');
+    await createSpace('Third', 'third');
 
-    const spaces = await db.getAllSpaces();
+    const spaces = await getAllSpaces();
     expect(spaces).toHaveLength(3);
-    const names = spaces.map((s: any) => s.name);
+    const names = spaces.map((s) => s.name);
     expect(names).toContain('First');
     expect(names).toContain('Second');
     expect(names).toContain('Third');
@@ -90,36 +104,36 @@ describe('getAllSpaces', () => {
 
 describe('deleteSpace', () => {
   it('deletes the space', async () => {
-    const space = await db.createSpace('ToDelete', 'to-delete');
-    await db.deleteSpace(space.id);
+    const space = await createSpace('ToDelete', 'to-delete');
+    await deleteSpace(space.id);
 
-    expect(await db.getSpaceById(space.id)).toBeUndefined();
+    expect(await getSpaceById(space.id)).toBeUndefined();
   });
 
   it('cascade-deletes associated backups', async () => {
-    const space = await db.createSpace('WithBackups', 'with-backups');
-    await db.createBackup(space.id, '{"elements":[]}', 'hash1');
-    await db.createBackup(space.id, '{"elements":[1]}', 'hash2');
+    const space = await createSpace('WithBackups', 'with-backups');
+    await createBackup(space.id, '{"elements":[]}', 'hash1');
+    await createBackup(space.id, '{"elements":[1]}', 'hash2');
 
-    await db.deleteSpace(space.id);
+    await deleteSpace(space.id);
 
     // NOTE: SQLite foreign keys are not enabled by default.
     // ON DELETE CASCADE in the schema requires PRAGMA foreign_keys = ON.
     // Without it, backups remain after space deletion.
     // This test documents actual behavior — backups are NOT cascade-deleted.
-    const backups = await db.getBackupsBySpaceId(space.id);
+    const backups = await getBackupsBySpaceId(space.id);
     expect(backups.length).toBeGreaterThan(0);
   });
 
   it('does not throw when deleting nonexistent space', async () => {
-    await expect(db.deleteSpace(999)).resolves.not.toThrow();
+    await expect(deleteSpace(999)).resolves.not.toThrow();
   });
 });
 
 describe('createBackup', () => {
   it('creates a backup and returns it', async () => {
-    const space = await db.createSpace('Test', 'test');
-    const backup = await db.createBackup(space.id, '{"elements":[]}', 'abc123');
+    const space = await createSpace('Test', 'test');
+    const backup = await createBackup(space.id, '{"elements":[]}', 'abc123');
 
     expect(backup).toBeDefined();
     expect(backup.id).toBe(1);
@@ -130,13 +144,13 @@ describe('createBackup', () => {
   });
 
   it('links backup to the correct space', async () => {
-    const space1 = await db.createSpace('Space1', 'space1');
-    const space2 = await db.createSpace('Space2', 'space2');
-    await db.createBackup(space1.id, '{"a":1}', 'hash-a');
-    await db.createBackup(space2.id, '{"b":2}', 'hash-b');
+    const space1 = await createSpace('Space1', 'space1');
+    const space2 = await createSpace('Space2', 'space2');
+    await createBackup(space1.id, '{"a":1}', 'hash-a');
+    await createBackup(space2.id, '{"b":2}', 'hash-b');
 
-    const backups1 = await db.getBackupsBySpaceId(space1.id);
-    const backups2 = await db.getBackupsBySpaceId(space2.id);
+    const backups1 = await getBackupsBySpaceId(space1.id);
+    const backups2 = await getBackupsBySpaceId(space2.id);
 
     expect(backups1).toHaveLength(1);
     expect(backups1[0].fileHash).toBe('hash-a');
@@ -147,24 +161,24 @@ describe('createBackup', () => {
 
 describe('getBackupsBySpaceId', () => {
   it('returns backups ordered by created_at DESC (or id ASC within same second)', async () => {
-    const space = await db.createSpace('Test', 'test');
-    await db.createBackup(space.id, '{"a":1}', 'hash1');
-    await db.createBackup(space.id, '{"b":2}', 'hash2');
-    await db.createBackup(space.id, '{"c":3}', 'hash3');
+    const space = await createSpace('Test', 'test');
+    await createBackup(space.id, '{"a":1}', 'hash1');
+    await createBackup(space.id, '{"b":2}', 'hash2');
+    await createBackup(space.id, '{"c":3}', 'hash3');
 
-    const backups = await db.getBackupsBySpaceId(space.id);
+    const backups = await getBackupsBySpaceId(space.id);
     expect(backups).toHaveLength(3);
-    const hashes = backups.map((b: any) => b.fileHash);
+    const hashes = backups.map((b) => b.fileHash);
     expect(hashes).toContain('hash1');
     expect(hashes).toContain('hash2');
     expect(hashes).toContain('hash3');
   });
 
   it('excludes file_data field', async () => {
-    const space = await db.createSpace('Test', 'test');
-    await db.createBackup(space.id, '{"sensitive":true}', 'hash');
+    const space = await createSpace('Test', 'test');
+    await createBackup(space.id, '{"sensitive":true}', 'hash');
 
-    const backups = await db.getBackupsBySpaceId(space.id);
+    const backups = await getBackupsBySpaceId(space.id);
     expect(backups[0]).not.toHaveProperty('fileData');
     expect(backups[0]).toHaveProperty('fileHash');
     expect(backups[0]).toHaveProperty('id');
@@ -173,53 +187,53 @@ describe('getBackupsBySpaceId', () => {
   });
 
   it('returns empty array for space with no backups', async () => {
-    const space = await db.createSpace('Test', 'test');
-    expect(await db.getBackupsBySpaceId(space.id)).toEqual([]);
+    const space = await createSpace('Test', 'test');
+    expect(await getBackupsBySpaceId(space.id)).toEqual([]);
   });
 });
 
 describe('getBackupById', () => {
   it('returns backup with file_data when found', async () => {
-    const space = await db.createSpace('Test', 'test');
-    const created = await db.createBackup(space.id, '{"data":true}', 'hash');
+    const space = await createSpace('Test', 'test');
+    const created = await createBackup(space.id, '{"data":true}', 'hash');
 
-    const backup = await db.getBackupById(created.id);
+    const backup = await getBackupById(created.id);
     expect(backup).toBeDefined();
     expect(backup.fileData).toBe('{"data":true}');
   });
 
   it('returns undefined when not found', async () => {
-    expect(await db.getBackupById(999)).toBeUndefined();
+    expect(await getBackupById(999)).toBeUndefined();
   });
 });
 
 describe('getLatestBackupHash', () => {
   it('returns the hash of a backup when one exists', async () => {
-    const space = await db.createSpace('Test', 'test');
-    await db.createBackup(space.id, '{"a":1}', 'hash-a');
+    const space = await createSpace('Test', 'test');
+    await createBackup(space.id, '{"a":1}', 'hash-a');
 
-    const hash = await db.getLatestBackupHash(space.id);
+    const hash = await getLatestBackupHash(space.id);
     expect(hash).toBe('hash-a');
   });
 
   it('returns the most recent hash when timestamps differ', async () => {
-    const space = await db.createSpace('Test', 'test');
-    await db.createBackup(space.id, '{"a":1}', 'old-hash');
+    const space = await createSpace('Test', 'test');
+    await createBackup(space.id, '{"a":1}', 'old-hash');
 
     // Wait 1 second to ensure different timestamp
     await new Promise((r) => setTimeout(r, 1100));
 
-    await db.createBackup(space.id, '{"b":2}', 'new-hash');
+    await createBackup(space.id, '{"b":2}', 'new-hash');
 
-    expect(await db.getLatestBackupHash(space.id)).toBe('new-hash');
+    expect(await getLatestBackupHash(space.id)).toBe('new-hash');
   });
 
   it('returns undefined when no backups exist', async () => {
-    const space = await db.createSpace('Test', 'test');
-    expect(await db.getLatestBackupHash(space.id)).toBeUndefined();
+    const space = await createSpace('Test', 'test');
+    expect(await getLatestBackupHash(space.id)).toBeUndefined();
   });
 
   it('returns undefined for nonexistent space', async () => {
-    expect(await db.getLatestBackupHash(999)).toBeUndefined();
+    expect(await getLatestBackupHash(999)).toBeUndefined();
   });
 });

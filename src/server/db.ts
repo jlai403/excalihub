@@ -10,17 +10,22 @@ type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;
 let client: SqlJsDatabase;
 let db: DrizzleDb;
 
+function getDbPath(): string {
+  return process.env.DB_PATH ?? env.DB_PATH;
+}
+
 export async function getDb(): Promise<DrizzleDb> {
   if (!db) {
     const SQL = await initSqlJs();
+    const dbPath = getDbPath();
 
-    const dir = dirname(env.DB_PATH);
+    const dir = dirname(dbPath);
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
     }
 
-    if (existsSync(env.DB_PATH)) {
-      const buffer = readFileSync(env.DB_PATH);
+    if (existsSync(dbPath)) {
+      const buffer = readFileSync(dbPath);
       client = new SQL.Database(buffer);
     } else {
       client = new SQL.Database();
@@ -30,6 +35,11 @@ export async function getDb(): Promise<DrizzleDb> {
     db = drizzle(client, { schema });
   }
   return db;
+}
+
+export function resetDb() {
+  db = undefined;
+  client = undefined;
 }
 
 function initSchema() {
@@ -63,5 +73,5 @@ function initSchema() {
 export function saveDb() {
   const data = client.export();
   const buffer = Buffer.from(data);
-  writeFileSync(env.DB_PATH, buffer);
+  writeFileSync(getDbPath(), buffer);
 }
