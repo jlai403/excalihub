@@ -43,7 +43,7 @@ ExcaliHub is a self-hosted hub that gives you multiple isolated Excalidraw white
 | **Routing** | Hub IS the reverse proxy (no Caddy) |
 | **DNS** | Wildcard `*.draw.domain.com` → server IP |
 | **Backup** | Auto on every Excalidraw autosave |
-| **Injection** | Injected JS hooks Excalidraw's React API |
+| **Injection** | Intercepts localStorage.setItem to capture saves |
 | **Identifier** | Subdomain extracted from hostname |
 | **Distribution** | Docker Compose |
 
@@ -128,7 +128,7 @@ excalihub/
 - Middleware that intercepts HTML responses from Excalidraw
 - Inject `<script>` tag before `</body>`
 - Script reads `window.location.hostname` for space identifier
-- Hook into Excalidraw's React API (`window.excalidrawAPI`)
+- Intercepts `localStorage.setItem` to detect saves
 - POST `.excalidraw` data to hub API on every autosave
 
 ### Step 4: Backup API
@@ -158,6 +158,14 @@ excalihub/
 - Option B: User provides existing reverse proxy with wildcard cert
 - For v1, support Option B (user handles TLS externally)
 - Document both approaches
+
+### Step 8: Authentication (v2)
+- Username/password stored in environment variables (hashed)
+- JWT session token in `__excalihub_session` cookie
+- Login page at `/login` (Astro page)
+- Proxy middleware checks cookie before proxying to Excalidraw
+- Redirect to login if session invalid/missing
+- Logout endpoint clears session cookie
 
 ## API Endpoints
 
@@ -190,13 +198,78 @@ DB_PATH=/data/excalihub.db
 # TLS (optional, for Let's Encrypt)
 TLS_ENABLED=false
 TLS_EMAIL=admin@domain.com
+
+# Authentication (v2)
+AUTH_ENABLED=false
+AUTH_USERNAME=admin
+AUTH_PASSWORD_HASH=  # bcrypt hash of password
+JWT_SECRET=          # random string for signing tokens
 ```
+
+## Authentication Design (v2)
+
+### Flow
+
+```
+1. User visits draw.domain.com (hub dashboard)
+2. No session → redirect to /login
+3. User submits credentials
+4. Hub validates against env vars (bcrypt comparison)
+5. Hub sets JWT cookie (__excalihub_session, 24h expiry)
+6. User redirected to dashboard
+
+7. User clicks space → project1.draw.domain.com
+8. Hub proxy checks __excalihub_session cookie
+9. Valid JWT → proxy to Excalidraw
+10. Invalid/missing → redirect to draw.domain.com/login
+```
+
+### Proxy Middleware Logic
+
+```typescript
+// Pseudocode
+app.use('*', (req, res, next) => {
+  const host = req.header('host');
+  
+  // Dashboard routes — check session
+  if (isDashboard(host)) {
+    if (!req.cookie('__excalihub_session')) {
+      return res.redirect('/login');
+    }
+  }
+  
+  // Space routes (*.draw.domain.com) — check session
+  if (isSpace(host)) {
+    if (!isValidJWT(req.cookie('__excalihub_session'))) {
+      return res.redirect(`https://${BASE_DOMAIN}/login`);
+    }
+  }
+  
+  next();
+});
+```
+
+### Security Considerations
+
+- **HTTPS only** — Cookie has `Secure` flag
+- **HttpOnly** — Cookie not accessible via JavaScript
+- **SameSite=Strict** — Prevents CSRF
+- **JWT expiry** — 24 hours, refresh on activity
+- **No auth bypass** — All routes protected except `/login`
+
+### API Endpoints (Auth)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/login` | Login form |
+| `POST` | `/login` | Validate credentials, set session |
+| `POST` | `/logout` | Clear session cookie |
 
 ## Key Technical Challenges
 
 1. **WebSocket proxying**: Excalidraw uses Yjs for real-time sync. The proxy must handle WebSocket upgrade correctly.
 
-2. **Script injection reliability**: The injected script needs to find Excalidraw's React API. This may change between versions. Need to test with the specific Excalidraw image being used.
+2. **Script injection reliability**: The injected script intercepts `localStorage.setItem` to detect saves. This is stable because Excalidraw has used localStorage for years, but may break if Excalidraw changes its save mechanism.
 
 3. **Concurrent backups**: Multiple tabs editing the same space could cause backup conflicts. Use file hash deduplication to handle this.
 
@@ -213,11 +286,11 @@ TLS_EMAIL=admin@domain.com
 - [ ] Docker Compose setup
 - [ ] README with setup instructions
 
-## Out of Scope (v2+)
+## Future Roadmap (v2+)
 
-- TLS/Let's Encrypt auto-provisioning
-- User authentication
-- Space sharing/collaboration
-- Backup scheduling/retention policies
-- Import/export of spaces
-- Multiple Excalidraw instances for load balancing
+- [ ] **Authentication** — Username/password + JWT sessions (see Authentication Design above)
+- [ ] TLS/Let's Encrypt auto-provisioning
+- [ ] Space sharing/collaboration
+- [ ] Backup scheduling/retention policies
+- [ ] Import/export of spaces
+- [ ] Multiple Excalidraw instances for load balancing
