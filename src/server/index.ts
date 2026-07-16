@@ -7,6 +7,7 @@ import { proxyMiddleware } from './proxy.js';
 import { injectionMiddleware } from './inject.js';
 import api from './routes/api.js';
 import { env } from '../env.js';
+import { log } from '../logger.js';
 
 const app = new Hono();
 
@@ -38,14 +39,14 @@ const host = env.HOST;
 
 async function main() {
   await getDb();
-  console.log('Database initialized');
+  log.success('Database initialized');
   
-  console.log(`ExcaliHub starting on ${env.HOST}:${env.PORT}`);
-  console.log(`Base domain: ${env.BASE_DOMAIN}`);
-  console.log(`Excalidraw container: ${env.EXCALIDRAW_CONTAINER}`);
+  log.info(`ExcaliHub starting on ${env.HOST}:${env.PORT}`);
+  log.info(`Base domain: ${env.BASE_DOMAIN}`);
+  log.info(`Excalidraw container: ${env.EXCALIDRAW_CONTAINER}`);
 }
 
-main().catch(console.error);
+main().catch(log.error);
 
 export default {
   port,
