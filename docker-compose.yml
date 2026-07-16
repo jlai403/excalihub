@@ -1,0 +1,25 @@
+services:
+  excalihub:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - PORT=80
+      - HOST=0.0.0.0
+      - BASE_DOMAIN=draw.domain.com
+      - EXCALIDRAW_CONTAINER=http://excalidraw:80
+      - DB_PATH=/data/excalihub.db
+    volumes:
+      - excalihub-data:/data
+    depends_on:
+      - excalidraw
+    restart: unless-stopped
+
+  excalidraw:
+    image: excalidraw/excalidraw:latest
+    expose:
+      - "80"
+    restart: unless-stopped
+
+volumes:
+  excalihub-data:
