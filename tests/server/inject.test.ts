@@ -1,21 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Hono } from 'hono';
 
 let app: Hono;
 
 beforeEach(async () => {
-  process.env.BASE_DOMAIN = 'draw.domain.com';
-
   vi.resetModules();
   const mod = await import('../../src/server/inject.js');
   const middleware = mod.injectionMiddleware();
 
   app = new Hono();
   app.use('*', middleware);
-});
-
-afterEach(() => {
-  delete process.env.BASE_DOMAIN;
 });
 
 const HTML_RESPONSE = '<html><body><h1>Hello</h1></body></html>';

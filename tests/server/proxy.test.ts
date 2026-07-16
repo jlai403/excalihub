@@ -8,16 +8,11 @@ beforeEach(() => {
   fetchMock = vi.fn().mockResolvedValue(new Response('ok'));
   vi.stubGlobal('fetch', fetchMock);
 
-  process.env.BASE_DOMAIN = 'draw.domain.com';
-  process.env.EXCALIDRAW_CONTAINER = 'http://localhost:8080';
-
   vi.resetModules();
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
-  delete process.env.BASE_DOMAIN;
-  delete process.env.EXCALIDRAW_CONTAINER;
 });
 
 async function importProxy() {

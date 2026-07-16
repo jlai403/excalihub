@@ -1,8 +1,7 @@
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
-
-const DB_PATH = process.env.DB_PATH || './data/excalihub.db';
+import { env } from '../env.js';
 
 let db: SqlJsDatabase;
 
@@ -10,13 +9,13 @@ export async function getDb(): Promise<SqlJsDatabase> {
   if (!db) {
     const SQL = await initSqlJs();
     
-    const dir = dirname(DB_PATH);
+    const dir = dirname(env.DB_PATH);
     if (!existsSync(dir)) {
       mkdirSync(dir, { recursive: true });
     }
     
-    if (existsSync(DB_PATH)) {
-      const buffer = readFileSync(DB_PATH);
+    if (existsSync(env.DB_PATH)) {
+      const buffer = readFileSync(env.DB_PATH);
       db = new SQL.Database(buffer);
     } else {
       db = new SQL.Database();
@@ -58,7 +57,7 @@ function initSchema() {
 export function saveDb() {
   const data = db.export();
   const buffer = Buffer.from(data);
-  writeFileSync(DB_PATH, buffer);
+  writeFileSync(env.DB_PATH, buffer);
 }
 
 export interface Space {

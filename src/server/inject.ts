@@ -1,6 +1,7 @@
 import { Context, Next } from 'hono';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
+import { env } from '../env.js';
 
 let injectedScript: string | null = null;
 
@@ -17,9 +18,8 @@ function getInjectedScript(): string {
 export function injectionMiddleware() {
   return async (c: Context, next: Next) => {
     const host = c.req.header('host') || '';
-    const baseDomain = process.env.BASE_DOMAIN || 'draw.domain.com';
     
-    if (!host.endsWith(`.${baseDomain}`)) {
+    if (!host.endsWith(`.${env.BASE_DOMAIN}`)) {
       return next();
     }
     
