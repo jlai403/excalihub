@@ -34,18 +34,17 @@ describe('injectionMiddleware', () => {
     expect(body).not.toContain('excalihub-sync');
   });
 
-  // NOTE: The injection middleware has a bug — it checks `response?.headers`
-  // but Hono's `next()` doesn't return a standard Response with accessible
-  // `.headers`. The response is returned unchanged. These tests document
-  // the actual (broken) behavior.
-  it('does not inject into HTML for subdomain hosts (known bug)', async () => {
+  // The injection middleware now properly injects the sync script into
+  // HTML responses from subdomain hosts.
+  it('injects into HTML for subdomain hosts', async () => {
     app.get('/', (c) => c.html(HTML_RESPONSE));
 
     const res = await app.request('/', {
       headers: { host: 'myproject.draw.domain.com' },
     });
     const body = await res.text();
-    expect(body).toBe(HTML_RESPONSE);
+    expect(body).toContain('excalihub-sync');
+    expect(body).toContain('</body>');
   });
 
   it('does not inject into non-HTML responses', async () => {

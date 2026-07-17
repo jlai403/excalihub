@@ -23,25 +23,24 @@ export function injectionMiddleware() {
       return next();
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response: any = await next();
+    await next();
 
-    if (!response?.headers) {
-      return response;
+    if (!c.res?.headers) {
+      return;
     }
 
-    const contentType = response.headers.get('content-type') || '';
+    const contentType = c.res.headers.get('content-type') || '';
     if (!contentType.includes('text/html')) {
-      return response;
+      return;
     }
 
-    const html = await response.text();
+    const html = await c.res.text();
     const script = `<script data-excalihub-sync>${getInjectedScript()}</script>`;
     const injected = html.replace('</body>', `${script}</body>`) || html + script;
 
-    return new Response(injected, {
-      status: response.status,
-      headers: response.headers,
+    c.res = new Response(injected, {
+      status: c.res.status,
+      headers: c.res.headers,
     });
   };
 }
