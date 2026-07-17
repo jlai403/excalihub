@@ -1,7 +1,6 @@
 import { createHash } from 'crypto';
 import * as BackupRepo from '~/server/repositories/backup.js';
-import type { Backup } from '~/server/repositories/backup.js';
-import * as SpaceService from './space.js';
+import * as SpaceRepo from '~/server/repositories/space.js';
 
 export type CreateBackupResult =
   | { success: true; backupId: number }
@@ -24,7 +23,7 @@ export async function createBackup(
   elements: string,
   appState?: string | null,
 ): Promise<CreateBackupResult> {
-  const space = await SpaceService.getSpaceBySubdomain(subdomain);
+  const space = await SpaceRepo.getSpaceBySubdomain(subdomain);
   if (!space) {
     throw new Error('Space not found');
   }
@@ -39,12 +38,4 @@ export async function createBackup(
 
   const backup = await BackupRepo.createBackup(space.id, fileData, fileHash);
   return { success: true, backupId: backup.id };
-}
-
-export async function getBackupsBySpaceId(spaceId: number): Promise<Backup[]> {
-  return BackupRepo.getBackupsBySpaceId(spaceId);
-}
-
-export async function getBackupById(id: number): Promise<Backup | undefined> {
-  return BackupRepo.getBackupById(id);
 }

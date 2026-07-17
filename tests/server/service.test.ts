@@ -3,7 +3,6 @@ import { getDb, resetDb } from '~/server/db.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import * as SpaceService from '~/server/services/space.js';
 import * as BackupService from '~/server/services/backup.js';
-import * as BackupRepo from '~/server/repositories/backup.js';
 
 beforeEach(async () => {
   const dbPath = setupTestDb();
@@ -43,40 +42,6 @@ describe('createSpace', () => {
     expect(space.name).toBe('My Project');
     expect(space.subdomain).toBe('my-project');
     expect(space.id).toBeDefined();
-  });
-});
-
-describe('getAllSpaces', () => {
-  it('returns empty array when no spaces exist', async () => {
-    expect(await SpaceService.getAllSpaces()).toEqual([]);
-  });
-
-  it('returns all spaces', async () => {
-    await SpaceService.createSpace('First');
-    await SpaceService.createSpace('Second');
-    const spaces = await SpaceService.getAllSpaces();
-    expect(spaces).toHaveLength(2);
-  });
-});
-
-describe('getSpaceById', () => {
-  it('returns the space when found', async () => {
-    const created = await SpaceService.createSpace('Test');
-    const space = await SpaceService.getSpaceById(created.id);
-    expect(space).toBeDefined();
-    expect(space!.name).toBe('Test');
-  });
-
-  it('returns undefined when not found', async () => {
-    expect(await SpaceService.getSpaceById(999)).toBeUndefined();
-  });
-});
-
-describe('deleteSpace', () => {
-  it('deletes the space', async () => {
-    const space = await SpaceService.createSpace('ToDelete');
-    await SpaceService.deleteSpace(space.id);
-    expect(await SpaceService.getSpaceById(space.id)).toBeUndefined();
   });
 });
 
@@ -149,21 +114,5 @@ describe('createBackup', () => {
     await expect(
       BackupService.createBackup('nonexistent', '[]')
     ).rejects.toThrow('Space not found');
-  });
-});
-
-describe('getBackupsBySpaceId', () => {
-  it('returns backups for a space', async () => {
-    const space = await SpaceService.createSpace('WithBackups');
-    await BackupRepo.createBackup(space.id, '{"elements":[]}', 'hash1');
-    await BackupRepo.createBackup(space.id, '{"elements":[1]}', 'hash2');
-
-    const backups = await BackupService.getBackupsBySpaceId(space.id);
-    expect(backups).toHaveLength(2);
-  });
-
-  it('returns empty array when no backups', async () => {
-    const space = await SpaceService.createSpace('Empty');
-    expect(await BackupService.getBackupsBySpaceId(space.id)).toEqual([]);
   });
 });

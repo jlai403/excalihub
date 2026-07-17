@@ -1,17 +1,19 @@
 import { Hono } from 'hono';
+import * as SpaceRepo from '~/server/repositories/space.js';
+import * as BackupRepo from '~/server/repositories/backup.js';
 import * as SpaceService from '~/server/services/space.js';
 import * as BackupService from '~/server/services/backup.js';
 
 const api = new Hono();
 
 api.get('/spaces', async (c) => {
-  const spaces = await SpaceService.getAllSpaces();
+  const spaces = await SpaceRepo.getAllSpaces();
   return c.json(spaces);
 });
 
 api.get('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const space = await SpaceService.getSpaceById(id);
+  const space = await SpaceRepo.getSpaceById(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
   return c.json(space);
 });
@@ -37,19 +39,19 @@ api.post('/spaces', async (c) => {
 
 api.delete('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const space = await SpaceService.getSpaceById(id);
+  const space = await SpaceRepo.getSpaceById(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
 
-  await SpaceService.deleteSpace(id);
+  await SpaceRepo.deleteSpace(id);
   return c.json({ success: true });
 });
 
 api.get('/spaces/:id/backups', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const space = await SpaceService.getSpaceById(id);
+  const space = await SpaceRepo.getSpaceById(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
 
-  const backups = await BackupService.getBackupsBySpaceId(id);
+  const backups = await BackupRepo.getBackupsBySpaceId(id);
   return c.json(backups);
 });
 
@@ -74,7 +76,7 @@ api.post('/backup', async (c) => {
 
 api.get('/backups/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const backup = await BackupService.getBackupById(id);
+  const backup = await BackupRepo.getBackupById(id);
   if (!backup) return c.json({ error: 'Backup not found' }, 404);
 
   return new Response(backup.fileData, {
