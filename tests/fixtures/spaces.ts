@@ -37,7 +37,7 @@ export class SpaceFixture {
     return this;
   }
 
-  async flush(): Promise<this> {
+  async execute(): Promise<this> {
     for (const op of this._pendingOps) {
       await op();
     }

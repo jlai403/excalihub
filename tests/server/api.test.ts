@@ -30,7 +30,7 @@ describe('GET /api/spaces', () => {
   });
 
   it('returns all created spaces', async () => {
-    await fixture.addSpace('Space A').addSpace('Space B').flush();
+    await fixture.addSpace('Space A').addSpace('Space B').execute();
 
     const res = await api.get('/api/spaces');
     expect(res.status).toBe(200);
@@ -40,7 +40,7 @@ describe('GET /api/spaces', () => {
 
 describe('GET /api/spaces/:id', () => {
   it('returns the space when found', async () => {
-    await fixture.addSpace('Test').flush();
+    await fixture.addSpace('Test').execute();
 
     const res = await api.get(`/api/spaces/${fixture.spaceIds[0]}`);
     expect(res.status).toBe(200);
@@ -87,7 +87,7 @@ describe('POST /api/spaces', () => {
   });
 
   it('returns 409 when name already exists', async () => {
-    await fixture.addSpace('Duplicate').flush();
+    await fixture.addSpace('Duplicate').execute();
     const res = await api.post('/api/spaces', { name: 'Duplicate' });
     expect(res.status).toBe(409);
     expect(await api.json(res)).toEqual({ error: 'Space name already exists' });
@@ -96,7 +96,7 @@ describe('POST /api/spaces', () => {
 
 describe('DELETE /api/spaces/:id', () => {
   it('deletes the space and returns success', async () => {
-    await fixture.addSpace('ToDelete').flush();
+    await fixture.addSpace('ToDelete').execute();
 
     const res = await api.delete(`/api/spaces/${fixture.spaceIds[0]}`);
     expect(res.status).toBe(200);
@@ -114,7 +114,7 @@ describe('DELETE /api/spaces/:id', () => {
 
 describe('GET /api/spaces/:id/backups', () => {
   it('returns backups for the space', async () => {
-    await fixture.addSpace('WithBackups').addBackup('WithBackups', { elements: JSON.stringify([{ id: '1' }]) }).flush();
+    await fixture.addSpace('WithBackups').addBackup('WithBackups', { elements: JSON.stringify([{ id: '1' }]) }).execute();
 
     const res = await api.get(`/api/spaces/${fixture.spaceIds[0]}/backups`);
     expect(res.status).toBe(200);
@@ -129,7 +129,7 @@ describe('GET /api/spaces/:id/backups', () => {
 
 describe('POST /api/backup', () => {
   it('creates a backup and returns backupId', async () => {
-    await fixture.addSpace('Test').flush();
+    await fixture.addSpace('Test').execute();
 
     const res = await api.post('/api/backup', {
       subdomain: fixture.spaceByName('Test')!.subdomain,
@@ -162,7 +162,7 @@ describe('POST /api/backup', () => {
   });
 
   it('deduplicates identical backups', async () => {
-    await fixture.addSpace('Dedup').flush();
+    await fixture.addSpace('Dedup').execute();
     const subdomain = fixture.spaceByName('Dedup')!.subdomain;
 
     const backupBody = {
@@ -183,7 +183,7 @@ describe('POST /api/backup', () => {
 
 describe('GET /api/backups/:id', () => {
   it('downloads backup as .excalidraw file', async () => {
-    await fixture.addSpace('Download').addBackup('Download', { elements: JSON.stringify([{ id: '1' }]) }).flush();
+    await fixture.addSpace('Download').addBackup('Download', { elements: JSON.stringify([{ id: '1' }]) }).execute();
 
     const res = await api.get(`/api/backups/${fixture.backups[0].id}`);
     expect(res.status).toBe(200);
