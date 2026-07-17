@@ -1,6 +1,7 @@
 import * as z from 'zod/v4-mini';
 
 const envSchema = z.object({
+  NODE_ENV: z._default(z.string(), 'development'),
   DB_PATH: z._default(z.string(), './data/excalihub.db'),
   BASE_DOMAIN: z._default(z.string(), 'draw.domain.com'),
   EXCALIDRAW_CONTAINER: z._default(z.string(), 'http://localhost:8080'),

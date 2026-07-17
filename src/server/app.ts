@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { existsSync } from 'node:fs';
+import { env } from '../env.js';
 import { getDb } from './db.js';
 import { proxyMiddleware } from './proxy.js';
 import { injectionMiddleware } from './inject.js';
@@ -15,7 +15,7 @@ export function createApp(): Hono {
   app.use('*', cors());
   app.route('/api', api);
 
-  if (existsSync('./dist/public')) {
+  if (env.NODE_ENV !== 'development') {
     app.use('/*', serveStatic({ root: './dist/public' }));
   }
 
