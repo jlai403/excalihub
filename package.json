@@ -6,20 +6,28 @@
     "dev": "concurrently \"tsx watch src/server/index.ts\" \"astro dev\"",
     "dev:server": "tsx watch src/server/index.ts",
     "dev:dashboard": "astro dev",
-    "build": "astro build && tsc",
-    "start": "node dist/server/index.js"
+    "build": "astro build; tsc; tsc-alias",
+    "start": "node dist/server/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@astrojs/node": "^11.0.2",
     "@hono/node-server": "^1.11.0",
     "astro": "^7.1.0",
+    "consola": "^3.4.2",
+    "drizzle-orm": "^0.45.2",
     "hono": "^4.4.0",
-    "sql.js": "^1.10.0"
+    "sql.js": "^1.10.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "concurrently": "^10.0.3",
+    "drizzle-kit": "^0.31.10",
+    "tsc-alias": "^1.9.1",
     "tsx": "^4.15.0",
-    "typescript": "^6.0.0"
+    "typescript": "^6.0.0",
+    "vitest": "^4.1.10"
   }
 }
