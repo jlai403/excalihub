@@ -1,6 +1,6 @@
 import { eq, desc } from 'drizzle-orm';
-import { getDb, saveDb } from '../db.js';
-import { backups } from '../schema.js';
+import { getDb, saveDb } from '~/server/db.js';
+import { backups } from '~/server/schema.js';
 import type { InferSelectModel } from 'drizzle-orm';
 
 export type Backup = InferSelectModel<typeof backups>;

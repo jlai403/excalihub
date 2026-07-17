@@ -2,7 +2,7 @@ import { drizzle } from 'drizzle-orm/sql-js';
 import initSqlJs, { Database as SqlJsDatabase } from 'sql.js';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { dirname } from 'path';
-import { env } from '../env.js';
+import { env } from '~/env.js';
 import * as schema from './schema.js';
 
 type DrizzleDb = ReturnType<typeof drizzle<typeof schema>>;

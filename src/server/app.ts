@@ -2,10 +2,10 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { serveStatic } from '@hono/node-server/serve-static';
-import { env } from '../env.js';
-import { proxyMiddleware, injectionMiddleware } from './middleware/index.js';
-import { getDb } from './db.js';
-import api from './routes/api.js';
+import { env } from '~/env.js';
+import { proxyMiddleware, injectionMiddleware } from '~/server/middleware/index.js';
+import { getDb } from '~/server/db.js';
+import api from '~/server/routes/api.js';
 
 export function createApp(): Hono {
   const app = new Hono();

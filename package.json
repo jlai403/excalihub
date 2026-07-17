@@ -6,7 +6,7 @@
     "dev": "concurrently \"tsx watch src/server/index.ts\" \"astro dev\"",
     "dev:server": "tsx watch src/server/index.ts",
     "dev:dashboard": "astro dev",
-    "build": "astro build && tsc",
+    "build": "astro build; tsc; tsc-alias",
     "start": "node dist/server/index.js",
     "test": "vitest run",
     "test:watch": "vitest"
@@ -25,6 +25,7 @@
     "@types/node": "^20.14.0",
     "concurrently": "^10.0.3",
     "drizzle-kit": "^0.31.10",
+    "tsc-alias": "^1.9.1",
     "tsx": "^4.15.0",
     "typescript": "^6.0.0",
     "vitest": "^4.1.10"

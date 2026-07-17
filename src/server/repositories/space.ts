@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
-import { getDb, saveDb } from '../db.js';
-import { spaces } from '../schema.js';
+import { getDb, saveDb } from '~/server/db.js';
+import { spaces } from '~/server/schema.js';
 import type { InferSelectModel } from 'drizzle-orm';
 
 export type Space = InferSelectModel<typeof spaces>;

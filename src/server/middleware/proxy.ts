@@ -1,5 +1,5 @@
 import { Context, Next } from 'hono';
-import { env } from '../../env.js';
+import { env } from '~/env.js';
 
 export function proxyMiddleware() {
   return async (c: Context, next: Next) => {

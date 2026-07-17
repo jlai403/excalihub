@@ -1,8 +1,8 @@
 import { serve } from '@hono/node-server';
-import { createApp } from './app.js';
-import { getDb } from './db.js';
-import { env } from '../env.js';
-import { log } from '../logger.js';
+import { createApp } from '~/server/app.js';
+import { getDb } from '~/server/db.js';
+import { env } from '~/env.js';
+import { log } from '~/logger.js';
 
 async function main() {
   await getDb();

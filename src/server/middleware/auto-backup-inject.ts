@@ -1,7 +1,7 @@
 import { Context, Next } from 'hono';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { env } from '../../env.js';
+import { env } from '~/env.js';
 
 let injectedScript: string | null = null;
 
