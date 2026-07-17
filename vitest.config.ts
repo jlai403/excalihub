@@ -11,7 +11,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     env: {
-      BASE_DOMAIN: 'draw.domain.com',
+      BASE_DOMAIN: 'draw.example.com',
       EXCALIDRAW_CONTAINER: 'http://localhost:8080',
       PORT: '80',
       HOST: '0.0.0.0',

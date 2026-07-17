@@ -17,7 +17,7 @@ describe('injectionMiddleware', () => {
     app.get('/', (c) => c.html(HTML_RESPONSE));
 
     const res = await app.request('/', {
-      headers: { host: 'draw.domain.com' },
+      headers: { host: 'draw.example.com' },
     });
     const body = await res.text();
     expect(body).toBe(HTML_RESPONSE);
@@ -38,7 +38,7 @@ describe('injectionMiddleware', () => {
     app.get('/', (c) => c.html(HTML_RESPONSE));
 
     const res = await app.request('/', {
-      headers: { host: 'myproject.draw.domain.com' },
+      headers: { host: 'myproject.draw.example.com' },
     });
     const body = await res.text();
     expect(body).toContain('excalihub-sync');
@@ -49,7 +49,7 @@ describe('injectionMiddleware', () => {
     app.get('/', (c) => c.text('{"status":"ok"}'));
 
     const res = await app.request('/', {
-      headers: { host: 'space.draw.domain.com' },
+      headers: { host: 'space.draw.example.com' },
     });
     const body = await res.text();
     expect(body).not.toContain('excalihub-sync');
@@ -61,7 +61,7 @@ describe('injectionMiddleware', () => {
     }));
 
     const res = await app.request('/', {
-      headers: { host: 'space.draw.domain.com' },
+      headers: { host: 'space.draw.example.com' },
     });
     const body = await res.text();
     expect(body).not.toContain('excalihub-sync');
