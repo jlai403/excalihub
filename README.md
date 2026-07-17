@@ -68,3 +68,4 @@ Browser ──> draw.example.com ────> Astro Dashboard
 - **Astro** — Dashboard UI
 - **SQLite / Drizzle ORM** — Persistence
 - **Docker Compose** — Deployment
+- **Excalidraw** — whiteboard editor (MIT). Shoutout to the Excalidraw team for their awesome work.
