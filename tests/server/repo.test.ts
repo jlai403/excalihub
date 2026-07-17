@@ -117,10 +117,6 @@ describe('deleteSpace', () => {
 
     await deleteSpace(space.id);
 
-    // NOTE: SQLite foreign keys are not enabled by default.
-    // ON DELETE CASCADE in the schema requires PRAGMA foreign_keys = ON.
-    // Without it, backups remain after space deletion.
-    // This test documents actual behavior — backups are NOT cascade-deleted.
     const backups = await getBackupsBySpaceId(space.id);
     expect(backups.length).toBeGreaterThan(0);
   });
@@ -220,7 +216,6 @@ describe('getLatestBackupHash', () => {
     const space = await createSpace('Test', 'test');
     await createBackup(space.id, '{"a":1}', 'old-hash');
 
-    // Wait 1 second to ensure different timestamp
     await new Promise((r) => setTimeout(r, 1100));
 
     await createBackup(space.id, '{"b":2}', 'new-hash');

@@ -34,8 +34,6 @@ describe('injectionMiddleware', () => {
     expect(body).not.toContain('excalihub-sync');
   });
 
-  // The injection middleware now properly injects the sync script into
-  // HTML responses from subdomain hosts.
   it('injects into HTML for subdomain hosts', async () => {
     app.get('/', (c) => c.html(HTML_RESPONSE));
 

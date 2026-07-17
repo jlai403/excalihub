@@ -17,19 +17,16 @@ import {
 
 const api = new Hono();
 
-// Ensure DB is initialized
 api.use('*', async (c, next) => {
   await getDb();
   return next();
 });
 
-// List all spaces
 api.get('/spaces', async (c) => {
   const spaces = await getAllSpaces();
   return c.json(spaces);
 });
 
-// Get single space
 api.get('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   const space = await getSpaceById(id);
@@ -37,7 +34,6 @@ api.get('/spaces/:id', async (c) => {
   return c.json(space);
 });
 
-// Create space
 api.post('/spaces', async (c) => {
   const body = await c.req.json();
   const { name } = body;
@@ -62,7 +58,6 @@ api.post('/spaces', async (c) => {
   }
 });
 
-// Delete space
 api.delete('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   const space = await getSpaceById(id);
@@ -72,7 +67,6 @@ api.delete('/spaces/:id', async (c) => {
   return c.json({ success: true });
 });
 
-// List backups for space
 api.get('/spaces/:id/backups', async (c) => {
   const id = parseInt(c.req.param('id'));
   const space = await getSpaceById(id);
@@ -82,7 +76,6 @@ api.get('/spaces/:id/backups', async (c) => {
   return c.json(backups);
 });
 
-// Receive backup from injected script
 api.post('/backup', async (c) => {
   const body = await c.req.json();
   const { subdomain, elements, appState } = body;
@@ -113,7 +106,6 @@ api.post('/backup', async (c) => {
   return c.json({ success: true, backupId: backup.id });
 });
 
-// Download backup
 api.get('/backups/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
   const backup = await getBackupById(id);
