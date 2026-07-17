@@ -3,6 +3,7 @@ import { getDb, resetDb } from '~/server/db.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import * as SpaceService from '~/server/services/space.js';
 import * as BackupService from '~/server/services/backup.js';
+import * as BackupRepo from '~/server/repositories/backup.js';
 
 beforeEach(async () => {
   const dbPath = setupTestDb();
@@ -14,90 +15,58 @@ afterEach(() => {
   cleanupTestDb();
 });
 
-describe('slugifyName', () => {
-  it('lowercases and replaces special chars with hyphens', () => {
-    expect(SpaceService.slugifyName('Hello World!!!')).toBe('hello-world');
-  });
-
-  it('trims leading and trailing hyphens', () => {
-    expect(SpaceService.slugifyName('-already-slugged-')).toBe('already-slugged');
-  });
-
-  it('collapses consecutive non-alphanumeric chars into single hyphen', () => {
-    expect(SpaceService.slugifyName('foo___bar')).toBe('foo-bar');
-  });
-
-  it('handles all lowercase name with no special chars', () => {
-    expect(SpaceService.slugifyName('my-project')).toBe('my-project');
-  });
-
-  it('returns empty string for empty input', () => {
-    expect(SpaceService.slugifyName('')).toBe('');
-  });
-});
-
 describe('createSpace', () => {
-  it('creates a space with auto-generated subdomain', async () => {
-    const space = await SpaceService.createSpace('My Project');
-    expect(space.name).toBe('My Project');
-    expect(space.subdomain).toBe('my-project');
-    expect(space.id).toBeDefined();
+  it('generates correct subdomain from name', async () => {
+    const space = await SpaceService.createSpace('Hello World!!!');
+    expect(space.subdomain).toBe('hello-world');
+  });
+
+  it('trims leading and trailing dashes from slug', async () => {
+    const space = await SpaceService.createSpace('-already-slugged-');
+    expect(space.subdomain).toBe('already-slugged');
+  });
+
+  it('collapses consecutive special chars into single hyphen', async () => {
+    const space = await SpaceService.createSpace('foo___bar');
+    expect(space.subdomain).toBe('foo-bar');
+  });
+
+  it('returns empty subdomain for empty name', async () => {
+    const space = await SpaceService.createSpace('');
+    expect(space.subdomain).toBe('');
   });
 });
 
-describe('buildFileData', () => {
-  it('constructs JSON with parsed elements and appState', () => {
-    const result = BackupService.buildFileData('[{"id":"1"}]', '{"theme":"dark"}');
-    const parsed = JSON.parse(result);
+describe('createBackup', () => {
+  it('creates a backup and stores structured file data', async () => {
+    await SpaceService.createSpace('Test');
+    const result = await BackupService.createBackup('test', '[{"id":"1"}]', '{"theme":"dark"}');
+
+    expect(result.success).toBe(true);
+    expect(result).toHaveProperty('backupId');
+
+    const stored = await BackupRepo.getBackupById((result as any).backupId);
+    const parsed = JSON.parse(stored!.fileData);
     expect(parsed.elements).toEqual([{ id: '1' }]);
     expect(parsed.appState).toEqual({ theme: 'dark' });
     expect(parsed.files).toEqual({});
   });
 
-  it('defaults appState to empty object when not provided', () => {
-    const result = BackupService.buildFileData('[{"id":"1"}]');
-    const parsed = JSON.parse(result);
-    expect(parsed.appState).toEqual({});
-  });
-
-  it('defaults appState to empty object when null', () => {
-    const result = BackupService.buildFileData('[{"id":"1"}]', null);
-    const parsed = JSON.parse(result);
-    expect(parsed.appState).toEqual({});
-  });
-});
-
-describe('hashFileData', () => {
-  it('returns a hex SHA256 hash', () => {
-    const hash = BackupService.hashFileData('hello');
-    expect(hash).toMatch(/^[a-f0-9]{64}$/);
-  });
-
-  it('returns the same hash for the same input', () => {
-    expect(BackupService.hashFileData('test')).toBe(BackupService.hashFileData('test'));
-  });
-
-  it('returns different hashes for different inputs', () => {
-    expect(BackupService.hashFileData('a')).not.toBe(BackupService.hashFileData('b'));
-  });
-});
-
-describe('createBackup', () => {
-  it('creates a backup and returns backupId', async () => {
+  it('uses empty appState when not provided', async () => {
     await SpaceService.createSpace('Test');
-    const result = await BackupService.createBackup('test', '[{"id":"1"}]', '{"theme":"dark"}');
-    expect(result.success).toBe(true);
-    expect(result).toHaveProperty('backupId');
+    const result = await BackupService.createBackup('test', '[{"id":"1"}]');
+
+    const stored = await BackupRepo.getBackupById((result as any).backupId);
+    const parsed = JSON.parse(stored!.fileData);
+    expect(parsed.appState).toEqual({});
   });
 
   it('deduplicates identical backups', async () => {
     await SpaceService.createSpace('Dedup');
-    const args = ['dedup', '[{"id":"1"}]', null] as const;
-
-    const r1 = await BackupService.createBackup(...args);
+    const r1 = await BackupService.createBackup('dedup', '[{"id":"1"}]', null);
     expect(r1).toEqual({ success: true, backupId: expect.any(Number) });
 
-    const r2 = await BackupService.createBackup(...args);
+    const r2 = await BackupService.createBackup('dedup', '[{"id":"1"}]', null);
     expect(r2).toEqual({ success: true, deduplicated: true });
   });
 
@@ -105,8 +74,6 @@ describe('createBackup', () => {
     await SpaceService.createSpace('Multi');
     const r1 = await BackupService.createBackup('multi', '[{"id":"1"}]', null);
     const r2 = await BackupService.createBackup('multi', '[{"id":"2"}]', null);
-    expect(r1).toHaveProperty('backupId');
-    expect(r2).toHaveProperty('backupId');
     expect((r1 as any).backupId).not.toBe((r2 as any).backupId);
   });
 
@@ -114,5 +81,19 @@ describe('createBackup', () => {
     await expect(
       BackupService.createBackup('nonexistent', '[]')
     ).rejects.toThrow('Space not found');
+  });
+
+  it('throws on invalid JSON in elements', async () => {
+    await SpaceService.createSpace('Test');
+    await expect(
+      BackupService.createBackup('test', 'not-json')
+    ).rejects.toThrow('Invalid backup data');
+  });
+
+  it('throws on invalid JSON in appState', async () => {
+    await SpaceService.createSpace('Test');
+    await expect(
+      BackupService.createBackup('test', '[]', 'not-json')
+    ).rejects.toThrow('Invalid backup data');
   });
 });

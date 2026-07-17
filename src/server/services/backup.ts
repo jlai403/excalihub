@@ -6,15 +6,34 @@ export type CreateBackupResult =
   | { success: true; backupId: number }
   | { success: true; deduplicated: true };
 
-export function buildFileData(elements: string, appState?: string | null): string {
+function buildFileData(elements: string, appState?: string | null): string {
+  let parsedElements: unknown;
+  let parsedAppState: unknown;
+
+  try {
+    parsedElements = JSON.parse(elements);
+  } catch {
+    throw new Error('Invalid backup data: elements must be valid JSON');
+  }
+
+  if (appState) {
+    try {
+      parsedAppState = JSON.parse(appState);
+    } catch {
+      throw new Error('Invalid backup data: appState must be valid JSON');
+    }
+  } else {
+    parsedAppState = {};
+  }
+
   return JSON.stringify({
-    elements: JSON.parse(elements),
-    appState: appState ? JSON.parse(appState) : {},
+    elements: parsedElements,
+    appState: parsedAppState,
     files: {},
   });
 }
 
-export function hashFileData(fileData: string): string {
+function hashFileData(fileData: string): string {
   return createHash('sha256').update(fileData).digest('hex');
 }
 

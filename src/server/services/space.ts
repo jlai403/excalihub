@@ -1,7 +1,7 @@
 import * as SpaceRepo from '~/server/repositories/space.js';
 import type { Space } from '~/server/repositories/space.js';
 
-export function slugifyName(name: string): string {
+function slugifyName(name: string): string {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')

@@ -70,6 +70,9 @@ api.post('/backup', async (c) => {
     if (err.message === 'Space not found') {
       return c.json({ error: 'Space not found' }, 404);
     }
+    if (err.message?.startsWith('Invalid backup data')) {
+      return c.json({ error: err.message }, 400);
+    }
     throw err;
   }
 });
