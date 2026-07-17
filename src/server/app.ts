@@ -3,9 +3,8 @@ import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { env } from '../env.js';
+import { proxyMiddleware, injectionMiddleware } from './middleware/index.js';
 import { getDb } from './db.js';
-import { proxyMiddleware } from './proxy.js';
-import { injectionMiddleware } from './inject.js';
 import api from './routes/api.js';
 
 export function createApp(): Hono {

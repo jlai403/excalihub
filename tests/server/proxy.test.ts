@@ -16,7 +16,7 @@ afterEach(() => {
 });
 
 async function importProxy() {
-  const mod = await import('../../src/server/proxy.js');
+  const mod = await import('../../src/server/middleware/proxy.js');
   return mod.proxyMiddleware();
 }
 

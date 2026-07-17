@@ -5,7 +5,7 @@ let app: Hono;
 
 beforeEach(async () => {
   vi.resetModules();
-  const mod = await import('../../src/server/inject.js');
+  const mod = await import('../../src/server/middleware/auto-backup-inject.js');
   const middleware = mod.injectionMiddleware();
 
   app = new Hono();
