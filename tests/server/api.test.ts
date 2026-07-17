@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { createApp } from '../../src/server/app.js';
 import { getDb, resetDb } from '../../src/server/db.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
