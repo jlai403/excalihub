@@ -16,15 +16,19 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start Hono server + Astro dev server concurrently |
-| `npm run dev:server` | Start Hono server only (hot-reload) |
-| `npm run dev:dashboard` | Start Astro dev server only |
-| `npm run build` | Build Astro + compile TypeScript |
-| `npm start` | Run production server |
-| `npm test` | Run Vitest test suite |
-| `npm run test:watch` | Run Vitest in watch mode |
+| `bun run dev` | Start Hono server + Astro dev server concurrently |
+| `bun run dev:server` | Start Hono server only (hot-reload) |
+| `bun run dev:dashboard` | Start Astro dev server only |
+| `bun run build` | Build Astro + bundle server with Bun |
+| `bun run start` | Run production server |
+| `bun test` | Run test suite |
+| `bun test --watch` | Run tests in watch mode |
 | `docker compose up --build` | Full deployment |
 | `droast Dockerfile` | Lint Dockerfile |
+
+## Stack
+
+- **Runtime**: Bun 1.x
 
 ## CI/CD
 

@@ -1,35 +1,30 @@
-FROM node:26-slim AS builder
+FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm ci
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 
-COPY tsconfig.json ./
-COPY src ./src
-COPY astro.config.mjs ./
+COPY . .
 
-RUN npx astro build && npm run build
+RUN bun run astro build && bun build src/server/index.ts --outdir dist --target bun
 
-FROM node:26-slim AS runtime
+FROM oven/bun:1 AS runtime
 
 ENV NODE_ENV=production
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
-
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/inject ./dist/inject
 
-RUN mkdir -p /data && chown -R node:node /data /app
+RUN mkdir -p /data && chown -R bun:bun /data /app
 
-USER node
+USER bun
 
 EXPOSE 80
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "fetch('http://localhost:80/health').then(r => process.exit(r.ok?0:1)).catch(() => process.exit(1))"
+  CMD bun -e "fetch('http://localhost:80/health').then(r => process.exit(r.ok?0:1)).catch(() => process.exit(1))"
 
-CMD ["node", "dist/server/index.js"]
+CMD ["bun", "run", "dist/server/index.js"]

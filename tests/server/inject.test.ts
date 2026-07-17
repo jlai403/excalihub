@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'bun:test';
 import { Hono } from 'hono';
 import { injectionMiddleware } from '../../src/server/middleware/auto-backup-inject.js';
 
