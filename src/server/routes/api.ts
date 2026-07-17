@@ -1,19 +1,16 @@
 import { Hono } from 'hono';
-import { createHash } from 'crypto';
 import { getDb } from '~/server/db.js';
 import {
-  createSpace,
-  getAllSpaces,
-  getSpaceById,
-  getSpaceBySubdomain,
-  deleteSpace,
-} from '~/server/repositories/space.js';
+  createSpaceService,
+  getAllSpacesService,
+  getSpaceByIdService,
+  deleteSpaceService,
+} from '~/server/services/space.js';
 import {
-  createBackup,
-  getBackupsBySpaceId,
-  getBackupById,
-  getLatestBackupHash,
-} from '~/server/repositories/backup.js';
+  createBackupService,
+  getBackupsBySpaceIdService,
+  getBackupByIdService,
+} from '~/server/services/backup.js';
 
 const api = new Hono();
 
@@ -23,13 +20,13 @@ api.use('*', async (c, next) => {
 });
 
 api.get('/spaces', async (c) => {
-  const spaces = await getAllSpaces();
+  const spaces = await getAllSpacesService();
   return c.json(spaces);
 });
 
 api.get('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const space = await getSpaceById(id);
+  const space = await getSpaceByIdService(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
   return c.json(space);
 });
@@ -42,13 +39,8 @@ api.post('/spaces', async (c) => {
     return c.json({ error: 'Name is required' }, 400);
   }
 
-  const subdomain = name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '');
-
   try {
-    const space = await createSpace(name, subdomain);
+    const space = await createSpaceService(name);
     return c.json(space, 201);
   } catch (err: any) {
     if (err.message?.includes('UNIQUE constraint') || err.message?.includes('unique')) {
@@ -60,19 +52,19 @@ api.post('/spaces', async (c) => {
 
 api.delete('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const space = await getSpaceById(id);
+  const space = await getSpaceByIdService(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
 
-  await deleteSpace(id);
+  await deleteSpaceService(id);
   return c.json({ success: true });
 });
 
 api.get('/spaces/:id/backups', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const space = await getSpaceById(id);
+  const space = await getSpaceByIdService(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
 
-  const backups = await getBackupsBySpaceId(id);
+  const backups = await getBackupsBySpaceIdService(id);
   return c.json(backups);
 });
 
@@ -84,31 +76,20 @@ api.post('/backup', async (c) => {
     return c.json({ error: 'Subdomain and elements required' }, 400);
   }
 
-  const space = await getSpaceBySubdomain(subdomain);
-  if (!space) {
-    return c.json({ error: 'Space not found' }, 404);
+  try {
+    const result = await createBackupService(subdomain, elements, appState);
+    return c.json(result);
+  } catch (err: any) {
+    if (err.message === 'Space not found') {
+      return c.json({ error: 'Space not found' }, 404);
+    }
+    throw err;
   }
-
-  const fileData = JSON.stringify({
-    elements: JSON.parse(elements),
-    appState: appState ? JSON.parse(appState) : {},
-    files: {},
-  });
-
-  const fileHash = createHash('sha256').update(fileData).digest('hex');
-
-  const latestHash = await getLatestBackupHash(space.id);
-  if (latestHash === fileHash) {
-    return c.json({ success: true, deduplicated: true });
-  }
-
-  const backup = await createBackup(space.id, fileData, fileHash);
-  return c.json({ success: true, backupId: backup.id });
 });
 
 api.get('/backups/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const backup = await getBackupById(id);
+  const backup = await getBackupByIdService(id);
   if (!backup) return c.json({ error: 'Backup not found' }, 404);
 
   return new Response(backup.fileData, {
