@@ -1,13 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { Hono } from 'hono';
+import { injectionMiddleware } from '../../src/server/middleware/auto-backup-inject.js';
 
 let app: Hono;
 
-beforeEach(async () => {
-  vi.resetModules();
-  const mod = await import('../../src/server/middleware/auto-backup-inject.js');
-  const middleware = mod.injectionMiddleware();
-
+beforeEach(() => {
+  const middleware = injectionMiddleware();
   app = new Hono();
   app.use('*', middleware);
 });

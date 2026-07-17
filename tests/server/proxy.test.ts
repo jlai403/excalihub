@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { Hono } from 'hono';
+import { proxyMiddleware } from '../../src/server/middleware/proxy.js';
 
 let app: Hono;
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -7,23 +8,16 @@ let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   fetchMock = vi.fn().mockResolvedValue(new Response('ok'));
   vi.stubGlobal('fetch', fetchMock);
-
-  vi.resetModules();
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-async function importProxy() {
-  const mod = await import('../../src/server/middleware/proxy.js');
-  return mod.proxyMiddleware();
-}
-
 describe('proxyMiddleware', () => {
   it('passes through for base domain host', async () => {
     const nextCalled = { current: false };
-    const middleware = await importProxy();
+    const middleware = proxyMiddleware();
 
     const app = new Hono();
     app.use('*', middleware);
@@ -42,7 +36,7 @@ describe('proxyMiddleware', () => {
 
   it('passes through for localhost', async () => {
     const nextCalled = { current: false };
-    const middleware = await importProxy();
+    const middleware = proxyMiddleware();
 
     const app = new Hono();
     app.use('*', middleware);
@@ -60,7 +54,7 @@ describe('proxyMiddleware', () => {
   });
 
   it('proxies subdomain requests to Excalidraw container', async () => {
-    const middleware = await importProxy();
+    const middleware = proxyMiddleware();
 
     const app = new Hono();
     app.use('*', middleware);
@@ -76,7 +70,7 @@ describe('proxyMiddleware', () => {
   });
 
   it('rewrites host header for proxied requests', async () => {
-    const middleware = await importProxy();
+    const middleware = proxyMiddleware();
 
     const app = new Hono();
     app.use('*', middleware);
@@ -90,7 +84,7 @@ describe('proxyMiddleware', () => {
   });
 
   it('forwards body for POST requests', async () => {
-    const middleware = await importProxy();
+    const middleware = proxyMiddleware();
 
     const app = new Hono();
     app.use('*', middleware);
@@ -108,7 +102,7 @@ describe('proxyMiddleware', () => {
   });
 
   it('does not forward body for GET requests', async () => {
-    const middleware = await importProxy();
+    const middleware = proxyMiddleware();
 
     const app = new Hono();
     app.use('*', middleware);
