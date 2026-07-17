@@ -1,20 +1,15 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Hono } from 'hono';
-import type { Hono as HonoType } from 'hono';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createApp } from '../../src/server/app.js';
+import { getDb, resetDb } from '../../src/server/db.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 
-let app: HonoType;
+let app: ReturnType<typeof createApp>;
 
 beforeEach(async () => {
-  setupTestDb();
-  vi.resetModules();
-  const { getDb } = await import('../../src/server/db.js');
-  await getDb(process.env.DB_PATH);
-  const apiModule = await import('../../src/server/routes/api.js');
-  const api = apiModule.default;
-
-  app = new Hono();
-  app.route('/api', api);
+  const dbPath = setupTestDb();
+  resetDb();
+  await getDb(dbPath);
+  app = createApp();
 });
 
 afterEach(() => {
