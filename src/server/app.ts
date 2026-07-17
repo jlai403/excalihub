@@ -12,6 +12,10 @@ export function createApp(): Hono {
 
   app.use('*', logger());
   app.use('*', cors());
+  app.use('*', async (_c, next) => {
+    await getDb();
+    return next();
+  });
   app.route('/api', api);
 
   if (env.NODE_ENV !== 'development') {

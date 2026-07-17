@@ -1,14 +1,8 @@
 import { Hono } from 'hono';
-import { getDb } from '~/server/db.js';
 import * as SpaceService from '~/server/services/space.js';
 import * as BackupService from '~/server/services/backup.js';
 
 const api = new Hono();
-
-api.use('*', async (c, next) => {
-  await getDb();
-  return next();
-});
 
 api.get('/spaces', async (c) => {
   const spaces = await SpaceService.getAllSpaces();
