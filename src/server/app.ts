@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import { serveStatic } from '@hono/node-server/serve-static';
+import { existsSync } from 'node:fs';
 import { getDb } from './db.js';
 import { proxyMiddleware } from './proxy.js';
 import { injectionMiddleware } from './inject.js';
@@ -13,7 +14,11 @@ export function createApp(): Hono {
   app.use('*', logger());
   app.use('*', cors());
   app.route('/api', api);
-  app.use('/*', serveStatic({ root: './dist/public' }));
+
+  if (existsSync('./dist/public')) {
+    app.use('/*', serveStatic({ root: './dist/public' }));
+  }
+
   app.use('*', proxyMiddleware());
   app.use('*', injectionMiddleware());
   app.get('/health', async (c) => {
