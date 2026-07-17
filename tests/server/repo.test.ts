@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { getDb, resetDb } from '../../src/server/db.js';
 import {
   createSpace,
@@ -122,7 +122,7 @@ describe('deleteSpace', () => {
   });
 
   it('does not throw when deleting nonexistent space', async () => {
-    await expect(deleteSpace(999)).resolves.not.toThrow();
+    await deleteSpace(999);
   });
 });
 

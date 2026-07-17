@@ -27,11 +27,11 @@ Any space you create will be at `your-space.draw.localhost`.
 
 ## Bare Metal
 
-Run without Docker (requires Node 26 + Excalidraw running separately):
+Run without Docker (requires Bun + Excalidraw running separately):
 
 ```bash
-npm install
-npm run dev       # Hono (port 80) + Astro (port 4321)
+bun install
+bun run dev       # Hono (port 80) + Astro (port 4321)
 ```
 
 ## Configuration
@@ -47,10 +47,10 @@ npm run dev       # Hono (port 80) + Astro (port 4321)
 ## Commands
 
 ```bash
-npm run dev            # Start Hono server + Astro dev dashboard
-npm run build          # Build for production
-npm start              # Run production server
-npm test               # Run test suite
+bun run dev            # Start Hono server + Astro dev dashboard
+bun run build          # Build for production
+bun run start          # Run production server
+bun test               # Run test suite
 ```
 
 ## Architecture
@@ -64,6 +64,7 @@ Browser ──> draw.example.com ────> Astro Dashboard
 
 ## Stack
 
+- **Bun** — Runtime, bundler, test runner
 - **Hono** — TypeScript backend (proxy, API, middleware)
 - **Astro** — Dashboard UI
 - **SQLite / Drizzle ORM** — Persistence

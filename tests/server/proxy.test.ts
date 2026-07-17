@@ -1,17 +1,19 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Hono } from 'hono';
 import { proxyMiddleware } from '../../src/server/middleware/proxy.js';
 
 let app: Hono;
-let fetchMock: ReturnType<typeof vi.fn>;
+let fetchMock: ReturnType<typeof mock>;
+let originalFetch: typeof globalThis.fetch;
 
 beforeEach(() => {
-  fetchMock = vi.fn().mockResolvedValue(new Response('ok'));
-  vi.stubGlobal('fetch', fetchMock);
+  originalFetch = globalThis.fetch;
+  fetchMock = mock(() => new Response('ok'));
+  globalThis.fetch = fetchMock as typeof globalThis.fetch;
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
+  globalThis.fetch = originalFetch;
 });
 
 describe('proxyMiddleware', () => {
