@@ -1,4 +1,4 @@
-import { serve } from '@hono/node-server';
+import { serve } from 'hono/bun';
 import { createApp } from '~/server/app.js';
 import { getDb } from '~/server/db.js';
 import { env } from '~/env.js';

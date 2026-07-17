@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { getDb, resetDb } from '~/server/db.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import * as SpaceService from '~/server/services/space.js';
