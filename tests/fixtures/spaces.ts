@@ -3,41 +3,40 @@ import { createApiHelper, type ApiHelper } from '../helpers/request.js';
 import type { Space } from '../../src/server/repositories/space.js';
 import type { Backup } from '../../src/server/repositories/backup.js';
 
-export async function createSpaceFixture(app: Hono) {
-  const api = createApiHelper(app);
-  const spaces: Space[] = [];
-  const backups: Backup[] = [];
+export class SpaceFixture {
+  private api: ApiHelper;
+  private _spaces: Space[] = [];
+  private _backups: Backup[] = [];
 
-  return {
-    async addSpace(name: string) {
-      const res = await api.post('/api/spaces', { name });
-      const space: Space = await api.json(res);
-      spaces.push(space);
-      return this;
-    },
+  constructor(app: Hono) {
+    this.api = createApiHelper(app);
+  }
 
-    async addBackup(spaceName: string, data: { elements: string; appState?: string | null }) {
-      const space = spaces.find(s => s.name === spaceName);
-      if (!space) throw new Error(`Space "${spaceName}" not found in fixture`);
+  async addSpace(name: string): Promise<this> {
+    const res = await this.api.post('/api/spaces', { name });
+    this._spaces.push(await this.api.json(res));
+    return this;
+  }
 
-      const res = await api.post('/api/backup', {
-        subdomain: space.subdomain,
-        elements: data.elements,
-        appState: data.appState ?? null,
-      });
-      const result = await api.json(res);
-      backups.push({ id: result.backupId, spaceId: space.id } as Backup);
-      return this;
-    },
+  async addBackup(spaceName: string, data: { elements: string; appState?: string | null }): Promise<this> {
+    const space = this._spaces.find(s => s.name === spaceName);
+    if (!space) throw new Error(`Space "${spaceName}" not found in fixture`);
 
-    get spaces() { return spaces; },
-    get spaceIds() { return spaces.map(s => s.id); },
-    get backups() { return backups; },
+    const res = await this.api.post('/api/backup', {
+      subdomain: space.subdomain,
+      elements: data.elements,
+      appState: data.appState ?? null,
+    });
+    const result = await this.api.json(res);
+    this._backups.push({ id: result.backupId, spaceId: space.id } as Backup);
+    return this;
+  }
 
-    spaceByName(name: string) {
-      return spaces.find(s => s.name === name);
-    },
-  };
+  get spaces(): Space[] { return this._spaces; }
+  get spaceIds(): number[] { return this._spaces.map(s => s.id); }
+  get backups(): Backup[] { return this._backups; }
+
+  spaceByName(name: string): Space | undefined {
+    return this._spaces.find(s => s.name === name);
+  }
 }
-
-export type SpaceFixture = Awaited<ReturnType<typeof createSpaceFixture>>;

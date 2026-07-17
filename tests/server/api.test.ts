@@ -3,7 +3,7 @@ import { createApp } from '../../src/server/app.js';
 import { getDb, resetDb } from '../../src/server/db.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import { createApiHelper, type ApiHelper } from '../helpers/request.js';
-import { createSpaceFixture, type SpaceFixture } from '../fixtures/index.js';
+import { SpaceFixture } from '../fixtures/index.js';
 
 let app: ReturnType<typeof createApp>;
 let api: ApiHelper;
@@ -15,7 +15,7 @@ beforeEach(async () => {
   await getDb(dbPath);
   app = createApp();
   api = createApiHelper(app);
-  fixture = await createSpaceFixture(app);
+  fixture = new SpaceFixture(app);
 });
 
 afterEach(() => {

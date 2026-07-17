@@ -1,2 +1,1 @@
-export { createSpaceFixture } from './spaces.js';
-export type { SpaceFixture } from './spaces.js';
+export { SpaceFixture } from './spaces.js';
