@@ -7,28 +7,41 @@ export class SpaceFixture {
   private api: ApiHelper;
   private _spaces: Space[] = [];
   private _backups: Backup[] = [];
+  private _pendingOps: Array<() => Promise<void>> = [];
 
   constructor(app: Hono) {
     this.api = createApiHelper(app);
   }
 
-  async addSpace(name: string): Promise<this> {
-    const res = await this.api.post('/api/spaces', { name });
-    this._spaces.push(await this.api.json(res));
+  addSpace(name: string): this {
+    this._pendingOps.push(async () => {
+      const res = await this.api.post('/api/spaces', { name });
+      this._spaces.push(await this.api.json(res));
+    });
     return this;
   }
 
-  async addBackup(spaceName: string, data: { elements: string; appState?: string | null }): Promise<this> {
-    const space = this._spaces.find(s => s.name === spaceName);
-    if (!space) throw new Error(`Space "${spaceName}" not found in fixture`);
+  addBackup(spaceName: string, data: { elements: string; appState?: string | null }): this {
+    this._pendingOps.push(async () => {
+      const space = this._spaces.find(s => s.name === spaceName);
+      if (!space) throw new Error(`Space "${spaceName}" not found in fixture`);
 
-    const res = await this.api.post('/api/backup', {
-      subdomain: space.subdomain,
-      elements: data.elements,
-      appState: data.appState ?? null,
+      const res = await this.api.post('/api/backup', {
+        subdomain: space.subdomain,
+        elements: data.elements,
+        appState: data.appState ?? null,
+      });
+      const result = await this.api.json(res);
+      this._backups.push({ id: result.backupId, spaceId: space.id } as Backup);
     });
-    const result = await this.api.json(res);
-    this._backups.push({ id: result.backupId, spaceId: space.id } as Backup);
+    return this;
+  }
+
+  async flush(): Promise<this> {
+    for (const op of this._pendingOps) {
+      await op();
+    }
+    this._pendingOps = [];
     return this;
   }
 
