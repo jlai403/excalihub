@@ -1,16 +1,7 @@
 import { Hono } from 'hono';
 import { getDb } from '~/server/db.js';
-import {
-  createSpaceService,
-  getAllSpacesService,
-  getSpaceByIdService,
-  deleteSpaceService,
-} from '~/server/services/space.js';
-import {
-  createBackupService,
-  getBackupsBySpaceIdService,
-  getBackupByIdService,
-} from '~/server/services/backup.js';
+import * as SpaceService from '~/server/services/space.js';
+import * as BackupService from '~/server/services/backup.js';
 
 const api = new Hono();
 
@@ -20,13 +11,13 @@ api.use('*', async (c, next) => {
 });
 
 api.get('/spaces', async (c) => {
-  const spaces = await getAllSpacesService();
+  const spaces = await SpaceService.getAllSpaces();
   return c.json(spaces);
 });
 
 api.get('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const space = await getSpaceByIdService(id);
+  const space = await SpaceService.getSpaceById(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
   return c.json(space);
 });
@@ -40,7 +31,7 @@ api.post('/spaces', async (c) => {
   }
 
   try {
-    const space = await createSpaceService(name);
+    const space = await SpaceService.createSpace(name);
     return c.json(space, 201);
   } catch (err: any) {
     if (err.message?.includes('UNIQUE constraint') || err.message?.includes('unique')) {
@@ -52,19 +43,19 @@ api.post('/spaces', async (c) => {
 
 api.delete('/spaces/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const space = await getSpaceByIdService(id);
+  const space = await SpaceService.getSpaceById(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
 
-  await deleteSpaceService(id);
+  await SpaceService.deleteSpace(id);
   return c.json({ success: true });
 });
 
 api.get('/spaces/:id/backups', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const space = await getSpaceByIdService(id);
+  const space = await SpaceService.getSpaceById(id);
   if (!space) return c.json({ error: 'Space not found' }, 404);
 
-  const backups = await getBackupsBySpaceIdService(id);
+  const backups = await BackupService.getBackupsBySpaceId(id);
   return c.json(backups);
 });
 
@@ -77,7 +68,7 @@ api.post('/backup', async (c) => {
   }
 
   try {
-    const result = await createBackupService(subdomain, elements, appState);
+    const result = await BackupService.createBackup(subdomain, elements, appState);
     return c.json(result);
   } catch (err: any) {
     if (err.message === 'Space not found') {
@@ -89,7 +80,7 @@ api.post('/backup', async (c) => {
 
 api.get('/backups/:id', async (c) => {
   const id = parseInt(c.req.param('id'));
-  const backup = await getBackupByIdService(id);
+  const backup = await BackupService.getBackupById(id);
   if (!backup) return c.json({ error: 'Backup not found' }, 404);
 
   return new Response(backup.fileData, {

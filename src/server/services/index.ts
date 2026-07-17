@@ -1,18 +1,18 @@
 export {
   slugifyName,
-  createSpaceService,
-  getAllSpacesService,
-  getSpaceByIdService,
-  getSpaceBySubdomainService,
-  deleteSpaceService,
+  createSpace,
+  getAllSpaces,
+  getSpaceById,
+  getSpaceBySubdomain,
+  deleteSpace,
 } from './space.js';
 
 export {
   buildFileData,
   hashFileData,
-  createBackupService,
-  getBackupsBySpaceIdService,
-  getBackupByIdService,
+  createBackup,
+  getBackupsBySpaceId,
+  getBackupById,
 } from './backup.js';
 
 export type { CreateBackupResult } from './backup.js';

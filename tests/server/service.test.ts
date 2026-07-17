@@ -1,22 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { getDb, resetDb } from '~/server/db.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
-import {
-  slugifyName,
-  createSpaceService,
-  getAllSpacesService,
-  getSpaceByIdService,
-  deleteSpaceService,
-} from '~/server/services/space.js';
-import {
-  buildFileData,
-  hashFileData,
-  createBackupService,
-  getBackupsBySpaceIdService,
-} from '~/server/services/backup.js';
-import {
-  createBackup,
-} from '~/server/repositories/backup.js';
+import * as SpaceService from '~/server/services/space.js';
+import * as BackupService from '~/server/services/backup.js';
+import * as BackupRepo from '~/server/repositories/backup.js';
 
 beforeEach(async () => {
   const dbPath = setupTestDb();
@@ -30,72 +17,72 @@ afterEach(() => {
 
 describe('slugifyName', () => {
   it('lowercases and replaces special chars with hyphens', () => {
-    expect(slugifyName('Hello World!!!')).toBe('hello-world');
+    expect(SpaceService.slugifyName('Hello World!!!')).toBe('hello-world');
   });
 
   it('trims leading and trailing hyphens', () => {
-    expect(slugifyName('-already-slugged-')).toBe('already-slugged');
+    expect(SpaceService.slugifyName('-already-slugged-')).toBe('already-slugged');
   });
 
   it('collapses consecutive non-alphanumeric chars into single hyphen', () => {
-    expect(slugifyName('foo___bar')).toBe('foo-bar');
+    expect(SpaceService.slugifyName('foo___bar')).toBe('foo-bar');
   });
 
   it('handles all lowercase name with no special chars', () => {
-    expect(slugifyName('my-project')).toBe('my-project');
+    expect(SpaceService.slugifyName('my-project')).toBe('my-project');
   });
 
   it('returns empty string for empty input', () => {
-    expect(slugifyName('')).toBe('');
+    expect(SpaceService.slugifyName('')).toBe('');
   });
 });
 
-describe('createSpaceService', () => {
+describe('createSpace', () => {
   it('creates a space with auto-generated subdomain', async () => {
-    const space = await createSpaceService('My Project');
+    const space = await SpaceService.createSpace('My Project');
     expect(space.name).toBe('My Project');
     expect(space.subdomain).toBe('my-project');
     expect(space.id).toBeDefined();
   });
 });
 
-describe('getAllSpacesService', () => {
+describe('getAllSpaces', () => {
   it('returns empty array when no spaces exist', async () => {
-    expect(await getAllSpacesService()).toEqual([]);
+    expect(await SpaceService.getAllSpaces()).toEqual([]);
   });
 
   it('returns all spaces', async () => {
-    await createSpaceService('First');
-    await createSpaceService('Second');
-    const spaces = await getAllSpacesService();
+    await SpaceService.createSpace('First');
+    await SpaceService.createSpace('Second');
+    const spaces = await SpaceService.getAllSpaces();
     expect(spaces).toHaveLength(2);
   });
 });
 
-describe('getSpaceByIdService', () => {
+describe('getSpaceById', () => {
   it('returns the space when found', async () => {
-    const created = await createSpaceService('Test');
-    const space = await getSpaceByIdService(created.id);
+    const created = await SpaceService.createSpace('Test');
+    const space = await SpaceService.getSpaceById(created.id);
     expect(space).toBeDefined();
     expect(space!.name).toBe('Test');
   });
 
   it('returns undefined when not found', async () => {
-    expect(await getSpaceByIdService(999)).toBeUndefined();
+    expect(await SpaceService.getSpaceById(999)).toBeUndefined();
   });
 });
 
-describe('deleteSpaceService', () => {
+describe('deleteSpace', () => {
   it('deletes the space', async () => {
-    const space = await createSpaceService('ToDelete');
-    await deleteSpaceService(space.id);
-    expect(await getSpaceByIdService(space.id)).toBeUndefined();
+    const space = await SpaceService.createSpace('ToDelete');
+    await SpaceService.deleteSpace(space.id);
+    expect(await SpaceService.getSpaceById(space.id)).toBeUndefined();
   });
 });
 
 describe('buildFileData', () => {
   it('constructs JSON with parsed elements and appState', () => {
-    const result = buildFileData('[{"id":"1"}]', '{"theme":"dark"}');
+    const result = BackupService.buildFileData('[{"id":"1"}]', '{"theme":"dark"}');
     const parsed = JSON.parse(result);
     expect(parsed.elements).toEqual([{ id: '1' }]);
     expect(parsed.appState).toEqual({ theme: 'dark' });
@@ -103,13 +90,13 @@ describe('buildFileData', () => {
   });
 
   it('defaults appState to empty object when not provided', () => {
-    const result = buildFileData('[{"id":"1"}]');
+    const result = BackupService.buildFileData('[{"id":"1"}]');
     const parsed = JSON.parse(result);
     expect(parsed.appState).toEqual({});
   });
 
   it('defaults appState to empty object when null', () => {
-    const result = buildFileData('[{"id":"1"}]', null);
+    const result = BackupService.buildFileData('[{"id":"1"}]', null);
     const parsed = JSON.parse(result);
     expect(parsed.appState).toEqual({});
   });
@@ -117,42 +104,42 @@ describe('buildFileData', () => {
 
 describe('hashFileData', () => {
   it('returns a hex SHA256 hash', () => {
-    const hash = hashFileData('hello');
+    const hash = BackupService.hashFileData('hello');
     expect(hash).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('returns the same hash for the same input', () => {
-    expect(hashFileData('test')).toBe(hashFileData('test'));
+    expect(BackupService.hashFileData('test')).toBe(BackupService.hashFileData('test'));
   });
 
   it('returns different hashes for different inputs', () => {
-    expect(hashFileData('a')).not.toBe(hashFileData('b'));
+    expect(BackupService.hashFileData('a')).not.toBe(BackupService.hashFileData('b'));
   });
 });
 
-describe('createBackupService', () => {
+describe('createBackup', () => {
   it('creates a backup and returns backupId', async () => {
-    await createSpaceService('Test');
-    const result = await createBackupService('test', '[{"id":"1"}]', '{"theme":"dark"}');
+    await SpaceService.createSpace('Test');
+    const result = await BackupService.createBackup('test', '[{"id":"1"}]', '{"theme":"dark"}');
     expect(result.success).toBe(true);
     expect(result).toHaveProperty('backupId');
   });
 
   it('deduplicates identical backups', async () => {
-    await createSpaceService('Dedup');
+    await SpaceService.createSpace('Dedup');
     const args = ['dedup', '[{"id":"1"}]', null] as const;
 
-    const r1 = await createBackupService(...args);
+    const r1 = await BackupService.createBackup(...args);
     expect(r1).toEqual({ success: true, backupId: expect.any(Number) });
 
-    const r2 = await createBackupService(...args);
+    const r2 = await BackupService.createBackup(...args);
     expect(r2).toEqual({ success: true, deduplicated: true });
   });
 
   it('does not deduplicate different content', async () => {
-    await createSpaceService('Multi');
-    const r1 = await createBackupService('multi', '[{"id":"1"}]', null);
-    const r2 = await createBackupService('multi', '[{"id":"2"}]', null);
+    await SpaceService.createSpace('Multi');
+    const r1 = await BackupService.createBackup('multi', '[{"id":"1"}]', null);
+    const r2 = await BackupService.createBackup('multi', '[{"id":"2"}]', null);
     expect(r1).toHaveProperty('backupId');
     expect(r2).toHaveProperty('backupId');
     expect((r1 as any).backupId).not.toBe((r2 as any).backupId);
@@ -160,23 +147,23 @@ describe('createBackupService', () => {
 
   it('throws when space not found', async () => {
     await expect(
-      createBackupService('nonexistent', '[]')
+      BackupService.createBackup('nonexistent', '[]')
     ).rejects.toThrow('Space not found');
   });
 });
 
-describe('getBackupsBySpaceIdService', () => {
+describe('getBackupsBySpaceId', () => {
   it('returns backups for a space', async () => {
-    const space = await createSpaceService('WithBackups');
-    await createBackup(space.id, '{"elements":[]}', 'hash1');
-    await createBackup(space.id, '{"elements":[1]}', 'hash2');
+    const space = await SpaceService.createSpace('WithBackups');
+    await BackupRepo.createBackup(space.id, '{"elements":[]}', 'hash1');
+    await BackupRepo.createBackup(space.id, '{"elements":[1]}', 'hash2');
 
-    const backups = await getBackupsBySpaceIdService(space.id);
+    const backups = await BackupService.getBackupsBySpaceId(space.id);
     expect(backups).toHaveLength(2);
   });
 
   it('returns empty array when no backups', async () => {
-    const space = await createSpaceService('Empty');
-    expect(await getBackupsBySpaceIdService(space.id)).toEqual([]);
+    const space = await SpaceService.createSpace('Empty');
+    expect(await BackupService.getBackupsBySpaceId(space.id)).toEqual([]);
   });
 });

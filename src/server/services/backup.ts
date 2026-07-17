@@ -1,12 +1,7 @@
 import { createHash } from 'crypto';
-import {
-  createBackup,
-  getBackupById,
-  getBackupsBySpaceId,
-  getLatestBackupHash,
-} from '~/server/repositories/backup.js';
+import * as BackupRepo from '~/server/repositories/backup.js';
 import type { Backup } from '~/server/repositories/backup.js';
-import { getSpaceBySubdomainService } from './space.js';
+import * as SpaceService from './space.js';
 
 export type CreateBackupResult =
   | { success: true; backupId: number }
@@ -24,12 +19,12 @@ export function hashFileData(fileData: string): string {
   return createHash('sha256').update(fileData).digest('hex');
 }
 
-export async function createBackupService(
+export async function createBackup(
   subdomain: string,
   elements: string,
   appState?: string | null,
 ): Promise<CreateBackupResult> {
-  const space = await getSpaceBySubdomainService(subdomain);
+  const space = await SpaceService.getSpaceBySubdomain(subdomain);
   if (!space) {
     throw new Error('Space not found');
   }
@@ -37,19 +32,19 @@ export async function createBackupService(
   const fileData = buildFileData(elements, appState);
   const fileHash = hashFileData(fileData);
 
-  const latestHash = await getLatestBackupHash(space.id);
+  const latestHash = await BackupRepo.getLatestBackupHash(space.id);
   if (latestHash === fileHash) {
     return { success: true, deduplicated: true };
   }
 
-  const backup = await createBackup(space.id, fileData, fileHash);
+  const backup = await BackupRepo.createBackup(space.id, fileData, fileHash);
   return { success: true, backupId: backup.id };
 }
 
-export async function getBackupsBySpaceIdService(spaceId: number): Promise<Backup[]> {
-  return getBackupsBySpaceId(spaceId);
+export async function getBackupsBySpaceId(spaceId: number): Promise<Backup[]> {
+  return BackupRepo.getBackupsBySpaceId(spaceId);
 }
 
-export async function getBackupByIdService(id: number): Promise<Backup | undefined> {
-  return getBackupById(id);
+export async function getBackupById(id: number): Promise<Backup | undefined> {
+  return BackupRepo.getBackupById(id);
 }
