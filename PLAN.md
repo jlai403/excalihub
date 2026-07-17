@@ -2,7 +2,7 @@
 
 ## Overview
 
-ExcaliHub is a self-hosted hub that gives you multiple isolated Excalidraw whiteboards via subdomains. Each "space" is a fresh Excalidraw board on its own subdomain (e.g., `project1.draw.domain.com`). The hub handles routing, auto-backup of `.excalidraw` files to SQLite, and provides a dashboard to manage spaces.
+ExcaliHub is a self-hosted hub that gives you multiple isolated Excalidraw whiteboards via subdomains. Each "space" is a fresh Excalidraw board on its own subdomain (e.g., `project1.draw.example.com`). The hub handles routing, auto-backup of `.excalidraw` files to SQLite, and provides a dashboard to manage spaces.
 
 ## Architecture
 
@@ -41,7 +41,7 @@ ExcaliHub is a self-hosted hub that gives you multiple isolated Excalidraw white
 | **Frontend** | Astro (dashboard) |
 | **Database** | SQLite via `better-sqlite3` or `bun:sqlite` |
 | **Routing** | Hub IS the reverse proxy (no Caddy) |
-| **DNS** | Wildcard `*.draw.domain.com` → server IP |
+| **DNS** | Wildcard `*.draw.example.com` → server IP |
 | **Backup** | Auto on every Excalidraw autosave |
 | **Injection** | Intercepts localStorage.setItem to capture saves |
 | **Identifier** | Subdomain extracted from hostname |
@@ -120,7 +120,7 @@ excalihub/
 
 ### Step 2: Reverse Proxy Core
 - Hono server that listens on port 80/443
-- Wildcard subdomain detection (`*.draw.domain.com`)
+- Wildcard subdomain detection (`*.draw.example.com`)
 - Proxy requests to Excalidraw container
 - Handle WebSocket connections (Excalidraw uses Yjs)
 
@@ -179,7 +179,7 @@ excalihub/
 | `POST` | `/api/backup` | Receive auto-backup from injected script |
 | `GET` | `/api/spaces/:id/backups` | List backups for space |
 | `GET` | `/api/backups/:id` | Download backup file |
-| `*` | `*.draw.domain.com/*` | Proxy to Excalidraw |
+| `*` | `*.draw.example.com/*` | Proxy to Excalidraw |
 
 ## Environment Variables
 
@@ -189,7 +189,7 @@ PORT=80
 HOST=0.0.0.0
 
 # Domain
-BASE_DOMAIN=draw.domain.com
+BASE_DOMAIN=draw.example.com
 EXCALIDRAW_CONTAINER=excalidraw:80
 
 # Database
@@ -197,7 +197,7 @@ DB_PATH=/data/excalihub.db
 
 # TLS (optional, for Let's Encrypt)
 TLS_ENABLED=false
-TLS_EMAIL=admin@domain.com
+TLS_EMAIL=admin@example.com
 
 # Authentication (v2)
 AUTH_ENABLED=false
@@ -211,17 +211,17 @@ JWT_SECRET=          # random string for signing tokens
 ### Flow
 
 ```
-1. User visits draw.domain.com (hub dashboard)
+1. User visits draw.example.com (hub dashboard)
 2. No session → redirect to /login
 3. User submits credentials
 4. Hub validates against env vars (bcrypt comparison)
 5. Hub sets JWT cookie (__excalihub_session, 24h expiry)
 6. User redirected to dashboard
 
-7. User clicks space → project1.draw.domain.com
+7. User clicks space → project1.draw.example.com
 8. Hub proxy checks __excalihub_session cookie
 9. Valid JWT → proxy to Excalidraw
-10. Invalid/missing → redirect to draw.domain.com/login
+10. Invalid/missing → redirect to draw.example.com/login
 ```
 
 ### Proxy Middleware Logic
@@ -238,7 +238,7 @@ app.use('*', (req, res, next) => {
     }
   }
   
-  // Space routes (*.draw.domain.com) — check session
+  // Space routes (*.draw.example.com) — check session
   if (isSpace(host)) {
     if (!isValidJWT(req.cookie('__excalihub_session'))) {
       return res.redirect(`https://${BASE_DOMAIN}/login`);

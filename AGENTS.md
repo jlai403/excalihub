@@ -3,7 +3,7 @@
 ## Project
 
 Self-hosted hub providing isolated Excalidraw whiteboards via subdomains.
-Each "space" gets a subdomain (e.g. `project1.draw.domain.com`) backed by a shared Excalidraw container.
+Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a shared Excalidraw container.
 
 ## Stack
 

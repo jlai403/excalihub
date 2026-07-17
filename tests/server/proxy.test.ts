@@ -27,7 +27,7 @@ describe('proxyMiddleware', () => {
     });
 
     const res = await app.request('/', {
-      headers: { host: 'draw.domain.com' },
+      headers: { host: 'draw.example.com' },
     });
     expect(res.status).toBe(200);
     expect(nextCalled.current).toBe(true);
@@ -60,7 +60,7 @@ describe('proxyMiddleware', () => {
     app.use('*', middleware);
 
     const res = await app.request('/boards/test-board', {
-      headers: { host: 'myproject.draw.domain.com' },
+      headers: { host: 'myproject.draw.example.com' },
     });
 
     expect(fetchMock).toHaveBeenCalledOnce();
@@ -76,7 +76,7 @@ describe('proxyMiddleware', () => {
     app.use('*', middleware);
 
     await app.request('/', {
-      headers: { host: 'space.draw.domain.com' },
+      headers: { host: 'space.draw.example.com' },
     });
 
     const [, opts] = fetchMock.mock.calls[0];
@@ -91,7 +91,7 @@ describe('proxyMiddleware', () => {
 
     await app.request('/', {
       method: 'POST',
-      headers: { host: 'space.draw.domain.com' },
+      headers: { host: 'space.draw.example.com' },
       body: '{"test":true}',
     });
 
@@ -109,7 +109,7 @@ describe('proxyMiddleware', () => {
 
     await app.request('/', {
       method: 'GET',
-      headers: { host: 'space.draw.domain.com' },
+      headers: { host: 'space.draw.example.com' },
     });
 
     const [, opts] = fetchMock.mock.calls[0];
