@@ -49,6 +49,8 @@ tests/               — Vitest tests (API, proxy, injection, repos, services)
 
 ## Session History
 
-### 2026-07-17 — Dockerfile improvements + CI merge
+### 2026-07-17 — Bun migration + Dockerfile improvements + CI merge
+- Migrated from Node/npm/vitest to Bun runtime: `hono/bun` serve, `bun:test`, `bun build`
+- Switched Dockerfile to `oven/bun:1`, CI to `oven-sh/setup-bun`
 - Fixed all droast findings: non-root user, HEALTHCHECK, .dockerignore, npm install → npm ci
 - Merged test.yml + dockerfile-lint.yml into single ci.yml with needs:test gating
