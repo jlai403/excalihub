@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { resetDb } from '../../src/server/db.js';
+import { getDb, resetDb } from '../../src/server/db.js';
 import {
   createSpace,
   getSpaceById,
@@ -16,9 +16,9 @@ import {
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 
 beforeEach(async () => {
-  setupTestDb();
+  const dbPath = setupTestDb();
   resetDb();
-  await import('../../src/server/db.js').then(m => m.getDb());
+  await getDb(dbPath);
 });
 
 afterEach(() => {

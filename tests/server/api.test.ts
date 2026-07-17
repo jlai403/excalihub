@@ -1,21 +1,15 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { rmSync, existsSync } from 'fs';
 import { Hono } from 'hono';
 import type { Hono as HonoType } from 'hono';
+import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 
 let app: HonoType;
-let testDbDir: string;
 
 beforeEach(async () => {
-  const testId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  testDbDir = join(tmpdir(), `excalihub-test-${testId}`);
-  const testDbPath = join(testDbDir, 'test.db');
-
-  process.env.DB_PATH = testDbPath;
-
+  setupTestDb();
   vi.resetModules();
+  const { getDb } = await import('../../src/server/db.js');
+  await getDb(process.env.DB_PATH);
   const apiModule = await import('../../src/server/routes/api.js');
   const api = apiModule.default;
 
@@ -24,10 +18,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  if (testDbDir && existsSync(testDbDir)) {
-    rmSync(testDbDir, { recursive: true, force: true });
-  }
-  delete process.env.DB_PATH;
+  cleanupTestDb();
 });
 
 describe('GET /api/spaces', () => {

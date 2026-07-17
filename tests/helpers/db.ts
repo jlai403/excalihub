@@ -4,10 +4,12 @@ import { rmSync, existsSync } from 'fs';
 
 let testDbDir: string;
 
-export function setupTestDb() {
+export function setupTestDb(): string {
   const testId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   testDbDir = join(tmpdir(), `excalihub-test-${testId}`);
-  process.env.DB_PATH = join(testDbDir, 'test.db');
+  const dbPath = join(testDbDir, 'test.db');
+  process.env.DB_PATH = dbPath;
+  return dbPath;
 }
 
 export function cleanupTestDb() {
