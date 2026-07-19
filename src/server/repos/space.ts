@@ -1,17 +1,6 @@
 import { mkdirSync, writeFileSync, renameSync, readFileSync, readdirSync, existsSync, rmSync } from 'fs'
 import { join } from 'path'
-import { randomBytes } from 'crypto'
-
-const NANOID_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
-
-function nanoid(size = 10): string {
-  const bytes = randomBytes(size)
-  let result = ''
-  for (let i = 0; i < size; i++) {
-    result += NANOID_ALPHABET[bytes[i] % NANOID_ALPHABET.length]
-  }
-  return result
-}
+import { spaceId as nanoid } from './nanoid.js'
 
 export type SpaceMeta = {
   id: string
