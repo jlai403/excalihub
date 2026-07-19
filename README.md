@@ -59,14 +59,14 @@ bun test               # Run test suite
 Browser ──> draw.example.com ────> Astro Dashboard
            project.draw.example.com ──> Hono Proxy ──> Excalidraw container
                                           │
-                                          └──> Auto-backup injection ──> POST /api/backup ──> SQLite
+                                          └──> Auto-backup injection ──> POST /api/backup ──> Flat files
 ```
 
 ## Stack
 
-- **Bun** — Runtime, bundler, test runner
+- **Bun** — Runtime, bundler, test runner, workspaces
 - **Hono** — TypeScript backend (proxy, API, middleware)
 - **Astro** — Dashboard UI
-- **SQLite / Drizzle ORM** — Persistence
+- **Flat files** — No database, no ORM
 - **Docker Compose** — Deployment
 - **Excalidraw** — whiteboard editor (MIT). Shoutout to the Excalidraw team for their awesome work.

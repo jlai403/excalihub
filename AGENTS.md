@@ -40,15 +40,16 @@ Workflow: `.github/workflows/ci.yml`
 ## Project Structure
 
 ```
-src/server/          — Hono app (routes, middleware, services, repos)
-  repos/             — Flat-file repos (space.ts, backup.ts)
-  services/          — Business logic (space, backup)
-  routes/            — API route handlers
-  middleware/        — Proxy, injection
-src/pages/           — Astro dashboard pages
-src/inject/          — Client-side script injected into Excalidraw for auto-backup
-src/layouts/         — Astro layouts
-tests/               — bun:test (API, proxy, injection, repos, services)
+packages/
+  server/             — Hono app (routes, middleware, services, repos)
+    src/
+      repos/          — Flat-file repos (space.ts, backup.ts)
+      services/       — Business logic (space, backup)
+      routes/         — API route handlers
+      middleware/     — Proxy, injection
+      inject/         — Client-side script injected into Excalidraw
+    tests/            — bun:test (API, proxy, injection, repos, services)
+  dashboard/          — Astro static site (pages, layouts)
 ```
 
 ## Data Layout
@@ -100,3 +101,14 @@ tests/               — bun:test (API, proxy, injection, repos, services)
 - Added `PATCH /api/spaces/:id` rename endpoint
 - Proxy validates subdomain existence before proxying
 - `Bun.serve` instead of `serve` from `hono/bun`
+
+### 2026-07-18 — Monorepo migration
+- Split into Bun workspaces: `packages/server/` + `packages/dashboard/`
+- Server deps (hono, consola, nanoid, zod) in `packages/server/package.json`
+- Dashboard deps (astro, @astrojs/node) in `packages/dashboard/package.json`
+- Dev deps (concurrently, typescript, @types/node) in root `package.json`
+- Tests moved to `packages/server/tests/`
+- Import paths updated: `~/server/...` → `~/...`
+- Inject script path updated in `auto-backup-inject.ts`
+- Dockerfile updated for workspace structure
+- CI updated: `bun test packages/server/tests/`
