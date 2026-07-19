@@ -16,9 +16,10 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 
 | Command | Description |
 |---|---|
-| `bun run dev` | Start Hono server + Astro dev server concurrently |
+| `bun run dev` | Start Hono server + Astro dev server + Excalidraw container concurrently |
 | `bun run dev:server` | Start Hono server only (hot-reload) |
-| `bun run dev:dashboard` | Start Astro dev server only |
+| `bun run dev:hub` | Start Astro dev server only |
+| `bun run dev:excalidraw` | Start Excalidraw container on localhost:8080 |
 | `bun run build` | Build Astro + bundle server with Bun |
 | `bun run start` | Run production server |
 | `bun test` | Run test suite |
