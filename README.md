@@ -42,7 +42,7 @@ bun run dev       # Hono (port 80) + Astro (port 4321)
 | `EXCALIDRAW_CONTAINER` | `http://excalidraw:80` | Excalidraw backend URL |
 | `PORT` | `80` | Server port |
 | `HOST` | `0.0.0.0` | Bind address |
-| `DB_PATH` | `/data/excalihub.db` | SQLite file path |
+| `DATA_DIR` | `./data` | Data directory (spaces, backups) |
 
 ## Commands
 
