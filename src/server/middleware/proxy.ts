@@ -6,33 +6,29 @@ export function proxyMiddleware() {
   return async (c: Context, next: Next) => {
     const host = c.req.header('host') || '';
 
-    if (host === env.BASE_DOMAIN || host === `localhost:${env.PORT}`) {
+    if (!host.endsWith(`.${env.BASE_DOMAIN}`)) {
       return next();
     }
 
-    if (host.endsWith(`.${env.BASE_DOMAIN}`)) {
-      const subdomain = host.slice(0, -`.${env.BASE_DOMAIN}`.length);
+    const subdomain = host.slice(0, -`.${env.BASE_DOMAIN}`.length);
 
-      if (!getSpaceBySubdomain(subdomain)) {
-        return c.json({ error: 'Space not found' }, 404);
-      }
-
-      const url = new URL(c.req.url);
-      const target = `${env.EXCALIDRAW_CONTAINER}${url.pathname}${url.search}`;
-
-      const headers = new Headers(c.req.raw.headers);
-      headers.set('host', new URL(env.EXCALIDRAW_CONTAINER).host);
-
-      return fetch(target, {
-        method: c.req.method,
-        headers,
-        body:
-          c.req.method !== 'GET' && c.req.method !== 'HEAD'
-            ? c.req.raw.body
-            : undefined,
-      });
+    if (!getSpaceBySubdomain(subdomain)) {
+      return c.json({ error: 'Space not found' }, 404);
     }
 
-    return next();
+    const url = new URL(c.req.url);
+    const target = `${env.EXCALIDRAW_CONTAINER}${url.pathname}${url.search}`;
+
+    const headers = new Headers(c.req.raw.headers);
+    headers.set('host', new URL(env.EXCALIDRAW_CONTAINER).host);
+
+    return fetch(target, {
+      method: c.req.method,
+      headers,
+      body:
+        c.req.method !== 'GET' && c.req.method !== 'HEAD'
+          ? c.req.raw.body
+          : undefined,
+    });
   };
 }
