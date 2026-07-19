@@ -5,13 +5,27 @@ import { getSpaceBySubdomain } from '~/repos/space.js';
 export function proxyMiddleware() {
   return async (c: Context, next: Next) => {
     const host = c.req.header('host') || '';
+    const suffix = `.${env.BASE_DOMAIN}`;
 
-    if (!host.endsWith(`.${env.BASE_DOMAIN}`)) {
+    if (!host.endsWith(suffix)) return next();
+
+    const subdomain = host.slice(0, -suffix.length);
+
+    // Root domain → hub
+    if (!subdomain) {
+      if (env.NODE_ENV === 'development') {
+        const url = new URL(c.req.url);
+        const res = await fetch(`http://localhost:4321${url.pathname}${url.search}`);
+        return new Response(res.body, { status: res.status, headers: res.headers });
+      }
+      const url = new URL(c.req.url);
+      const filePath = `./dist/public${url.pathname === '/' ? '/index.html' : url.pathname}`;
+      const file = Bun.file(filePath);
+      if (await file.exists()) return new Response(file);
       return next();
     }
 
-    const subdomain = host.slice(0, -`.${env.BASE_DOMAIN}`.length);
-
+    // Subdomain → Excalidraw
     if (!getSpaceBySubdomain(subdomain)) {
       return c.json({ error: 'Space not found' }, 404);
     }
