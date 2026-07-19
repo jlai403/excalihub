@@ -4,7 +4,6 @@ import { proxyMiddleware } from '../../src/middleware/proxy.js';
 import { createSpace } from '../../src/repos/space.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 
-let app: Hono;
 let fetchMock: ReturnType<typeof mock>;
 let originalFetch: typeof globalThis.fetch;
 
@@ -27,41 +26,17 @@ afterEach(() => {
 });
 
 describe('proxyMiddleware', () => {
-  it('passes through for base domain host', async () => {
-    const nextCalled = { current: false };
-    const middleware = proxyMiddleware();
-
-    const app = new Hono();
-    app.use('*', middleware);
-    app.get('*', (c) => {
-      nextCalled.current = true;
-      return c.json({ passed: true });
-    });
-
-    const res = await app.request('/', {
+  it('does not proxy base domain to Excalidraw', async () => {
+    await makeApp().request('/', {
       headers: { host: 'draw.example.com' },
     });
-    expect(res.status).toBe(200);
-    expect(nextCalled.current).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('passes through for localhost', async () => {
-    const nextCalled = { current: false };
-    const middleware = proxyMiddleware();
-
-    const app = new Hono();
-    app.use('*', middleware);
-    app.get('*', (c) => {
-      nextCalled.current = true;
-      return c.json({ passed: true });
+  it('does not proxy hub subdomain to Excalidraw', async () => {
+    await makeApp().request('/', {
+      headers: { host: 'draw.localhost' },
     });
-
-    const res = await app.request('/', {
-      headers: { host: 'localhost' },
-    });
-    expect(res.status).toBe(200);
-    expect(nextCalled.current).toBe(true);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 

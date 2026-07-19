@@ -72,6 +72,7 @@ hub/                  — Astro static site (pages, layouts)
 |---|---|---|
 | `DATA_DIR` | `./data` | Data directory (spaces, backups) |
 | `BASE_DOMAIN` | `draw.example.com` | Wildcard domain for spaces |
+| `HUB_SUBDOMAIN` | `draw` | Hub subdomain prefix (e.g. `draw` → `draw.localhost` in dev) |
 | `EXCALIDRAW_CONTAINER` | `http://localhost:8080` | Excalidraw backend URL |
 | `PORT` | `80` | Server port |
 | `HOST` | `0.0.0.0` | Bind address |
