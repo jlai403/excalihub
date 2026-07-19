@@ -6,13 +6,10 @@ export function proxyMiddleware() {
   return async (c: Context, next: Next) => {
     const host = c.req.header('host') || '';
     const suffix = `.${env.BASE_DOMAIN}`;
+    const hubHost = `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}`;
 
-    if (!host.endsWith(suffix)) return next();
-
-    const subdomain = host.slice(0, -suffix.length);
-
-    // Root domain → hub
-    if (!subdomain) {
+    // Hub domain → serve hub
+    if (host === env.BASE_DOMAIN || host === hubHost) {
       if (env.NODE_ENV === 'development') {
         const url = new URL(c.req.url);
         const res = await fetch(`http://localhost:4321${url.pathname}${url.search}`);
@@ -26,6 +23,10 @@ export function proxyMiddleware() {
     }
 
     // Subdomain → Excalidraw
+    if (!host.endsWith(suffix)) return next();
+
+    const subdomain = host.slice(0, -suffix.length);
+
     if (!getSpaceBySubdomain(subdomain)) {
       return c.json({ error: 'Space not found' }, 404);
     }
