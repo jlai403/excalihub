@@ -1,5 +1,5 @@
-import { createApp } from '~/server/app.js';
-import { initRepos } from '~/server/repos/index.js';
+import { createApp } from '~/app.js';
+import { initRepos } from '~/repos/index.js';
 import { env } from '~/env.js';
 import { log } from '~/logger.js';
 

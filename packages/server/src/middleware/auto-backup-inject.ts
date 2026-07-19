@@ -8,7 +8,7 @@ let injectedScript: string | null = null;
 function getInjectedScript(): string {
   if (!injectedScript) {
     injectedScript = readFileSync(
-      resolve(import.meta.dirname, '../../inject/excalidraw-sync.js'),
+      resolve(import.meta.dirname, '../inject/excalidraw-sync.js'),
       'utf-8'
     );
   }

@@ -1,6 +1,6 @@
 import { createHash } from 'crypto';
-import * as BackupRepo from '~/server/repos/backup.js';
-import * as SpaceRepo from '~/server/repos/space.js';
+import * as BackupRepo from '~/repos/backup.js';
+import * as SpaceRepo from '~/repos/space.js';
 
 export type CreateBackupResult =
   { success: true; filename: string } | { success: true; deduplicated: true };

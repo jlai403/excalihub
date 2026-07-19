@@ -1,6 +1,6 @@
 import type { Hono } from 'hono';
 import { createApiHelper, type ApiHelper } from '../helpers/request.js';
-import type { SpaceMeta } from '../../src/server/repos/space.js';
+import type { SpaceMeta } from '../../src/repos/space.js';
 
 export type BackupEntry = { filename: string };
 

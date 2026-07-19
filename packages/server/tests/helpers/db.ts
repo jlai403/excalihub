@@ -5,7 +5,7 @@ import {
   initRepos,
   resetSpaces,
   resetBackups,
-} from '../../src/server/repos/index.js';
+} from '../../src/repos/index.js';
 
 let testDataDir: string;
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
-import { createApp } from '../../src/server/app.js';
+import { createApp } from '../../src/app.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import { createApiHelper, type ApiHelper } from '../helpers/request.js';
 import { SpaceFixture } from '../fixtures/index.js';

@@ -7,13 +7,13 @@ import {
   getSpaceBySubdomain,
   getAllSpaces,
   deleteSpace,
-} from '../../src/server/repos/space.js';
+} from '../../src/repos/space.js';
 import {
   createBackup,
   getBackupsBySpaceId,
   getBackupById,
   getLatestBackupHash,
-} from '../../src/server/repos/backup.js';
+} from '../../src/repos/backup.js';
 
 beforeEach(() => {
   setupTestDb();

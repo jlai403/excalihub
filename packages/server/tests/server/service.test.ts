@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
-import * as SpaceService from '~/server/services/space.js';
-import * as BackupService from '~/server/services/backup.js';
-import * as BackupRepo from '~/server/repos/backup.js';
+import * as SpaceService from '~/services/space.js';
+import * as BackupService from '~/services/backup.js';
+import * as BackupRepo from '~/repos/backup.js';
 
 beforeEach(() => {
   setupTestDb();

@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import * as SpaceRepo from '~/server/repos/space.js';
-import * as BackupRepo from '~/server/repos/backup.js';
-import * as SpaceService from '~/server/services/space.js';
-import * as BackupService from '~/server/services/backup.js';
+import * as SpaceRepo from '~/repos/space.js';
+import * as BackupRepo from '~/repos/backup.js';
+import * as SpaceService from '~/services/space.js';
+import * as BackupService from '~/services/backup.js';
 
 const api = new Hono();
 

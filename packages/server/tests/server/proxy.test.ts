@@ -1,7 +1,7 @@
 import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Hono } from 'hono';
-import { proxyMiddleware } from '../../src/server/middleware/proxy.js';
-import { createSpace } from '../../src/server/repos/space.js';
+import { proxyMiddleware } from '../../src/middleware/proxy.js';
+import { createSpace } from '../../src/repos/space.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 
 let app: Hono;
