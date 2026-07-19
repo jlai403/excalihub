@@ -1,4 +1,4 @@
-process.env.BASE_DOMAIN = 'draw.example.com';
+process.env.BASE_DOMAIN = 'example.com';
 process.env.HUB_SUBDOMAIN = 'draw';
 process.env.EXCALIDRAW_CONTAINER = 'http://localhost:8080';
 process.env.PORT = '80';

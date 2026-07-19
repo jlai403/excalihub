@@ -19,7 +19,8 @@ export function injectionMiddleware() {
   return async (c: Context, next: Next) => {
     const host = c.req.header('host') || '';
 
-    if (!host.endsWith(`.${env.BASE_DOMAIN}`)) {
+    const hubHost = `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}`;
+    if (host === hubHost || !host.endsWith(`.${hubHost}`)) {
       return next();
     }
 

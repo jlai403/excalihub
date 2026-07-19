@@ -5,11 +5,11 @@ import { getSpaceBySubdomain } from '~/repos/space.js';
 export function proxyMiddleware() {
   return async (c: Context, next: Next) => {
     const host = c.req.header('host') || '';
-    const suffix = `.${env.BASE_DOMAIN}`;
+    const suffix = `.${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}`;
     const hubHost = `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}`;
 
     // Hub domain → serve hub
-    if (host === env.BASE_DOMAIN || host === hubHost) {
+    if (host === hubHost) {
       if (env.NODE_ENV === 'development') {
         const url = new URL(c.req.url);
         const res = await fetch(`http://localhost:4321${url.pathname}${url.search}`);
