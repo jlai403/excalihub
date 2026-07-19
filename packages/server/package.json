@@ -1,0 +1,11 @@
+{
+  "name": "server",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "consola": "^3.4.2",
+    "hono": "^4.4.0",
+    "nanoid": "^6.0.0",
+    "zod": "^4.4.3"
+  }
+}
