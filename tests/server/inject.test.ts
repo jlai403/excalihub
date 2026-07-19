@@ -56,9 +56,11 @@ describe('injectionMiddleware', () => {
   });
 
   it('passes through when no closing body tag', async () => {
-    app.get('/', (c) => c.body('<html><h1>No body tag</h1></html>', 200, {
-      'content-type': 'text/html',
-    }));
+    app.get('/', (c) =>
+      c.body('<html><h1>No body tag</h1></html>', 200, {
+        'content-type': 'text/html',
+      }),
+    );
 
     const res = await app.request('/', {
       headers: { host: 'space.draw.example.com' },

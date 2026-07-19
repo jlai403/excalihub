@@ -2,8 +2,7 @@ import type { Hono } from 'hono';
 
 export function createApiHelper(app: Hono) {
   return {
-    get: (path: string) =>
-      app.request(path),
+    get: (path: string) => app.request(path),
 
     post: (path: string, body: unknown) =>
       app.request(path, {
@@ -26,11 +25,9 @@ export function createApiHelper(app: Hono) {
         body: JSON.stringify(body),
       }),
 
-    delete: (path: string) =>
-      app.request(path, { method: 'DELETE' }),
+    delete: (path: string) => app.request(path, { method: 'DELETE' }),
 
-    json: (res: Response) =>
-      res.json() as Promise<any>,
+    json: (res: Response) => res.json() as Promise<any>,
   };
 }
 
