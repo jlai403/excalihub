@@ -16,15 +16,12 @@
     "@astrojs/node": "^11.0.2",
     "astro": "^7.1.0",
     "consola": "^3.4.2",
-    "drizzle-orm": "^0.45.2",
     "hono": "^4.4.0",
-    "sql.js": "^1.10.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "concurrently": "^10.0.3",
-    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.0"
   }
 }

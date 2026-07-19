@@ -19,6 +19,13 @@ export function createApiHelper(app: Hono) {
         body: JSON.stringify(body),
       }),
 
+    patch: (path: string, body: unknown) =>
+      app.request(path, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+
     delete: (path: string) =>
       app.request(path, { method: 'DELETE' }),
 
