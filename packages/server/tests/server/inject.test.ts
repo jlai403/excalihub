@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { Hono } from 'hono';
-import { injectionMiddleware } from '../../src/server/middleware/auto-backup-inject.js';
+import { injectionMiddleware } from '../../src/middleware/auto-backup-inject.js';
 
 let app: Hono;
 

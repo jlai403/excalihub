@@ -1,6 +1,6 @@
 import { Context, Next } from 'hono';
 import { env } from '~/env.js';
-import { getSpaceBySubdomain } from '~/server/repos/space.js';
+import { getSpaceBySubdomain } from '~/repos/space.js';
 
 export function proxyMiddleware() {
   return async (c: Context, next: Next) => {

@@ -1,5 +1,5 @@
-import * as SpaceRepo from '~/server/repos/space.js';
-import type { SpaceMeta } from '~/server/repos/space.js';
+import * as SpaceRepo from '~/repos/space.js';
+import type { SpaceMeta } from '~/repos/space.js';
 
 const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'dashboard', 'login']);
 

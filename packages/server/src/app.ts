@@ -6,8 +6,8 @@ import { env } from '~/env.js';
 import {
   proxyMiddleware,
   injectionMiddleware,
-} from '~/server/middleware/index.js';
-import api from '~/server/routes/api.js';
+} from '~/middleware/index.js';
+import api from '~/routes/api.js';
 
 export function createApp(): Hono {
   const app = new Hono();
