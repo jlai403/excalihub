@@ -1,2 +1,2 @@
 [test]
-preload = "./packages/server/tests/setup.ts"
+preload = "./server/tests/setup.ts"

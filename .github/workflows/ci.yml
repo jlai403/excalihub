@@ -15,7 +15,7 @@ jobs:
         with:
           bun-version: latest
       - run: bun install --frozen-lockfile
-      - run: bun test packages/server/tests/
+      - run: bun test server/tests/
 
   lint:
     needs: test

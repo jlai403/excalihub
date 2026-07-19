@@ -3,15 +3,15 @@
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",
-  "workspaces": ["packages/*"],
+  "workspaces": ["server", "hub"],
   "scripts": {
-    "dev": "concurrently \"bun --watch packages/server/src/index.ts\" \"bun run --filter dashboard dev\"",
-    "dev:server": "bun --watch packages/server/src/index.ts",
-    "dev:dashboard": "bun run --filter dashboard dev",
-    "build": "bun run --filter dashboard build && bun build packages/server/src/index.ts --outdir dist --target bun",
+    "dev": "concurrently \"bun --watch server/src/index.ts\" \"bun run --filter hub dev\"",
+    "dev:server": "bun --watch server/src/index.ts",
+    "dev:hub": "bun run --filter hub dev",
+    "build": "bun run --filter hub build && bun build server/src/index.ts --outdir dist --target bun",
     "start": "bun run dist/server/index.js",
-    "test": "bun test packages/server/tests/",
-    "test:watch": "bun test packages/server/tests/ --watch"
+    "test": "bun test server/tests/",
+    "test:watch": "bun test server/tests/ --watch"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
