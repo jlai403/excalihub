@@ -4,8 +4,12 @@ export default defineConfig({
   outDir: '../dist/public',
   server: {
     port: 4321,
-    proxy: {
-      '/api': 'http://localhost:80',
+  },
+  vite: {
+    server: {
+      proxy: {
+        '/api': 'http://localhost:80',
+      },
     },
   },
 });
