@@ -3,9 +3,9 @@
   window.__excalihub_synced = true;
 
   const subdomain = window.location.hostname.split('.')[0];
-  let backupTimeout: ReturnType<typeof setTimeout> | null = null;
+  let backupTimeout = null;
 
-  async function sendBackup(elements: string | null, appState: string | null) {
+  async function sendBackup(elements, appState) {
     if (!elements) return;
 
     try {
@@ -20,7 +20,7 @@
   }
 
   const originalSetItem = Storage.prototype.setItem;
-  Storage.prototype.setItem = function(key: string, value: string) {
+  Storage.prototype.setItem = function(key, value) {
     originalSetItem.call(this, key, value);
 
     if (key === 'excalidraw' || key === 'excalidraw-state') {
