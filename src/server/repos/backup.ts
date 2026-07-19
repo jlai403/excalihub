@@ -1,18 +1,7 @@
 import { readFileSync, readdirSync, existsSync, writeFileSync } from 'fs'
 import { join } from 'path'
-import { randomBytes } from 'crypto'
 import { updateLatestBackup, getSpaceBySubdomain } from './space.js'
-
-const NANOID_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
-
-function nanoid(size = 8): string {
-  const bytes = randomBytes(size)
-  let result = ''
-  for (let i = 0; i < size; i++) {
-    result += NANOID_ALPHABET[bytes[i] % NANOID_ALPHABET.length]
-  }
-  return result
-}
+import { backupId as nanoid } from './nanoid.js'
 
 let dataDir = './data'
 
