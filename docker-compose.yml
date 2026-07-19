@@ -6,7 +6,7 @@ services:
     environment:
       - PORT=80
       - HOST=0.0.0.0
-      - BASE_DOMAIN=draw.example.com
+      - BASE_DOMAIN=example.com
       - EXCALIDRAW_CONTAINER=http://excalidraw:80
       - DATA_DIR=/data
     volumes:
