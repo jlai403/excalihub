@@ -1,74 +1,9 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { CreateSpaceForm } from '../../components/CreateSpaceForm';
 ---
 
 <Layout title="Create Space">
-  <h2 style="margin-bottom: 2rem;">Create New Space</h2>
-  
-  <div class="card" style="max-width: 500px;">
-    <form id="create-form">
-      <div style="margin-bottom: 1.5rem;">
-        <label for="name" style="display: block; margin-bottom: 0.5rem; color: #888;">
-          Space Name
-        </label>
-        <input
-          type="text"
-          id="name"
-          name="name"
-          required
-          placeholder="e.g., my-project"
-          style="width: 100%; padding: 0.75rem; background: #0f0f0f; border: 1px solid #333; border-radius: 6px; color: white; font-size: 1rem;"
-        />
-        <p style="color: #666; font-size: 0.75rem; margin-top: 0.5rem;">
-          This will create a space at: <span id="preview" style="color: #60a5fa;">your-name.draw.example.com</span>
-        </p>
-      </div>
-      
-      <div style="display: flex; gap: 1rem;">
-        <button type="submit" class="btn">Create</button>
-        <a href="/" class="btn" style="background: #333;">Cancel</a>
-      </div>
-    </form>
-  </div>
+  <h2 class="text-2xl font-semibold mb-6">Create New Space</h2>
+  <CreateSpaceForm client:load />
 </Layout>
-
-<script>
-  const BASE_DOMAIN = window.location.hostname.split('.').slice(-2).join('.');
-  const form = document.getElementById('create-form') as HTMLFormElement;
-  const nameInput = document.getElementById('name') as HTMLInputElement;
-  const preview = document.getElementById('preview');
-  
-  nameInput?.addEventListener('input', () => {
-    const slug = nameInput.value
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    if (preview) {
-      preview.textContent = `${slug || 'your-name'}.${BASE_DOMAIN}`;
-    }
-  });
-  
-  form?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const name = nameInput.value.trim();
-    if (!name) return;
-    
-    try {
-      const res = await fetch('/api/spaces', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name }),
-      });
-      
-      if (res.ok) {
-        window.location.href = '/';
-      } else {
-        const err = await res.json();
-        alert(err.error || 'Failed to create space');
-      }
-    } catch (e) {
-      alert('Failed to create space');
-    }
-  });
-</script>
