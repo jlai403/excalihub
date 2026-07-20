@@ -4,19 +4,11 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
-    "paths": { "~/*": ["./src/*"] },
-    "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "types": ["node"],
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
+    "resolveJsonModule": true
   },
-  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]
 }

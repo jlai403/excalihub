@@ -9,12 +9,12 @@ Each space gets its own subdomain (e.g. `project1.draw.example.com`) backed by a
 ```bash
 git clone <repo>
 cd excalihub
-BASE_DOMAIN=draw.localhost docker compose up --build
+docker compose up --build
 ```
 
 Open `http://draw.localhost` — no DNS or `/etc/hosts` setup required.
 `*.localhost` resolves to `127.0.0.1` on macOS and Linux out of the box.
-
+The hub is served at `{HUB_SUBDOMAIN}.{BASE_DOMAIN}` (default: `draw.localhost`).
 Any space you create will be at `your-space.draw.localhost`.
 
 ## Homelab Deployment
@@ -22,7 +22,7 @@ Any space you create will be at `your-space.draw.localhost`.
 1. **DNS** — wildcard `*.draw.example.com` → your server IP (A record)
 2. **Ports** — forward 80/443 to the server
 3. **TLS** — add a reverse proxy (Caddy, Nginx Proxy Manager) for Let's Encrypt
-4. **Config** — set `BASE_DOMAIN=draw.example.com` in `docker-compose.yml`
+4. **Config** — set `BASE_DOMAIN=example.com` in `docker-compose.yml`
 5. **Up** — `docker compose up --build -d`
 
 ## Bare Metal
@@ -38,11 +38,11 @@ bun run dev       # Hono (port 80) + Astro (port 4321)
 
 | Variable | Default | Description |
 |---|---|---|
-| `BASE_DOMAIN` | `draw.example.com` | Wildcard domain for spaces |
+| `BASE_DOMAIN` | `example.com` | Root domain (e.g. `example.com` → `*.example.com`) |
 | `EXCALIDRAW_CONTAINER` | `http://excalidraw:80` | Excalidraw backend URL |
 | `PORT` | `80` | Server port |
 | `HOST` | `0.0.0.0` | Bind address |
-| `DB_PATH` | `/data/excalihub.db` | SQLite file path |
+| `DATA_DIR` | `./data` | Data directory (spaces, backups) |
 
 ## Commands
 
@@ -59,14 +59,14 @@ bun test               # Run test suite
 Browser ──> draw.example.com ────> Astro Dashboard
            project.draw.example.com ──> Hono Proxy ──> Excalidraw container
                                           │
-                                          └──> Auto-backup injection ──> POST /api/backup ──> SQLite
+                                          └──> Auto-backup injection ──> POST /api/backup ──> Flat files
 ```
 
 ## Stack
 
-- **Bun** — Runtime, bundler, test runner
+- **Bun** — Runtime, bundler, test runner, workspaces
 - **Hono** — TypeScript backend (proxy, API, middleware)
 - **Astro** — Dashboard UI
-- **SQLite / Drizzle ORM** — Persistence
+- **Flat files** — No database, no ORM
 - **Docker Compose** — Deployment
 - **Excalidraw** — whiteboard editor (MIT). Shoutout to the Excalidraw team for their awesome work.

@@ -6,9 +6,9 @@ services:
     environment:
       - PORT=80
       - HOST=0.0.0.0
-      - BASE_DOMAIN=draw.example.com
+      - BASE_DOMAIN=example.com
       - EXCALIDRAW_CONTAINER=http://excalidraw:80
-      - DB_PATH=/data/excalihub.db
+      - DATA_DIR=/data
     volumes:
       - excalihub-data:/data
     depends_on:

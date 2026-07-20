@@ -3,11 +3,13 @@ FROM oven/bun:1 AS builder
 WORKDIR /app
 
 COPY package.json bun.lock ./
+COPY server/package.json server/
+COPY hub/package.json hub/
 RUN bun install --frozen-lockfile
 
 COPY . .
 
-RUN bun run astro build && bun build src/server/index.ts --outdir dist --target bun
+RUN bun run --filter hub build && bun build server/src/index.ts --outdir dist --target bun
 
 FROM oven/bun:1 AS runtime
 
@@ -16,7 +18,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/src/inject ./dist/inject
+COPY --from=builder /app/server/src/inject ./dist/inject
 
 RUN mkdir -p /data && chown -R bun:bun /data /app
 
