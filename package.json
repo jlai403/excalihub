@@ -3,28 +3,20 @@
   "version": "0.1.0",
   "license": "MIT",
   "type": "module",
+  "workspaces": ["server", "hub"],
   "scripts": {
-    "dev": "concurrently \"bun --watch src/server/index.ts\" \"bunx astro dev\"",
-    "dev:server": "bun --watch src/server/index.ts",
-    "dev:dashboard": "bunx astro dev",
-    "build": "astro build && bun build src/server/index.ts --outdir dist --target bun",
+    "dev": "concurrently --kill-others-on-fail \"bun run dev:server\" \"bun run dev:hub\" \"bun run dev:excalidraw\"",
+    "dev:server": "bun --watch server/src/index.ts",
+    "dev:hub": "bun run --filter hub dev",
+    "dev:excalidraw": "docker run --rm -p 8080:80 excalidraw/excalidraw:latest",
+    "build": "bun run --filter hub build && bun build server/src/index.ts --outdir dist --target bun",
     "start": "bun run dist/server/index.js",
-    "test": "bun test",
-    "test:watch": "bun test --watch"
-  },
-  "dependencies": {
-    "@astrojs/node": "^11.0.2",
-    "astro": "^7.1.0",
-    "consola": "^3.4.2",
-    "drizzle-orm": "^0.45.2",
-    "hono": "^4.4.0",
-    "sql.js": "^1.10.0",
-    "zod": "^4.4.3"
+    "test": "bun test server/tests/",
+    "test:watch": "bun test server/tests/ --watch"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "concurrently": "^10.0.3",
-    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.0"
   }
 }
