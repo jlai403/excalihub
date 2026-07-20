@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import * as Card from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
@@ -6,8 +7,7 @@
 
   let name = $state("");
   let loading = $state(false);
-
-  const BASE_DOMAIN = window.location.hostname.split(".").slice(-2).join(".");
+  let baseDomain = $state("example.com");
 
   let slug = $derived(
     name
@@ -15,6 +15,15 @@
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "")
   );
+
+  onMount(() => {
+    fetch("/api/config")
+      .then((r) => r.json())
+      .then((config) => {
+        baseDomain = config.baseDomain;
+      })
+      .catch(() => {});
+  });
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -55,7 +64,7 @@
         />
         <p class="text-xs text-muted-foreground">
           This will create a space at:
-          <span class="text-primary">{slug || "your-name"}.{BASE_DOMAIN}</span>
+          <span class="text-primary">{slug || "your-name"}.{baseDomain}</span>
         </p>
       </div>
       <div class="flex gap-2">

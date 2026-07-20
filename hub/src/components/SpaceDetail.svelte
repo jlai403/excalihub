@@ -29,8 +29,7 @@
   let actionLoading = $state(false);
   let deleteOpen = $state(false);
   let archiveOpen = $state(false);
-
-  const BASE_DOMAIN = window.location.hostname.split(".").slice(-2).join(".");
+  let baseDomain = $state("example.com");
 
   onMount(() => {
     if (!spaceId) {
@@ -38,14 +37,16 @@
       return;
     }
     Promise.all([
+      fetch("/api/config").then((r) => r.json()),
       fetch(`/api/spaces/${spaceId}`).then((r) => r.json()),
       fetch(`/api/spaces/${spaceId}/backups`).then((r) => r.json()),
     ])
-      .then(([spaceData, backupData]) => {
+      .then(([config, spaceData, backupData]) => {
         if (!spaceData.id) {
           window.location.href = "/";
           return;
         }
+        baseDomain = config.baseDomain;
         space = spaceData;
         backups = backupData;
         loading = false;
@@ -92,10 +93,10 @@
         <h2 class="text-2xl font-semibold">{space.name}</h2>
         <p class="mt-1 text-sm text-muted-foreground">
           <a
-            href="http://{space.subdomain}.{BASE_DOMAIN}"
+            href="http://{space.subdomain}.{baseDomain}"
             class="text-primary hover:underline"
           >
-            {space.subdomain}.{BASE_DOMAIN}
+            {space.subdomain}.{baseDomain}
           </a>
         </p>
         {#if isArchived}

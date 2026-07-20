@@ -17,13 +17,15 @@
   let loading = $state(true);
   let actionLoading = $state(false);
   let deleteTarget = $state<string | null>(null);
-
-  const BASE_DOMAIN = window.location.hostname.split(".").slice(-2).join(".");
+  let baseDomain = $state("example.com");
 
   onMount(() => {
-    fetch("/api/spaces")
-      .then((res) => res.json())
-      .then((data) => {
+    Promise.all([
+      fetch("/api/config").then((r) => r.json()),
+      fetch("/api/spaces").then((r) => r.json()),
+    ])
+      .then(([config, data]) => {
+        baseDomain = config.baseDomain;
         spaces = data.filter((s: Space) => s.status === "archived");
         loading = false;
       })
@@ -70,7 +72,7 @@
           </Card.Header>
           <Card.Content>
             <p class="text-sm text-muted-foreground mb-4">
-              {space.subdomain}.{BASE_DOMAIN}
+              {space.subdomain}.{baseDomain}
             </p>
             <p class="text-xs text-muted-foreground/60 mb-4">
               Created: {new Date(space.createdAt).toLocaleDateString()}

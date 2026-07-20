@@ -28,18 +28,27 @@ afterEach(() => {
 
 describe('proxyMiddleware', () => {
   describe('hub routing', () => {
-    it('calls next() for draw.example.com', async () => {
+    it('serves hub via fetch for draw.example.com', async () => {
       const res = await makeApp().request('/', {
         headers: { host: 'draw.example.com' },
       });
-      const body = await res.json();
-      expect(body.reached).toBe('next');
-      expect(fetchMock).not.toHaveBeenCalled();
+      const body = await res.text();
+      expect(body).toBe('ok');
+      expect(fetchMock).toHaveBeenCalledOnce();
     });
 
-    it('calls next() for bare example.com', async () => {
+    it('serves hub via fetch for bare example.com', async () => {
       const res = await makeApp().request('/', {
         headers: { host: 'example.com' },
+      });
+      const body = await res.text();
+      expect(body).toBe('ok');
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it('bypasses hub serving for /api/* paths', async () => {
+      const res = await makeApp().request('/api/test', {
+        headers: { host: 'draw.example.com' },
       });
       const body = await res.json();
       expect(body.reached).toBe('next');
