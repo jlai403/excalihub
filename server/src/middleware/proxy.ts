@@ -8,16 +8,13 @@ export function proxyMiddleware() {
   return async (c: Context, next: Next) => {
     const host = c.req.header('host') || '';
 
-    // Subdomain → proxy to Excalidraw
     const subdomain = extractSubdomain(host, hubHost);
     if (subdomain) return proxyToExcalidraw(c, subdomain);
 
-    // Hub or bare domain → continue to API/dashboard
     if (host === hubHost || host === env.BASE_DOMAIN) {
-      return next();
+      return serveHub(c, next);
     }
 
-    // Unknown host
     return c.json({ error: 'Not found' }, 404);
   };
 }
@@ -26,6 +23,24 @@ function extractSubdomain(host: string, hubHost: string): string | null {
   const suffix = `.${hubHost}`;
   if (!host.endsWith(suffix)) return null;
   return host.slice(0, -suffix.length);
+}
+
+async function serveHub(c: Context, next: Next) {
+  const url = new URL(c.req.url);
+
+  if (url.pathname.startsWith('/api/')) {
+    return next();
+  }
+
+  if (env.NODE_ENV !== 'production') {
+    const res = await fetch(`http://localhost:4321${url.pathname}${url.search}`);
+    return new Response(res.body, { status: res.status, headers: res.headers });
+  }
+
+  const filePath = `./dist/public${url.pathname === '/' ? '/index.html' : url.pathname}`;
+  const file = Bun.file(filePath);
+  if (await file.exists()) return new Response(file);
+  return next();
 }
 
 async function proxyToExcalidraw(c: Context, subdomain: string) {

@@ -14,13 +14,15 @@
   let spaces: Space[] = $state([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
-
-  const BASE_DOMAIN = window.location.hostname.split(".").slice(-2).join(".");
+  let baseDomain = $state("example.com");
 
   onMount(() => {
-    fetch("/api/spaces")
-      .then((res) => res.json())
-      .then((data) => {
+    Promise.all([
+      fetch("/api/config").then((r) => r.json()),
+      fetch("/api/spaces").then((r) => r.json()),
+    ])
+      .then(([config, data]) => {
+        baseDomain = config.baseDomain;
         spaces = data.filter((s: Space) => s.status === "active");
         loading = false;
       })
@@ -52,14 +54,14 @@
       <Card.Root>
         <Card.Header>
           <Card.Title>
-            <a href="/space?id={space.id}" class="hover:underline">
+            <a href="http://{space.subdomain}.{baseDomain}" class="hover:underline">
               {space.name}
             </a>
           </Card.Title>
         </Card.Header>
         <Card.Content>
           <p class="text-sm text-muted-foreground">
-            {space.subdomain}.{BASE_DOMAIN}
+            {space.subdomain}.{baseDomain}
           </p>
           <p class="mt-2 text-xs text-muted-foreground/60">
             Created: {new Date(space.createdAt).toLocaleDateString()}

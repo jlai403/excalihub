@@ -1,5 +1,6 @@
 ---
 import '../styles/globals.css';
+import ThemeToggle from '../components/ThemeToggle.svelte';
 
 interface Props {
   title: string;
@@ -10,11 +11,20 @@ const currentPath = Astro.url.pathname;
 ---
 
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title} | ExcaliHub</title>
+    <script is:inline>
+      (() => {
+        const t = localStorage.getItem("theme") || "system";
+        const dark =
+          t === "dark" ||
+          (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches);
+        document.documentElement.classList.toggle("dark", dark);
+      })();
+    </script>
   </head>
   <body class="min-h-screen bg-background text-foreground">
     <div class="mx-auto max-w-5xl px-4 py-6">
@@ -41,6 +51,9 @@ const currentPath = Astro.url.pathname;
           >
             Archived
           </a>
+          <div class="ml-auto">
+            <ThemeToggle client:load />
+          </div>
         </nav>
       </header>
       <main>
