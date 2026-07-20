@@ -1,5 +1,5 @@
 import { defineConfig } from 'astro/config';
-import react from '@astrojs/react';
+import svelte from '@astrojs/svelte';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
@@ -9,11 +9,14 @@ export default defineConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      noExternal: ['@lucide/svelte', 'bits-ui', 'runed', 'svelte-toolbelt'],
+    },
     server: {
       proxy: {
         '/api': 'http://localhost:80',
       },
     },
   },
-  integrations: [react()],
+  integrations: [svelte()],
 });

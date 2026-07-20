@@ -1,8 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { SpaceDetail } from '../components/SpaceDetail';
+import SpaceDetail from '../components/SpaceDetail.svelte';
 ---
 
 <Layout title="Space">
-  <SpaceDetail client:load spaceId={Astro.url.searchParams.get('id') || ''} />
+  <SpaceDetail client:only="svelte" spaceId={Astro.url.searchParams.get('id') || ''} />
 </Layout>

@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { SpacesList } from '../components/SpacesList';
+import SpacesList from '../components/SpacesList.svelte';
 ---
 
 <Layout title="Dashboard">
@@ -10,5 +10,5 @@ import { SpacesList } from '../components/SpacesList';
       Create Space
     </a>
   </div>
-  <SpacesList client:load />
+  <SpacesList client:only="svelte" />
 </Layout>

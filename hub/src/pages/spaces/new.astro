@@ -1,9 +1,9 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { CreateSpaceForm } from '../../components/CreateSpaceForm';
+import CreateSpaceForm from '../../components/CreateSpaceForm.svelte';
 ---
 
 <Layout title="Create Space">
   <h2 class="text-2xl font-semibold mb-6">Create New Space</h2>
-  <CreateSpaceForm client:load />
+  <CreateSpaceForm client:only="svelte" />
 </Layout>
