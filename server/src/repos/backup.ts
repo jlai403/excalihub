@@ -69,6 +69,12 @@ export function resetBackups(): void {
   locks.clear();
 }
 
+export function removeBackupsBySubdomain(subdomain: string): void {
+  for (const [key, value] of backupIndex) {
+    if (value === subdomain) backupIndex.delete(key);
+  }
+}
+
 export function initBackups(dir: string): void {
   dataDir = dir;
   backupIndex.clear();

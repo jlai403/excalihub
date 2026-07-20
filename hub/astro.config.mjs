@@ -1,4 +1,6 @@
 import { defineConfig } from 'astro/config';
+import react from '@astrojs/react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   outDir: '../dist/public',
@@ -6,10 +8,12 @@ export default defineConfig({
     port: 4321,
   },
   vite: {
+    plugins: [tailwindcss()],
     server: {
       proxy: {
         '/api': 'http://localhost:80',
       },
     },
   },
+  integrations: [react()],
 });

@@ -1,5 +1,5 @@
 import * as SpaceRepo from '~/repos/space.js';
-import type { SpaceMeta } from '~/repos/space.js';
+import type { SpaceMeta, SpaceStatus } from '~/repos/space.js';
 
 const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'dashboard', 'login']);
 
@@ -34,10 +34,13 @@ export async function createSpace(name: string): Promise<SpaceMeta> {
 
 export async function renameSpace(
   id: string,
-  updates: { name?: string; subdomain?: string },
+  updates: { name?: string; subdomain?: string; status?: SpaceStatus },
 ): Promise<SpaceMeta> {
   if (updates.subdomain) {
     validateSubdomain(updates.subdomain);
+  }
+  if (updates.status && !['active', 'archived'].includes(updates.status)) {
+    throw new Error('Status must be "active" or "archived"');
   }
   return SpaceRepo.updateSpaceMeta(id, updates);
 }
