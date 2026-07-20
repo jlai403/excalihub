@@ -28,9 +28,9 @@ afterEach(() => {
 
 describe('proxyMiddleware', () => {
   describe('hub routing', () => {
-    it('serves hub via fetch for draw.example.com', async () => {
+    it('serves hub via fetch for excalihub.example.com', async () => {
       const res = await makeApp().request('/', {
-        headers: { host: 'draw.example.com' },
+        headers: { host: 'excalihub.example.com' },
       });
       const body = await res.text();
       expect(body).toBe('ok');
@@ -48,7 +48,7 @@ describe('proxyMiddleware', () => {
 
     it('bypasses hub serving for /api/* paths', async () => {
       const res = await makeApp().request('/api/test', {
-        headers: { host: 'draw.example.com' },
+        headers: { host: 'excalihub.example.com' },
       });
       const body = await res.json();
       expect(body.reached).toBe('next');
@@ -61,7 +61,7 @@ describe('proxyMiddleware', () => {
       createSpace('My Project', 'myproject');
 
       const res = await makeApp().request('/boards/test-board', {
-        headers: { host: 'myproject.draw.example.com' },
+        headers: { host: 'myproject.excalihub.example.com' },
       });
 
       expect(res.status).toBe(200);
@@ -73,7 +73,7 @@ describe('proxyMiddleware', () => {
 
     it('returns 404 when space does not exist', async () => {
       const res = await makeApp().request('/', {
-        headers: { host: 'nonexistent.draw.example.com' },
+        headers: { host: 'nonexistent.excalihub.example.com' },
       });
       expect(res.status).toBe(404);
       expect(fetchMock).not.toHaveBeenCalled();
@@ -83,7 +83,7 @@ describe('proxyMiddleware', () => {
       createSpace('Space', 'space');
 
       await makeApp().request('/', {
-        headers: { host: 'space.draw.example.com' },
+        headers: { host: 'space.excalihub.example.com' },
       });
 
       const [, opts] = fetchMock.mock.calls[0];
@@ -95,7 +95,7 @@ describe('proxyMiddleware', () => {
 
       await makeApp().request('/', {
         method: 'POST',
-        headers: { host: 'space.draw.example.com' },
+        headers: { host: 'space.excalihub.example.com' },
         body: '{"test":true}',
       });
 
@@ -110,7 +110,7 @@ describe('proxyMiddleware', () => {
 
       await makeApp().request('/', {
         method: 'GET',
-        headers: { host: 'space.draw.example.com' },
+        headers: { host: 'space.excalihub.example.com' },
       });
 
       const [, opts] = fetchMock.mock.calls[0];

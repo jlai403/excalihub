@@ -2,7 +2,7 @@
 
 Self-hosted hub for isolated Excalidraw whiteboards via subdomains.
 
-Each space gets its own subdomain (e.g. `project1.draw.example.com`) backed by a shared Excalidraw container with automatic backup.
+Each space gets its own subdomain (e.g. `project1.excalihub.example.com`) backed by a shared Excalidraw container with automatic backup.
 
 ## Local Development
 
@@ -12,14 +12,14 @@ cd excalihub
 docker compose up --build
 ```
 
-Open `http://draw.localhost` — no DNS or `/etc/hosts` setup required.
+Open `http://excalihub.localhost` — no DNS or `/etc/hosts` setup required.
 `*.localhost` resolves to `127.0.0.1` on macOS and Linux out of the box.
-The hub is served at `{HUB_SUBDOMAIN}.{BASE_DOMAIN}` (default: `draw.localhost`).
-Any space you create will be at `your-space.draw.localhost`.
+The hub is served at `{HUB_SUBDOMAIN}.{BASE_DOMAIN}` (default: `excalihub.localhost`).
+Any space you create will be at `your-space.excalihub.localhost`.
 
 ## Homelab Deployment
 
-1. **DNS** — wildcard `*.draw.example.com` → your server IP (A record)
+1. **DNS** — wildcard `*.excalihub.example.com` → your server IP (A record)
 2. **Ports** — forward 80/443 to the server
 3. **TLS** — add a reverse proxy (Caddy, Nginx Proxy Manager) for Let's Encrypt
 4. **Config** — set `BASE_DOMAIN=example.com` in `docker-compose.yml`
@@ -56,8 +56,8 @@ bun test               # Run test suite
 ## Architecture
 
 ```
-Browser ──> draw.example.com ────> Astro Dashboard
-           project.draw.example.com ──> Hono Proxy ──> Excalidraw container
+Browser ──> excalihub.example.com ────> Astro Dashboard
+           project.excalihub.example.com ──> Hono Proxy ──> Excalidraw container
                                           │
                                           └──> Auto-backup injection ──> POST /api/backup ──> Flat files
 ```
