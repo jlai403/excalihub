@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 
 test.describe.serial("proxy routing", () => {
   test("hub loads at excalihub.localhost", async ({ page }) => {
-    await page.goto("http://excalihub.localhost:81/");
+    await page.goto("http://excalihub.localhost:8081/");
     await expect(page).toHaveTitle(/ExcaliHub/);
   });
 
@@ -26,7 +26,7 @@ test.describe.serial("proxy routing", () => {
   });
 
   test("unknown subdomain returns error", async ({ request }) => {
-    const response = await request.get("http://nonexistent.excalihub.localhost:81/", {
+    const response = await request.get("http://nonexistent.excalihub.localhost:8081/", {
       maxRedirects: 0,
     });
     expect(response.status()).toBe(404);

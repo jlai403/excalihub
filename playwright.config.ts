@@ -11,7 +11,7 @@ export default defineConfig({
   globalSetup: "./tests/e2e/globalSetup.ts",
 
   use: {
-    baseURL: "http://localhost:81",
+    baseURL: "http://localhost:8081",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
@@ -25,11 +25,11 @@ export default defineConfig({
   webServer: [
     {
       command: "bun run dev:server",
-      url: "http://localhost:81/api/config",
+      url: "http://localhost:8081/api/config",
       reuseExistingServer: false,
       timeout: 30_000,
       env: {
-        PORT: "81",
+        PORT: "8081",
         DATA_DIR: "./data-e2e",
         HUB_PORT: "4321",
       },
