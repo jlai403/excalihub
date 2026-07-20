@@ -17,7 +17,7 @@
   let loading = $state(true);
   let actionLoading = $state(false);
   let deleteTarget = $state<string | null>(null);
-  let baseDomain = $state("example.com");
+  let hubHost = $state("excalihub.example.com");
 
   onMount(() => {
     Promise.all([
@@ -25,7 +25,7 @@
       fetch("/api/spaces").then((r) => r.json()),
     ])
       .then(([config, data]) => {
-        baseDomain = config.baseDomain;
+        hubHost = config.hubHost;
         spaces = data.filter((s: Space) => s.status === "archived");
         loading = false;
       })
@@ -72,7 +72,7 @@
           </Card.Header>
           <Card.Content>
             <p class="text-sm text-muted-foreground mb-4">
-              {space.subdomain}.{baseDomain}
+              {space.subdomain}.{hubHost}
             </p>
             <p class="text-xs text-muted-foreground/60 mb-4">
               Created: {new Date(space.createdAt).toLocaleDateString()}

@@ -6,7 +6,8 @@ export function proxyMiddleware() {
   const hubHost = `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}`;
 
   return async (c: Context, next: Next) => {
-    const host = c.req.header('host') || '';
+    const rawHost = c.req.header('host') || '';
+    const host = rawHost.replace(/:\d+$/, '');
 
     const subdomain = extractSubdomain(host, hubHost);
     if (subdomain) return proxyToExcalidraw(c, subdomain);
@@ -33,7 +34,7 @@ async function serveHub(c: Context, next: Next) {
   }
 
   if (env.NODE_ENV !== 'production') {
-    const res = await fetch(`http://localhost:4321${url.pathname}${url.search}`);
+    const res = await fetch(`http://localhost:${env.HUB_PORT}${url.pathname}${url.search}`);
     return new Response(res.body, { status: res.status, headers: res.headers });
   }
 

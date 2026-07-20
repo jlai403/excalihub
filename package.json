@@ -12,9 +12,14 @@
     "build": "bun run --filter hub build && bun build server/src/index.ts --outdir dist --target bun",
     "start": "bun run dist/server/index.js",
     "test": "bun test server/tests/",
-    "test:watch": "bun test server/tests/ --watch"
+    "test:watch": "bun test server/tests/ --watch",
+    "test:e2e": "bunx playwright test",
+    "test:e2e:ui": "bunx playwright test --ui",
+    "test:e2e:debug": "bunx playwright test --debug",
+    "test:report": "bunx playwright show-report"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "^20.14.0",
     "concurrently": "^10.0.3",
     "typescript": "^6.0.0"

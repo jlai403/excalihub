@@ -8,7 +8,7 @@ import * as BackupService from '~/services/backup.js';
 const api = new Hono();
 
 api.get('/config', (c) => {
-  return c.json({ baseDomain: env.BASE_DOMAIN });
+  return c.json({ hubHost: `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}` });
 });
 
 api.get('/spaces', async (c) => {

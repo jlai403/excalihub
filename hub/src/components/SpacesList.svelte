@@ -14,7 +14,7 @@
   let spaces: Space[] = $state([]);
   let loading = $state(true);
   let error = $state<string | null>(null);
-  let baseDomain = $state("example.com");
+  let hubHost = $state("excalihub.example.com");
 
   onMount(() => {
     Promise.all([
@@ -22,7 +22,7 @@
       fetch("/api/spaces").then((r) => r.json()),
     ])
       .then(([config, data]) => {
-        baseDomain = config.baseDomain;
+        hubHost = config.hubHost;
         spaces = data.filter((s: Space) => s.status === "active");
         loading = false;
       })
@@ -54,14 +54,14 @@
       <Card.Root>
         <Card.Header>
           <Card.Title>
-            <a href="http://{space.subdomain}.{baseDomain}" class="hover:underline">
+            <a href="http://{space.subdomain}.{hubHost}" class="hover:underline">
               {space.name}
             </a>
           </Card.Title>
         </Card.Header>
         <Card.Content>
           <p class="text-sm text-muted-foreground">
-            {space.subdomain}.{baseDomain}
+            {space.subdomain}.{hubHost}
           </p>
           <p class="mt-2 text-xs text-muted-foreground/60">
             Created: {new Date(space.createdAt).toLocaleDateString()}

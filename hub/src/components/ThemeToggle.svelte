@@ -25,12 +25,14 @@
 
   $effect(() => {
     const saved = localStorage.getItem("theme") as Theme | null;
-    theme = saved || "system";
-    applyTheme(theme);
+    const initial = saved || "system";
+    theme = initial;
+    applyTheme(initial);
 
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => {
-      if (theme === "system") applyTheme("system");
+      const current = (localStorage.getItem("theme") as Theme) || "system";
+      if (current === "system") applyTheme("system");
     };
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
