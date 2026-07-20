@@ -29,31 +29,32 @@
   let actionLoading = $state(false);
   let deleteOpen = $state(false);
   let archiveOpen = $state(false);
-  let baseDomain = $state("example.com");
+  let hubHost = $state("excalihub.example.com");
 
-  onMount(() => {
+  onMount(async () => {
     if (!spaceId) {
       window.location.href = "/";
       return;
     }
-    Promise.all([
-      fetch("/api/config").then((r) => r.json()),
-      fetch(`/api/spaces/${spaceId}`).then((r) => r.json()),
-      fetch(`/api/spaces/${spaceId}/backups`).then((r) => r.json()),
-    ])
-      .then(([config, spaceData, backupData]) => {
-        if (!spaceData.id) {
-          window.location.href = "/";
-          return;
-        }
-        baseDomain = config.baseDomain;
-        space = spaceData;
-        backups = backupData;
-        loading = false;
-      })
-      .catch(() => {
+    try {
+      const [config, spaceData, backupData] = await Promise.all([
+        fetch("/api/config").then((r) => r.json()),
+        fetch(`/api/spaces/${spaceId}`).then((r) => r.json()),
+        fetch(`/api/spaces/${spaceId}/backups`).then((r) => r.json()),
+      ]);
+      if (!spaceData.id) {
         window.location.href = "/";
-      });
+        return;
+      }
+      hubHost = config.hubHost;
+      space = spaceData;
+      backups = backupData;
+    } catch {
+      window.location.href = "/";
+      return;
+    } finally {
+      loading = false;
+    }
   });
 
   async function handleArchive() {
@@ -93,10 +94,10 @@
         <h2 class="text-2xl font-semibold">{space.name}</h2>
         <p class="mt-1 text-sm text-muted-foreground">
           <a
-            href="http://{space.subdomain}.{baseDomain}"
+            href="http://{space.subdomain}.{hubHost}"
             class="text-primary hover:underline"
           >
-            {space.subdomain}.{baseDomain}
+            {space.subdomain}.{hubHost}
           </a>
         </p>
         {#if isArchived}
