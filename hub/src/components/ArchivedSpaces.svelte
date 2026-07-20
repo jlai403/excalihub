@@ -19,17 +19,19 @@
   let deleteTarget = $state<string | null>(null);
   let hubHost = $state("excalihub.example.com");
 
-  onMount(() => {
-    Promise.all([
-      fetch("/api/config").then((r) => r.json()),
-      fetch("/api/spaces").then((r) => r.json()),
-    ])
-      .then(([config, data]) => {
-        hubHost = config.hubHost;
-        spaces = data.filter((s: Space) => s.status === "archived");
-        loading = false;
-      })
-      .catch(() => (loading = false));
+  onMount(async () => {
+    try {
+      const [config, data] = await Promise.all([
+        fetch("/api/config").then((r) => r.json()),
+        fetch("/api/spaces").then((r) => r.json()),
+      ]);
+      hubHost = config.hubHost;
+      spaces = data.filter((s: Space) => s.status === "archived");
+    } catch {
+      // handled by loading state
+    } finally {
+      loading = false;
+    }
   });
 
   async function handleUnarchive(id: string) {

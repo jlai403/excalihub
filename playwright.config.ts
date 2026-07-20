@@ -26,7 +26,7 @@ export default defineConfig({
     {
       command: "bun run dev:server",
       url: "http://localhost:81/api/config",
-      reuseExistingServer: !process.env.CI,
+      reuseExistingServer: false,
       timeout: 30_000,
       env: {
         PORT: "81",

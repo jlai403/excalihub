@@ -7,7 +7,7 @@
 
   let name = $state("");
   let loading = $state(false);
-  let baseDomain = $state("example.com");
+  let hubHost = $state("excalihub.example.com");
 
   let slug = $derived(
     name
@@ -16,13 +16,13 @@
       .replace(/^-|-$/g, "")
   );
 
-  onMount(() => {
-    fetch("/api/config")
-      .then((r) => r.json())
-      .then((config) => {
-        baseDomain = config.baseDomain;
-      })
-      .catch(() => {});
+  onMount(async () => {
+    try {
+      const config = await fetch("/api/config").then((r) => r.json());
+      hubHost = config.hubHost;
+    } catch {
+      // handled by default value
+    }
   });
 
   async function handleSubmit(e: Event) {
@@ -64,7 +64,7 @@
         />
         <p class="text-xs text-muted-foreground">
           This will create a space at:
-          <span class="text-primary">{slug || "your-name"}.{baseDomain}</span>
+          <span class="text-primary">{slug || "your-name"}.{hubHost}</span>
         </p>
       </div>
       <div class="flex gap-2">

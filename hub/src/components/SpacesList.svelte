@@ -16,20 +16,19 @@
   let error = $state<string | null>(null);
   let hubHost = $state("excalihub.example.com");
 
-  onMount(() => {
-    Promise.all([
-      fetch("/api/config").then((r) => r.json()),
-      fetch("/api/spaces").then((r) => r.json()),
-    ])
-      .then(([config, data]) => {
-        hubHost = config.hubHost;
-        spaces = data.filter((s: Space) => s.status === "active");
-        loading = false;
-      })
-      .catch(() => {
-        error = "Failed to load spaces";
-        loading = false;
-      });
+  onMount(async () => {
+    try {
+      const [config, data] = await Promise.all([
+        fetch("/api/config").then((r) => r.json()),
+        fetch("/api/spaces").then((r) => r.json()),
+      ]);
+      hubHost = config.hubHost;
+      spaces = data.filter((s: Space) => s.status === "active");
+    } catch {
+      error = "Failed to load spaces";
+    } finally {
+      loading = false;
+    }
   });
 </script>
 
