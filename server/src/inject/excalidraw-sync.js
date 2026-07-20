@@ -2,14 +2,16 @@
   if (window.__excalihub_synced) return;
   window.__excalihub_synced = true;
 
-  const subdomain = window.location.hostname.split('.')[0];
+  const parts = window.location.hostname.split('.');
+  const subdomain = parts[0];
+  const hubDomain = parts.slice(1).join('.');
   let backupTimeout = null;
 
   async function sendBackup(elements, appState) {
     if (!elements) return;
 
     try {
-      await fetch('/api/backup', {
+      await fetch(`https://${hubDomain}/api/backup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subdomain, elements, appState }),

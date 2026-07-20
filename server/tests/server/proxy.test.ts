@@ -10,6 +10,7 @@ let originalFetch: typeof globalThis.fetch;
 function makeApp() {
   const app = new Hono();
   app.use('*', proxyMiddleware());
+  app.get('/*', (c) => c.json({ reached: 'next' }));
   return app;
 }
 
@@ -27,35 +28,26 @@ afterEach(() => {
 
 describe('proxyMiddleware', () => {
   describe('hub routing', () => {
-    it('serves hub for draw.example.com', async () => {
-      await makeApp().request('/', {
+    it('calls next() for draw.example.com', async () => {
+      const res = await makeApp().request('/', {
         headers: { host: 'draw.example.com' },
       });
+      const body = await res.json();
+      expect(body.reached).toBe('next');
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('does not proxy hub to Excalidraw', async () => {
-      await makeApp().request('/any/path', {
-        headers: { host: 'draw.example.com' },
+    it('calls next() for bare example.com', async () => {
+      const res = await makeApp().request('/', {
+        headers: { host: 'example.com' },
       });
+      const body = await res.json();
+      expect(body.reached).toBe('next');
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 
   describe('subdomain routing', () => {
-    it('extracts subdomain from test.draw.example.com', async () => {
-      createSpace('My Project', 'test');
-
-      await makeApp().request('/boards/test-board', {
-        headers: { host: 'test.draw.example.com' },
-      });
-
-      expect(fetchMock).toHaveBeenCalledOnce();
-      const [target, opts] = fetchMock.mock.calls[0];
-      expect(target).toBe('http://localhost:8080/boards/test-board');
-      expect(opts.method).toBe('GET');
-    });
-
     it('proxies to Excalidraw when space exists', async () => {
       createSpace('My Project', 'myproject');
 
@@ -65,6 +57,9 @@ describe('proxyMiddleware', () => {
 
       expect(res.status).toBe(200);
       expect(fetchMock).toHaveBeenCalledOnce();
+      const [target, opts] = fetchMock.mock.calls[0];
+      expect(target).toBe('http://localhost:8080/boards/test-board');
+      expect(opts.method).toBe('GET');
     });
 
     it('returns 404 when space does not exist', async () => {
@@ -115,24 +110,19 @@ describe('proxyMiddleware', () => {
   });
 
   describe('non-matching hosts', () => {
-    it('falls through for bare localhost', async () => {
-      await makeApp().request('/', {
-        headers: { host: 'localhost' },
-      });
-      expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('falls through for bare example.com', async () => {
-      await makeApp().request('/', {
-        headers: { host: 'example.com' },
-      });
-      expect(fetchMock).not.toHaveBeenCalled();
-    });
-
-    it('falls through for unrelated domain', async () => {
-      await makeApp().request('/', {
+    it('returns 404 for unknown domains', async () => {
+      const res = await makeApp().request('/', {
         headers: { host: 'random.other.com' },
       });
+      expect(res.status).toBe(404);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 for localhost', async () => {
+      const res = await makeApp().request('/', {
+        headers: { host: 'localhost' },
+      });
+      expect(res.status).toBe(404);
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });

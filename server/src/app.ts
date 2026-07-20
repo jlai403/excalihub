@@ -12,8 +12,8 @@ export function createApp(): Hono {
 
   app.use('*', logger());
   app.use('*', cors());
-  app.route('/api', api);
   app.use('*', proxyMiddleware());
+  app.route('/api', api);
   app.use('*', injectionMiddleware());
   app.get('/health', async (c) => {
     return c.json({ status: 'ok' });
