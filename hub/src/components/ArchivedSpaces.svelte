@@ -10,15 +10,12 @@
   let loading = $state(true);
   let actionLoading = $state(false);
   let deleteTarget = $state<string | null>(null);
-  let hubHost = $state("excalihub.example.com");
+  let hubHost = $state("");
 
   onMount(async () => {
+    hubHost = window.__hubHost;
     try {
-      const [config, data] = await Promise.all([
-        fetch("/api/config").then((r) => r.json()),
-        fetch("/api/spaces").then((r) => r.json()),
-      ]);
-      hubHost = config.hubHost;
+      const data = await fetch("/api/spaces").then((r) => r.json());
       spaces = data.filter((s: Space) => s.status === "archived");
     } catch {
       // handled by loading state
