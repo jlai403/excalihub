@@ -2,6 +2,7 @@
   import { onMount } from "svelte";
   import * as Card from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
+  import CreateSpaceForm from "./CreateSpaceForm.svelte";
 
   type Space = {
     id: string;
@@ -15,6 +16,7 @@
   let loading = $state(true);
   let error = $state<string | null>(null);
   let hubHost = $state("excalihub.example.com");
+  let createOpen = $state(false);
 
   onMount(async () => {
     try {
@@ -30,7 +32,18 @@
       loading = false;
     }
   });
+
+  function handleCreated(space: Space) {
+    spaces = [...spaces, space];
+  }
 </script>
+
+<CreateSpaceForm bind:open={createOpen} onCreated={handleCreated} />
+
+<div class="flex items-center justify-between mb-6">
+  <h2 class="text-2xl font-semibold">Spaces</h2>
+  <Button onclick={() => (createOpen = true)}>Create Space</Button>
+</div>
 
 {#if loading}
   <p class="text-muted-foreground">Loading spaces...</p>
@@ -44,7 +57,7 @@
   <Card.Root>
     <Card.Content class="py-12 text-center">
       <p class="mb-4 text-muted-foreground">No spaces yet</p>
-      <Button href="/spaces/new">Create your first space</Button>
+      <Button onclick={() => (createOpen = true)}>Create your first space</Button>
     </Card.Content>
   </Card.Root>
 {:else}

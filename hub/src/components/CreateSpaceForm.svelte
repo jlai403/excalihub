@@ -1,13 +1,28 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import * as Card from "$lib/components/ui/card";
+  import * as Dialog from "$lib/components/ui/dialog";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
 
+  let {
+    open = $bindable(false),
+    onCreated,
+  }: {
+    open: boolean;
+    onCreated: (space: {
+      id: string;
+      name: string;
+      subdomain: string;
+      createdAt: string;
+      status: string;
+    }) => void;
+  } = $props();
+
   let name = $state("");
   let loading = $state(false);
   let hubHost = $state("excalihub.example.com");
+  let error = $state<string | null>(null);
 
   let slug = $derived(
     name
@@ -25,11 +40,18 @@
     }
   });
 
+  function reset() {
+    name = "";
+    error = null;
+    loading = false;
+  }
+
   async function handleSubmit(e: Event) {
     e.preventDefault();
     if (!name.trim()) return;
 
     loading = true;
+    error = null;
     try {
       const res = await fetch("/api/spaces", {
         method: "POST",
@@ -38,21 +60,30 @@
       });
 
       if (res.ok) {
-        window.location.href = "/";
+        const space = await res.json();
+        onCreated(space);
+        open = false;
+        reset();
       } else {
         const err = await res.json();
-        alert(err.error || "Failed to create space");
+        error = err.error || "Failed to create space";
       }
     } catch {
-      alert("Failed to create space");
+      error = "Failed to create space";
     } finally {
       loading = false;
     }
   }
 </script>
 
-<Card.Root class="max-w-md">
-  <Card.Content class="pt-6">
+<Dialog.Root {open} onOpenChange={(v) => { open = v; if (!v) reset(); }}>
+  <Dialog.Content>
+    <Dialog.Header>
+      <Dialog.Title>Create Space</Dialog.Title>
+      <Dialog.Description>
+        Create a new whiteboard space. It will get its own subdomain.
+      </Dialog.Description>
+    </Dialog.Header>
     <form onsubmit={handleSubmit} class="space-y-4">
       <div class="space-y-2">
         <Label for="name">Space Name</Label>
@@ -67,12 +98,17 @@
           <span class="text-primary">{slug || "your-name"}.{hubHost}</span>
         </p>
       </div>
-      <div class="flex gap-2">
+      {#if error}
+        <p class="text-sm text-destructive">{error}</p>
+      {/if}
+      <Dialog.Footer>
+        <Button type="button" variant="outline" onclick={() => { open = false; reset(); }}>
+          Cancel
+        </Button>
         <Button type="submit" disabled={loading}>
           {loading ? "Creating..." : "Create"}
         </Button>
-        <Button type="button" variant="outline" href="/">Cancel</Button>
-      </div>
+      </Dialog.Footer>
     </form>
-  </Card.Content>
-</Card.Root>
+  </Dialog.Content>
+</Dialog.Root>
