@@ -4,11 +4,5 @@ import SpacesList from '../components/SpacesList.svelte';
 ---
 
 <Layout title="Dashboard">
-  <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-semibold">Spaces</h2>
-    <a href="/spaces/new" class="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/80 transition-colors">
-      Create Space
-    </a>
-  </div>
   <SpacesList client:only="svelte" />
 </Layout>

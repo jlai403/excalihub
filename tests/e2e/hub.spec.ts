@@ -20,16 +20,21 @@ test.describe.serial("hub", () => {
   });
 
   test("creates a space and appears in list", async ({ page }) => {
-    await page.goto("/spaces/new");
+    await page.goto("/");
 
-    // Wait for Svelte hydration — the form should be interactive
-    const form = page.locator("form");
-    await expect(form).toBeVisible();
+    // Open the create modal
+    await page.getByRole("button", { name: "Create Space" }).click();
 
+    // Wait for the dialog to appear
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+
+    // Fill and submit the form
     await page.getByLabel("Space Name").fill("My Test Space");
-    await page.getByRole("button", { name: "Create" }).first().click();
+    await dialog.getByRole("button", { name: "Create" }).click();
 
-    await expect(page).toHaveURL("/");
+    // Dialog closes, space appears in list reactively
+    await expect(dialog).not.toBeVisible();
     await expect(page.getByText("My Test Space")).toBeVisible();
     await expect(page.getByText("my-test-space.")).toBeVisible();
   });
