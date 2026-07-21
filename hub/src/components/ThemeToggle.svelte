@@ -41,7 +41,7 @@
 
 <button
   onclick={cycle}
-  class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+  class="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer"
   title="Theme: {theme}"
 >
   {#if theme === "system"}

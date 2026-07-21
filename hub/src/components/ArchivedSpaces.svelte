@@ -45,7 +45,7 @@
 </script>
 
 <div>
-  <h2 class="text-2xl font-semibold mb-4">Archived Spaces</h2>
+  <h2 class="text-2xl font-semibold mb-6">Archived Spaces</h2>
 
   {#if loading}
     <p class="text-muted-foreground">Loading archived spaces...</p>
