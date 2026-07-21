@@ -1,6 +1,14 @@
 import { test, expect } from "@playwright/test";
 
 test.describe.serial("proxy routing", () => {
+  test.beforeAll(async ({ request }) => {
+    const res = await request.get("/api/spaces");
+    const spaces = await res.json();
+    for (const space of spaces) {
+      await request.delete(`/api/spaces/${space.id}`);
+    }
+  });
+
   test("hub loads at excalihub.localhost", async ({ page }) => {
     await page.goto("http://excalihub.localhost:8081/");
     await expect(page).toHaveTitle(/ExcaliHub/);

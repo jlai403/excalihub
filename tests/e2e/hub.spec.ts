@@ -1,6 +1,14 @@
 import { test, expect } from "@playwright/test";
 
 test.describe.serial("hub", () => {
+  test.beforeAll(async ({ request }) => {
+    const res = await request.get("/api/spaces");
+    const spaces = await res.json();
+    for (const space of spaces) {
+      await request.delete(`/api/spaces/${space.id}`);
+    }
+  });
+
   test("loads with correct title", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/ExcaliHub/);
