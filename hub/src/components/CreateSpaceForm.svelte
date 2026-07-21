@@ -4,19 +4,14 @@
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
+  import type { Space } from "$lib/types";
 
   let {
     open = $bindable(false),
     onCreated,
   }: {
     open: boolean;
-    onCreated: (space: {
-      id: string;
-      name: string;
-      subdomain: string;
-      createdAt: string;
-      status: string;
-    }) => void;
+    onCreated: (space: Space) => void;
   } = $props();
 
   let name = $state("");

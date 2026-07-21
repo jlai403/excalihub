@@ -4,14 +4,7 @@
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import { ArchiveRestore, Trash2 } from "@lucide/svelte";
-
-  type Space = {
-    id: string;
-    name: string;
-    subdomain: string;
-    createdAt: string;
-    status: string;
-  };
+  import type { Space } from "$lib/types";
 
   let spaces = $state<Space[]>([]);
   let loading = $state(true);
