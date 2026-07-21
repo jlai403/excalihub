@@ -3,6 +3,8 @@ export type Space = {
   name: string;
   subdomain: string;
   createdAt: string;
+  updatedAt: string;
+  latest_backup: string | null;
   status: string;
 };
 

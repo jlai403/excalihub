@@ -4,3 +4,5 @@ node_modules
 dist
 .cache
 *.md
+data
+data-e2e
