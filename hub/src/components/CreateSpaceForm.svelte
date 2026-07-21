@@ -16,7 +16,7 @@
 
   let name = $state("");
   let loading = $state(false);
-  let hubHost = $state("excalihub.example.com");
+  let hubHost = $state("");
   let error = $state<string | null>(null);
 
   let slug = $derived(
@@ -26,13 +26,8 @@
       .replace(/^-|-$/g, "")
   );
 
-  onMount(async () => {
-    try {
-      const config = await fetch("/api/config").then((r) => r.json());
-      hubHost = config.hubHost;
-    } catch {
-      // handled by default value
-    }
+  onMount(() => {
+    hubHost = window.__hubHost;
   });
 
   function reset() {

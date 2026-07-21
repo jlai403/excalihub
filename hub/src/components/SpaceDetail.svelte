@@ -15,16 +15,16 @@
   let actionLoading = $state(false);
   let deleteOpen = $state(false);
   let archiveOpen = $state(false);
-  let hubHost = $state("excalihub.example.com");
+  let hubHost = $state("");
 
   onMount(async () => {
+    hubHost = window.__hubHost;
     if (!spaceId) {
       window.location.href = "/";
       return;
     }
     try {
-      const [config, spaceData, backupData] = await Promise.all([
-        fetch("/api/config").then((r) => r.json()),
+      const [spaceData, backupData] = await Promise.all([
         fetch(`/api/spaces/${spaceId}`).then((r) => r.json()),
         fetch(`/api/spaces/${spaceId}/backups`).then((r) => r.json()),
       ]);
@@ -32,7 +32,6 @@
         window.location.href = "/";
         return;
       }
-      hubHost = config.hubHost;
       space = spaceData;
       backups = backupData;
     } catch {
