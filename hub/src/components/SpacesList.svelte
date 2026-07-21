@@ -7,7 +7,7 @@
 
   let spaces: Space[] = $state([]);
   let loading = $state(true);
-  let error = $state<string | null>(null);
+  let error: string | null = $state(null);
   let hubHost = $state("");
   let createOpen = $state(false);
 
@@ -25,6 +25,13 @@
 
   function handleCreated(space: Space) {
     spaces = [...spaces, space];
+  }
+
+  function formatBackupTime(filename: string | null): string {
+    if (!filename) return "Never";
+    const match = filename.match(/^(\d+)-/);
+    if (!match) return "Unknown";
+    return new Date(parseInt(match[1])).toLocaleDateString();
   }
 </script>
 
@@ -64,6 +71,12 @@
           </p>
           <p class="mt-2 text-xs text-muted-foreground/60">
             Created: {new Date(space.createdAt).toLocaleDateString()}
+          </p>
+          <p class="text-xs text-muted-foreground/60">
+            Updated: {new Date(space.updatedAt).toLocaleDateString()}
+          </p>
+          <p class="text-xs text-muted-foreground/60">
+            Last Backup: {formatBackupTime(space.latest_backup)}
           </p>
         </Card.Content>
       </Card.Root>
