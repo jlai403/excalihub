@@ -13,10 +13,10 @@
     "start": "bun run dist/server/index.js",
     "test": "bun test server/tests/",
     "test:watch": "bun test server/tests/ --watch",
-    "test:e2e": "bunx playwright test",
-    "test:e2e:ui": "bunx playwright test --ui",
-    "test:e2e:debug": "bunx playwright test --debug",
-    "test:report": "bunx playwright show-report"
+    "test:e2e": "bun playwright test",
+    "test:e2e:ui": "bun playwright test --ui",
+    "test:e2e:debug": "bun playwright test --debug",
+    "test:report": "bun playwright show-report"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
