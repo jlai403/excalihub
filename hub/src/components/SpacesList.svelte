@@ -30,10 +30,7 @@
 
 <CreateSpaceForm bind:open={createOpen} onCreated={handleCreated} />
 
-<div class="flex items-center justify-between mb-6">
-  <h2 class="text-2xl font-semibold">Spaces</h2>
-  <Button onclick={() => (createOpen = true)}>Create Space</Button>
-</div>
+<h2 class="text-2xl font-semibold mb-6">Spaces</h2>
 
 {#if loading}
   <p class="text-muted-foreground">Loading spaces...</p>
