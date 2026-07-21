@@ -1,65 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import SpacesList from '../components/SpacesList.svelte';
 ---
 
 <Layout title="Dashboard">
-  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <h2>Spaces</h2>
-    <a href="/spaces/new" class="btn">Create Space</a>
-  </div>
-  
-  <div id="spaces-container">
-    <p style="color: #888;">Loading spaces...</p>
-  </div>
+  <SpacesList client:only="svelte" />
 </Layout>
-
-<script>
-  const BASE_DOMAIN = window.location.hostname.split('.').slice(-2).join('.');
-  
-  async function loadSpaces() {
-    const container = document.getElementById('spaces-container');
-    
-    try {
-      const res = await fetch('/api/spaces');
-      const spaces = await res.json();
-      
-      if (spaces.length === 0) {
-        container.innerHTML = `
-          <div class="card" style="text-align: center; padding: 3rem;">
-            <p style="color: #888; margin-bottom: 1rem;">No spaces yet</p>
-            <a href="/spaces/new" class="btn">Create your first space</a>
-          </div>
-        `;
-        return;
-      }
-      
-      container.innerHTML = `
-        <div class="grid">
-          ${spaces.map(space => `
-            <div class="card">
-              <h3 style="margin-bottom: 0.5rem;">
-                <a href="/space?id=${space.id}">
-                  ${space.name}
-                </a>
-              </h3>
-              <p style="color: #888; font-size: 0.875rem; margin-bottom: 1rem;">
-                ${space.subdomain}.${BASE_DOMAIN}
-              </p>
-              <p style="color: #666; font-size: 0.75rem;">
-                Created: ${new Date(space.created_at).toLocaleDateString()}
-              </p>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    } catch (e) {
-      container.innerHTML = `
-        <div class="card" style="text-align: center; padding: 2rem;">
-          <p style="color: #ef4444;">Failed to load spaces</p>
-        </div>
-      `;
-    }
-  }
-  
-  loadSpaces();
-</script>
