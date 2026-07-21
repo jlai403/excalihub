@@ -3,14 +3,7 @@
   import * as Card from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
   import CreateSpaceForm from "./CreateSpaceForm.svelte";
-
-  type Space = {
-    id: string;
-    name: string;
-    subdomain: string;
-    createdAt: string;
-    status: string;
-  };
+  import type { Space } from "$lib/types";
 
   let spaces: Space[] = $state([]);
   let loading = $state(true);

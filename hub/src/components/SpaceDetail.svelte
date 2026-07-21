@@ -5,23 +5,9 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import { Badge } from "$lib/components/ui/badge";
   import { Archive, Trash2 } from "@lucide/svelte";
+  import type { Space, Backup } from "$lib/types";
 
   let { spaceId }: { spaceId: string } = $props();
-
-  type Space = {
-    id: string;
-    name: string;
-    subdomain: string;
-    createdAt: string;
-    status: string;
-    latest_backup: string | null;
-  };
-
-  type Backup = {
-    filename: string;
-    hash: string;
-    createdAt: string;
-  };
 
   let space = $state<Space | null>(null);
   let backups = $state<Backup[]>([]);
