@@ -9,6 +9,9 @@ import {
 } from 'fs';
 import { join } from 'path';
 import { spaceId as nanoid } from './nanoid.js';
+import { removeBackupsBySubdomain } from './backup.js';
+
+export type SpaceStatus = 'active' | 'archived';
 
 export type SpaceMeta = {
   id: string;
@@ -17,6 +20,7 @@ export type SpaceMeta = {
   createdAt: string;
   updatedAt: string;
   latest_backup: string | null;
+  status: SpaceStatus;
 };
 
 let dataDir = './data';
@@ -47,6 +51,7 @@ export function initSpaces(dir: string): void {
     if (!existsSync(mp)) continue;
     try {
       const meta: SpaceMeta = JSON.parse(readFileSync(mp, 'utf-8'));
+      if (!meta.status) meta.status = 'active';
       index.set(meta.subdomain, meta);
     } catch {
       // skip corrupted meta.json
@@ -76,6 +81,7 @@ export function createSpace(name: string, subdomain: string): SpaceMeta {
     createdAt: now,
     updatedAt: now,
     latest_backup: null,
+    status: 'active',
   };
 
   const dir = spaceDir(subdomain);
@@ -102,17 +108,40 @@ export function getAllSpaces(): SpaceMeta[] {
   return [...index.values()];
 }
 
+export function getAllSpacesByStatus(status: SpaceStatus): SpaceMeta[] {
+  return [...index.values()].filter((s) => s.status === status);
+}
+
+export function archiveSpace(id: string): SpaceMeta {
+  const space = getSpaceById(id);
+  if (!space) throw new Error('Space not found');
+  space.status = 'archived';
+  space.updatedAt = new Date().toISOString();
+  writeMetaAtomic(space);
+  return space;
+}
+
+export function unarchiveSpace(id: string): SpaceMeta {
+  const space = getSpaceById(id);
+  if (!space) throw new Error('Space not found');
+  space.status = 'active';
+  space.updatedAt = new Date().toISOString();
+  writeMetaAtomic(space);
+  return space;
+}
+
 export function deleteSpace(id: string): void {
   const space = getSpaceById(id);
   if (!space) return;
 
   rmSync(spaceDir(space.subdomain), { recursive: true, force: true });
+  removeBackupsBySubdomain(space.subdomain);
   index.delete(space.subdomain);
 }
 
 export function updateSpaceMeta(
   id: string,
-  updates: { name?: string; subdomain?: string },
+  updates: { name?: string; subdomain?: string; status?: SpaceStatus },
 ): SpaceMeta {
   const space = getSpaceById(id);
   if (!space) throw new Error('Space not found');
@@ -130,6 +159,7 @@ export function updateSpaceMeta(
     ...space,
     name: newName,
     subdomain: newSubdomain,
+    status: updates.status ?? space.status,
     updatedAt: new Date().toISOString(),
   };
 

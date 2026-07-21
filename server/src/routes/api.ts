@@ -1,10 +1,15 @@
 import { Hono } from 'hono';
+import { env } from '~/env.js';
 import * as SpaceRepo from '~/repos/space.js';
 import * as BackupRepo from '~/repos/backup.js';
 import * as SpaceService from '~/services/space.js';
 import * as BackupService from '~/services/backup.js';
 
 const api = new Hono();
+
+api.get('/config', (c) => {
+  return c.json({ hubHost: `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}` });
+});
 
 api.get('/spaces', async (c) => {
   const spaces = SpaceRepo.getAllSpaces();

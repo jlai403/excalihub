@@ -7,14 +7,19 @@
   "scripts": {
     "dev": "concurrently --kill-others-on-fail \"bun run dev:server\" \"bun run dev:hub\" \"bun run dev:excalidraw\"",
     "dev:server": "bun --watch server/src/index.ts",
-    "dev:hub": "bun run --filter hub dev",
+    "dev:hub": "bun run --filter hub dev -- --force",
     "dev:excalidraw": "docker run --rm -p 8080:80 excalidraw/excalidraw:latest",
     "build": "bun run --filter hub build && bun build server/src/index.ts --outdir dist --target bun",
     "start": "bun run dist/server/index.js",
     "test": "bun test server/tests/",
-    "test:watch": "bun test server/tests/ --watch"
+    "test:watch": "bun test server/tests/ --watch",
+    "test:e2e": "bun playwright test",
+    "test:e2e:ui": "bun playwright test --ui",
+    "test:e2e:debug": "bun playwright test --debug",
+    "test:report": "bun playwright show-report"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "^20.14.0",
     "concurrently": "^10.0.3",
     "typescript": "^6.0.0"
