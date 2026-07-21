@@ -1,5 +1,10 @@
 # ExcaliHub
 
+[![CI](https://github.com/jlai403/excalihub/actions/workflows/ci.yml/badge.svg)](https://github.com/jlai403/excalihub/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Bun](https://img.shields.io/badge/Bun-1.x-f9f0ff?logo=bun&logoColor=black)](https://bun.sh)
+[![Last Commit](https://img.shields.io/github/last-commit/jlai403/excalihub)](https://github.com/jlai403/excalihub/commits/main)
+
 Self-hosted hub for isolated Excalidraw whiteboards via subdomains.
 
 Each space gets its own subdomain (e.g. `project1.excalihub.example.com`) backed by a shared Excalidraw container with automatic backup.
