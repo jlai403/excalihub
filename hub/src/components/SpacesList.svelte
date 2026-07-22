@@ -5,9 +5,8 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import { Archive } from "@lucide/svelte";
   import CreateSpaceForm from "./CreateSpaceForm.svelte";
-  import type { Space } from "$lib/types";
+  import { getSpaces, loadSpaces, addSpace, archiveSpace } from "$lib/stores/spaces.svelte";
 
-  let spaces: Space[] = $state([]);
   let loading = $state(true);
   let error: string | null = $state(null);
   let hubHost = $state("");
@@ -15,11 +14,12 @@
   let archiveTarget = $state<string | null>(null);
   let actionLoading = $state(false);
 
+  const spaces = $derived(getSpaces());
+
   onMount(async () => {
     hubHost = window.__hubHost;
     try {
-      const data = await fetch("/api/spaces").then((r) => r.json());
-      spaces = data.filter((s: Space) => s.status === "active");
+      await loadSpaces();
     } catch {
       error = "Failed to load spaces";
     } finally {
@@ -27,18 +27,13 @@
     }
   });
 
-  function handleCreated(space: Space) {
-    spaces = [...spaces, space];
+  function handleCreated(space: Parameters<typeof addSpace>[0]) {
+    addSpace(space);
   }
 
   async function handleArchive(id: string) {
     actionLoading = true;
-    await fetch(`/api/spaces/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "archived" }),
-    });
-    spaces = spaces.filter((s) => s.id !== id);
+    await archiveSpace(id);
     archiveTarget = null;
     actionLoading = false;
   }
@@ -94,7 +89,7 @@
           <p class="text-xs text-muted-foreground/60">
             Last Backup: {formatBackupTime(space.latest_backup)}
           </p>
-          <div class="mt-4">
+          <div class="mt-3">
             <Dialog.Root open={archiveTarget === space.id} onOpenChange={(open) => { if (!open) archiveTarget = null; }}>
               <Dialog.Trigger>
                 {#snippet child({ props })}
