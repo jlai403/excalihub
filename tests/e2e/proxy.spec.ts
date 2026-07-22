@@ -24,10 +24,10 @@ test.describe.serial("proxy routing", () => {
 
     // Navigate to hub — wait for the space card to appear
     await page.goto("/");
-    await expect(page.getByText("Link Test")).toBeVisible();
+    await expect(page.getByRole("link", { name: "Link Test", exact: true })).toBeVisible();
 
     // The card title is an <a> with href pointing to the subdomain URL
-    const cardLink = page.getByRole("link", { name: "Link Test" });
+    const cardLink = page.getByRole("link", { name: "Link Test", exact: true });
     await expect(cardLink).toBeVisible();
     const href = await cardLink.getAttribute("href");
     expect(href).toContain("link-test.excalihub.localhost");

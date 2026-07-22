@@ -2,6 +2,8 @@
   import { onMount } from "svelte";
   import * as Card from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
+  import * as Dialog from "$lib/components/ui/dialog";
+  import { Archive } from "@lucide/svelte";
   import CreateSpaceForm from "./CreateSpaceForm.svelte";
   import type { Space } from "$lib/types";
 
@@ -10,6 +12,8 @@
   let error: string | null = $state(null);
   let hubHost = $state("");
   let createOpen = $state(false);
+  let archiveTarget = $state<string | null>(null);
+  let actionLoading = $state(false);
 
   onMount(async () => {
     hubHost = window.__hubHost;
@@ -25,6 +29,18 @@
 
   function handleCreated(space: Space) {
     spaces = [...spaces, space];
+  }
+
+  async function handleArchive(id: string) {
+    actionLoading = true;
+    await fetch(`/api/spaces/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "archived" }),
+    });
+    spaces = spaces.filter((s) => s.id !== id);
+    archiveTarget = null;
+    actionLoading = false;
   }
 
   function formatBackupTime(filename: string | null): string {
@@ -78,6 +94,31 @@
           <p class="text-xs text-muted-foreground/60">
             Last Backup: {formatBackupTime(space.latest_backup)}
           </p>
+          <div class="mt-4">
+            <Dialog.Root open={archiveTarget === space.id} onOpenChange={(open) => { if (!open) archiveTarget = null; }}>
+              <Dialog.Trigger>
+                {#snippet child({ props })}
+                  <Button variant="outline" size="sm" {...props} onclick={() => (archiveTarget = space.id)}>
+                    <Archive class="size-4" />
+                    Archive
+                  </Button>
+                {/snippet}
+              </Dialog.Trigger>
+              <Dialog.Content>
+                <Dialog.Header>
+                  <Dialog.Title>Archive "{space.name}"?</Dialog.Title>
+                  <Dialog.Description>
+                    The space will still be accessible via its URL but won't appear in the hub.
+                    You can unarchive it later from the Archived page.
+                  </Dialog.Description>
+                </Dialog.Header>
+                <Dialog.Footer>
+                  <Button variant="outline" onclick={() => (archiveTarget = null)}>Cancel</Button>
+                  <Button onclick={() => handleArchive(space.id)} disabled={actionLoading}>Archive</Button>
+                </Dialog.Footer>
+              </Dialog.Content>
+            </Dialog.Root>
+          </div>
         </Card.Content>
       </Card.Root>
     {/each}
