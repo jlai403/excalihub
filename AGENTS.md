@@ -134,3 +134,8 @@ hub/                  — Astro static site (pages, layouts)
 - Deleted dead code: `space.astro` and `SpaceDetail.svelte`
 - Updated e2e tests: archive/unarchive/delete via UI, fixed sidebar text collisions with `data-slot="card"` locators
 - Fixed pre-existing e2e failures: scoped locators to avoid sidebar/main ambiguity
+
+### 2026-07-22 — Sidebar collapsed state fixes
+- Fixed label visibility: `labelClass` changed from `const` to `$derived` so it reacts to `pinned` state
+- Bumped collapsed sidebar width from `w-12` (48px) to `w-14` (56px) for icon breathing room
+- Added `navItemClass` (`$derived`) with fixed `pl-[14px] pr-2` — icons centered in collapsed sidebar, stationary on hover/pin
