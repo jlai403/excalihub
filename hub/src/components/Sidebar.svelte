@@ -34,7 +34,7 @@
   const isActive = (path: string) => currentPath === path;
   const initial = (name: string) => name.charAt(0).toUpperCase();
   const labelClass = $derived("transition-opacity duration-200 " + (pinned ? "" : "hidden group-hover/sidebar:inline"));
-  const navItemClass = $derived(pinned ? "px-2" : "px-0 justify-center group-hover/sidebar:justify-start");
+  const navItemClass = $derived(pinned ? "px-2" : "pl-2");
 </script>
 
 <CreateSpaceForm bind:open={createOpen} onCreated={handleCreated} />
