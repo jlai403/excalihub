@@ -2,21 +2,21 @@
   import { onMount } from "svelte";
   import ThemeToggle from "./ThemeToggle.svelte";
   import CreateSpaceForm from "./CreateSpaceForm.svelte";
-  import type { Space } from "$lib/types";
+  import { getSpaces, loadSpaces, addSpace } from "$lib/stores/spaces.svelte";
 
   let { currentPath = "/" }: { currentPath?: string } = $props();
 
-  let spaces: Space[] = $state([]);
   let hubHost = $state("");
   let createOpen = $state(false);
   let pinned = $state(true);
+
+  const spaces = $derived(getSpaces());
 
   onMount(async () => {
     hubHost = window.__hubHost;
     pinned = localStorage.getItem("sidebar-pinned") === "true";
     try {
-      const data = await fetch("/api/spaces").then((r) => r.json());
-      spaces = data.filter((s: Space) => s.status === "active");
+      await loadSpaces();
     } catch {
       // handled by empty state
     }
@@ -27,18 +27,19 @@
     localStorage.setItem("sidebar-pinned", String(pinned));
   }
 
-  function handleCreated(space: Space) {
-    spaces = [...spaces, space];
+  function handleCreated(space: Parameters<typeof addSpace>[0]) {
+    addSpace(space);
   }
 
   const isActive = (path: string) => currentPath === path;
   const initial = (name: string) => name.charAt(0).toUpperCase();
-  const labelClass = "whitespace-nowrap transition-opacity duration-200 " + (pinned ? "opacity-100" : "opacity-0 group-hover/sidebar:opacity-100");
+  const labelClass = $derived("transition-opacity duration-200 " + (pinned ? "" : "hidden group-hover/sidebar:inline"));
+  const navItemClass = $derived("pl-[14px] pr-2");
 </script>
 
 <CreateSpaceForm bind:open={createOpen} onCreated={handleCreated} />
 
-<aside class="group/sidebar flex flex-col h-screen {pinned ? 'w-48' : 'w-12 hover:w-48'} shrink-0 border-r border-border bg-sidebar text-sidebar-foreground transition-all duration-200 overflow-hidden">
+<aside class="group/sidebar flex flex-col h-screen {pinned ? 'w-48' : 'w-14 hover:w-48'} shrink-0 border-r border-border bg-sidebar text-sidebar-foreground transition-all duration-200 overflow-hidden">
   <div class="flex items-center h-12 px-3 shrink-0">
     <span class="text-sidebar-primary text-lg font-semibold leading-none">◆</span>
     <span class={labelClass + " ml-2 text-sm font-semibold"}>
@@ -60,7 +61,7 @@
   <nav class="flex flex-col gap-0.5 px-1.5 shrink-0">
     <a
       href="/"
-      class="flex items-center gap-2.5 h-8 px-2 rounded-md text-sm transition-colors
+      class="flex items-center gap-2.5 h-8 {navItemClass} rounded-md text-sm transition-colors
         {isActive('/') ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'text-sidebar-foreground hover:bg-sidebar-accent/50'}"
     >
       <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
@@ -68,7 +69,7 @@
     </a>
     <a
       href="/archived"
-      class="flex items-center gap-2.5 h-8 px-2 rounded-md text-sm transition-colors
+      class="flex items-center gap-2.5 h-8 {navItemClass} rounded-md text-sm transition-colors
         {isActive('/archived') ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium' : 'text-sidebar-foreground hover:bg-sidebar-accent/50'}"
     >
       <svg class="size-4 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>
@@ -110,7 +111,7 @@
   <div class="flex flex-col gap-0.5 px-1.5 shrink-0">
     <button
       onclick={() => (createOpen = true)}
-      class="flex items-center gap-2.5 h-8 px-2 rounded-md text-sm font-medium bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
+      class="flex items-center gap-2.5 h-8 {navItemClass} rounded-md text-sm font-medium bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
     >
       <span class="size-4 flex items-center justify-center shrink-0">+</span>
       <span class={labelClass}>Create Space</span>

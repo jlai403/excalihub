@@ -1,4 +1,10 @@
-import { readFileSync, readdirSync, existsSync, writeFileSync } from 'fs';
+import {
+  readFileSync,
+  readdirSync,
+  existsSync,
+  writeFileSync,
+  unlinkSync,
+} from 'fs';
 import { join } from 'path';
 import { updateLatestBackup, getSpaceBySubdomain } from './space.js';
 import { backupId as nanoid } from './nanoid.js';
@@ -50,18 +56,101 @@ const backupIndex = new Map<string, string>();
 
 function parseFilename(
   filename: string,
-): { nanoid: string; unixTs: number; hashPrefix: string } | null {
-  const match = filename.match(/^([a-z0-9]+)-(\d+)-([a-f0-9]+)\.excalidraw$/);
+): { unixTs: number; nanoid: string; hashPrefix: string } | null {
+  const match = filename.match(
+    /^(\d+)-([a-z0-9]+)-([a-f0-9]+)\.excalidraw$/,
+  );
   if (!match) return null;
-  return { nanoid: match[1], unixTs: parseInt(match[2]), hashPrefix: match[3] };
+  return {
+    unixTs: parseInt(match[1]),
+    nanoid: match[2],
+    hashPrefix: match[3],
+  };
 }
 
 function buildFilename(unixTs: number, hash: string): string {
-  return `${nanoid()}-${unixTs}-${hash.slice(0, 8)}.excalidraw`;
+  return `${unixTs}-${nanoid()}-${hash.slice(0, 8)}.excalidraw`;
 }
 
 function hashPrefix(filename: string): string | null {
   return parseFilename(filename)?.hashPrefix ?? null;
+}
+
+const ONE_DAY = 86_400_000;
+const ONE_WEEK = 7 * ONE_DAY;
+const FOUR_WEEKS = 4 * ONE_WEEK;
+const TWELVE_MONTHS = 365 * ONE_DAY;
+
+function cleanupOldBackups(subdomain: string): void {
+  if (process.env.BACKUP_RETENTION_DISABLED) return;
+
+  const dir = backupsDir(subdomain);
+  if (!existsSync(dir)) return;
+
+  const files: { filename: string; unixTs: number }[] = [];
+  for (const f of readdirSync(dir)) {
+    if (!f.endsWith('.excalidraw')) continue;
+    const parsed = parseFilename(f);
+    if (parsed) files.push({ filename: f, unixTs: parsed.unixTs });
+  }
+  files.sort((a, b) => a.unixTs - b.unixTs);
+
+  if (files.length === 0) return;
+
+  const now = Date.now();
+  const toKeep = new Set<string>();
+
+  // Daily: latest per day for last 7 days
+  const dailyCutoff = now - 7 * ONE_DAY;
+  const dailyByDay = new Map<string, (typeof files)[0]>();
+  for (const f of files) {
+    if (f.unixTs >= dailyCutoff) {
+      const day = new Date(f.unixTs).toISOString().slice(0, 10);
+      const existing = dailyByDay.get(day);
+      if (!existing || f.unixTs > existing.unixTs) {
+        dailyByDay.set(day, f);
+      }
+    }
+  }
+  for (const f of dailyByDay.values()) toKeep.add(f.filename);
+
+  // Weekly: latest per week for last 4 weeks (excluding last 7 days)
+  const weeklyCutoff = now - FOUR_WEEKS;
+  const weeklyByWeek = new Map<string, (typeof files)[0]>();
+  for (const f of files) {
+    if (f.unixTs >= weeklyCutoff && f.unixTs < dailyCutoff) {
+      const d = new Date(f.unixTs);
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - d.getDay());
+      const week = weekStart.toISOString().slice(0, 10);
+      const existing = weeklyByWeek.get(week);
+      if (!existing || f.unixTs > existing.unixTs) {
+        weeklyByWeek.set(week, f);
+      }
+    }
+  }
+  for (const f of weeklyByWeek.values()) toKeep.add(f.filename);
+
+  // Monthly: latest per month for last 12 months (excluding last 4 weeks)
+  const monthlyCutoff = now - TWELVE_MONTHS;
+  const monthlyByMonth = new Map<string, (typeof files)[0]>();
+  for (const f of files) {
+    if (f.unixTs >= monthlyCutoff && f.unixTs < weeklyCutoff) {
+      const month = new Date(f.unixTs).toISOString().slice(0, 7);
+      const existing = monthlyByMonth.get(month);
+      if (!existing || f.unixTs > existing.unixTs) {
+        monthlyByMonth.set(month, f);
+      }
+    }
+  }
+  for (const f of monthlyByMonth.values()) toKeep.add(f.filename);
+
+  // Delete files not in any retention tier
+  for (const f of files) {
+    if (!toKeep.has(f.filename)) {
+      unlinkSync(join(dir, f.filename));
+    }
+  }
 }
 
 export function resetBackups(): void {
@@ -123,10 +212,27 @@ export async function createBackup(
     const parsed = parseFilename(filename);
     if (parsed) backupIndex.set(parsed.nanoid, subdomain);
 
+    cleanupOldBackups(subdomain);
+
     return { filename };
   } finally {
     release();
   }
+}
+
+export function deleteBackup(
+  subdomain: string,
+  filename: string,
+): boolean {
+  const parsed = parseFilename(filename);
+  if (!parsed) return false;
+
+  const filePath = join(backupsDir(subdomain), filename);
+  if (!existsSync(filePath)) return false;
+
+  unlinkSync(filePath);
+  backupIndex.delete(parsed.nanoid);
+  return true;
 }
 
 export function getBackupsBySpaceId(subdomain: string): Array<{

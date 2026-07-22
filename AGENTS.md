@@ -5,6 +5,10 @@
 Self-hosted hub providing isolated Excalidraw whiteboards via subdomains.
 Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a shared Excalidraw container.
 
+## Rules
+
+- **All tests must pass before pushing.** Run `bun test` and `bun test:e2e` and confirm green before any commit.
+
 ## Stack
 
 - **Backend**: Hono (TypeScript) — reverse proxy, REST API, middleware
@@ -22,8 +26,9 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 | `bun run dev:excalidraw` | Start Excalidraw container on localhost:8080 |
 | `bun run build` | Build Astro + bundle server with Bun |
 | `bun run start` | Run production server |
-| `bun test` | Run test suite |
+| `bun test` | Run unit/integration test suite |
 | `bun test --watch` | Run tests in watch mode |
+| `bun test:e2e` | Run Playwright e2e tests (chromium, firefox, webkit) |
 | `docker compose up --build` | Full deployment |
 | `droast Dockerfile` | Lint Dockerfile |
 
@@ -58,7 +63,7 @@ hub/                  — Astro static site (pages, layouts)
 /data/spaces/{subdomain}/
   meta.json          — { id, name, subdomain, createdAt, updatedAt, latest_backup }
   backups/
-    {nanoid}-{unix_ts}-{hash_prefix}.excalidraw
+    {unix_ts}-{nanoid}-{hash_prefix}.excalidraw
 ```
 
 - In-memory `Map<subdomain, SpaceMeta>` populated at boot, all reads hit the map
@@ -87,6 +92,7 @@ hub/                  — Astro static site (pages, layouts)
 | `PATCH` | `/api/spaces/:id` | Rename space (body: `{ name?, subdomain? }`) |
 | `DELETE` | `/api/spaces/:id` | Delete space + all backups |
 | `GET` | `/api/spaces/:id/backups` | List backups (metadata only) |
+| `DELETE` | `/api/spaces/:id/backups/:filename` | Delete a specific backup |
 | `POST` | `/api/backup` | Create backup (body: `{ subdomain, elements, appState? }`) |
 | `GET` | `/api/backups/:filename` | Download backup file |
 
@@ -113,3 +119,23 @@ hub/                  — Astro static site (pages, layouts)
 - Inject script path updated in `auto-backup-inject.ts`
 - Dockerfile updated for workspace structure
 - CI updated: `bun test server/tests/`
+
+### 2026-07-21 — Backup retention + protocol fix
+- Fixed protocol mismatch in inject script (was hardcoded `https://`, now uses `window.location.protocol`)
+- Changed backup filename format: `{nanoid}-{ts}-{hash}` → `{ts}-{nanoid}-{hash}` (chronological sort)
+- Implemented 7-4-12 retention policy (7 daily, 4 weekly, 12 monthly backups per space)
+- Added `DELETE /api/spaces/:id/backups/:filename` endpoint
+- Updated frontend `Space` type with `updatedAt` and `latest_backup` fields
+- Space cards now display Last Updated and Last Backup
+- Added contribution rule: tests must pass before pushing
+
+### 2026-07-22 — Archive/delete UI
+- Added archive button with confirmation dialog to space cards in `SpacesList.svelte`
+- Deleted dead code: `space.astro` and `SpaceDetail.svelte`
+- Updated e2e tests: archive/unarchive/delete via UI, fixed sidebar text collisions with `data-slot="card"` locators
+- Fixed pre-existing e2e failures: scoped locators to avoid sidebar/main ambiguity
+
+### 2026-07-22 — Sidebar collapsed state fixes
+- Fixed label visibility: `labelClass` changed from `const` to `$derived` so it reacts to `pinned` state
+- Bumped collapsed sidebar width from `w-12` (48px) to `w-14` (56px) for icon breathing room
+- Added `navItemClass` (`$derived`) with fixed `pl-[14px] pr-2` — icons centered in collapsed sidebar, stationary on hover/pin

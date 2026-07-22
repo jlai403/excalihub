@@ -138,7 +138,7 @@ describe('createBackup', () => {
 
     expect(result).toBeDefined();
     expect(result.filename).toBeDefined();
-    expect(result.filename).toMatch(/^[a-z0-9]+-\d+-[a-f0-9]+\.excalidraw$/);
+    expect(result.filename).toMatch(/^\d+-[a-z0-9]+-[a-f0-9]+\.excalidraw$/);
     expect(result.deduplicated).toBeUndefined();
   });
 

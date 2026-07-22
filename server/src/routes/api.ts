@@ -110,6 +110,18 @@ api.post('/backup', async (c) => {
   }
 });
 
+api.delete('/spaces/:id/backups/:filename', async (c) => {
+  const id = c.req.param('id');
+  const filename = c.req.param('filename');
+  const space = SpaceRepo.getSpaceById(id);
+  if (!space) return c.json({ error: 'Space not found' }, 404);
+
+  const deleted = BackupRepo.deleteBackup(space.subdomain, filename);
+  if (!deleted) return c.json({ error: 'Backup not found' }, 404);
+
+  return c.json({ success: true });
+});
+
 api.get('/backups/:filename', async (c) => {
   const filename = c.req.param('filename');
   const backup = BackupRepo.getBackupById(filename);
