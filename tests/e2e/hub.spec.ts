@@ -9,6 +9,12 @@ test.describe.serial("hub", () => {
     }
   });
 
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("sidebar-pinned", "true");
+    });
+  });
+
   test("loads with correct title", async ({ page }) => {
     await page.goto("/");
     await expect(page).toHaveTitle(/ExcaliHub/);
