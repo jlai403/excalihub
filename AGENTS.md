@@ -7,7 +7,7 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 
 ## Rules
 
-- **All tests must pass before pushing.** Run `bun test` and confirm green before any commit. Includes unit, integration, and e2e tests.
+- **All tests must pass before pushing.** Run `bun test` and `bun test:e2e` and confirm green before any commit.
 
 ## Stack
 
@@ -26,8 +26,9 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 | `bun run dev:excalidraw` | Start Excalidraw container on localhost:8080 |
 | `bun run build` | Build Astro + bundle server with Bun |
 | `bun run start` | Run production server |
-| `bun test` | Run test suite |
+| `bun test` | Run unit/integration test suite |
 | `bun test --watch` | Run tests in watch mode |
+| `bun test:e2e` | Run Playwright e2e tests (chromium, firefox, webkit) |
 | `docker compose up --build` | Full deployment |
 | `droast Dockerfile` | Lint Dockerfile |
 
@@ -127,3 +128,9 @@ hub/                  — Astro static site (pages, layouts)
 - Updated frontend `Space` type with `updatedAt` and `latest_backup` fields
 - Space cards now display Last Updated and Last Backup
 - Added contribution rule: tests must pass before pushing
+
+### 2026-07-22 — Archive/delete UI
+- Added archive button with confirmation dialog to space cards in `SpacesList.svelte`
+- Deleted dead code: `space.astro` and `SpaceDetail.svelte`
+- Updated e2e tests: archive/unarchive/delete via UI, fixed sidebar text collisions with `data-slot="card"` locators
+- Fixed pre-existing e2e failures: scoped locators to avoid sidebar/main ambiguity
