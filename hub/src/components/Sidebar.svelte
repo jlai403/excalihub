@@ -2,21 +2,21 @@
   import { onMount } from "svelte";
   import ThemeToggle from "./ThemeToggle.svelte";
   import CreateSpaceForm from "./CreateSpaceForm.svelte";
-  import type { Space } from "$lib/types";
+  import { getSpaces, loadSpaces, addSpace } from "$lib/stores/spaces.svelte";
 
   let { currentPath = "/" }: { currentPath?: string } = $props();
 
-  let spaces: Space[] = $state([]);
   let hubHost = $state("");
   let createOpen = $state(false);
   let pinned = $state(true);
+
+  const spaces = $derived(getSpaces());
 
   onMount(async () => {
     hubHost = window.__hubHost;
     pinned = localStorage.getItem("sidebar-pinned") === "true";
     try {
-      const data = await fetch("/api/spaces").then((r) => r.json());
-      spaces = data.filter((s: Space) => s.status === "active");
+      await loadSpaces();
     } catch {
       // handled by empty state
     }
@@ -27,13 +27,13 @@
     localStorage.setItem("sidebar-pinned", String(pinned));
   }
 
-  function handleCreated(space: Space) {
-    spaces = [...spaces, space];
+  function handleCreated(space: Parameters<typeof addSpace>[0]) {
+    addSpace(space);
   }
 
   const isActive = (path: string) => currentPath === path;
   const initial = (name: string) => name.charAt(0).toUpperCase();
-  const labelClass = "whitespace-nowrap transition-opacity duration-200 " + (pinned ? "opacity-100" : "opacity-0 group-hover/sidebar:opacity-100");
+  const labelClass = "whitespace-nowrap transition-all duration-200 " + (pinned ? "opacity-100 max-w-none" : "opacity-0 max-w-0 overflow-hidden group-hover/sidebar:opacity-100 group-hover/sidebar:max-w-none");
 </script>
 
 <CreateSpaceForm bind:open={createOpen} onCreated={handleCreated} />
