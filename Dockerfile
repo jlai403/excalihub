@@ -7,7 +7,9 @@ COPY server/package.json server/
 COPY hub/package.json hub/
 RUN bun install --frozen-lockfile
 
-COPY . .
+COPY tsconfig.json ./
+COPY server/ server/
+COPY hub/ hub/
 
 RUN bun run --filter hub build && bun build server/src/index.ts --outdir dist --target bun
 

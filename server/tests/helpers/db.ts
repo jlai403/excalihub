@@ -12,6 +12,7 @@ let testDataDir: string;
 export function setupTestDb(): string {
   testDataDir = mkdtempSync(join(tmpdir(), 'excalihub-test-'));
   process.env.DATA_DIR = testDataDir;
+  process.env.BACKUP_RETENTION_DISABLED = '1';
   initRepos(testDataDir);
   return testDataDir;
 }
@@ -23,4 +24,5 @@ export function cleanupTestDb(): void {
     rmSync(testDataDir, { recursive: true, force: true });
   }
   delete process.env.DATA_DIR;
+  delete process.env.BACKUP_RETENTION_DISABLED;
 }

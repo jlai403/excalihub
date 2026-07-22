@@ -11,11 +11,14 @@
     if (!elements) return;
 
     try {
-      await fetch(`https://${hubDomain}/api/backup`, {
+      const res = await fetch(`${window.location.protocol}//${hubDomain}/api/backup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subdomain, elements, appState }),
       });
+      if (!res.ok) {
+        console.warn('[ExcaliHub] Backup rejected:', res.status, res.statusText);
+      }
     } catch (err) {
       console.error('[ExcaliHub] Backup failed:', err);
     }
