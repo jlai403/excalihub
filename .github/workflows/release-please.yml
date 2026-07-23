@@ -20,6 +20,6 @@ jobs:
 
       - name: Trigger Docker publish
         if: ${{ steps.release.outputs.release_created }}
-        run: gh workflow run docker-publish.yml -f tag=${{ steps.release.outputs.tag_name }}
+        run: gh workflow run docker-publish.yml -f tag=${{ steps.release.outputs.tag_name }} --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
