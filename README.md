@@ -19,36 +19,10 @@ ExcaliHub gives you a self-hosted dashboard where every whiteboard lives on its 
 
 ## Quick Start
 
-Create a `docker-compose.yml`:
-
-```yaml
-services:
-  excalihub:
-    image: ghcr.io/jlai403/excalihub:latest
-    ports:
-      - "80:80"
-    environment:
-      - BASE_DOMAIN=example.com
-    volumes:
-      - excalihub-data:/data
-    depends_on:
-      - excalidraw
-    restart: unless-stopped
-
-  excalidraw:
-    image: excalidraw/excalidraw:latest
-    expose:
-      - "80"
-    restart: unless-stopped
-
-volumes:
-  excalihub-data:
-```
-
-Then run:
-
 ```bash
-docker compose up -d
+git clone https://github.com/jlai403/excalihub.git
+cd excalihub
+docker compose up --build
 ```
 
 Open `http://excalihub.localhost` — no DNS setup needed.
