@@ -1,4 +1,6 @@
 import { Context, Next } from 'hono';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { env } from '~/env.js';
 import { getSpaceBySubdomain } from '~/repos/space.js';
 
@@ -44,6 +46,18 @@ async function serveHub(c: Context, next: Next) {
   return next();
 }
 
+let injectedScript: string | null = null;
+
+function getInjectedScript(): string {
+  if (!injectedScript) {
+    injectedScript = readFileSync(
+      resolve(import.meta.dirname, '../inject/excalidraw-sync.js'),
+      'utf-8'
+    );
+  }
+  return injectedScript;
+}
+
 async function proxyToExcalidraw(c: Context, subdomain: string) {
   if (!getSpaceBySubdomain(subdomain)) {
     return c.json({ error: 'Space not found' }, 404);
@@ -55,11 +69,26 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
   const headers = new Headers(c.req.raw.headers);
   headers.set('host', new URL(env.EXCALIDRAW_CONTAINER).host);
 
-  return fetch(target, {
+  const res = await fetch(target, {
     method: c.req.method,
     headers,
     body: c.req.method !== 'GET' && c.req.method !== 'HEAD'
       ? c.req.raw.body
       : undefined,
+  });
+
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('text/html')) return res;
+
+  const html = await res.text();
+  const debugFlag = env.NODE_ENV !== 'production' ? 'window.__EXCALIHUB_DEBUG = true;' : '';
+  const script = `<script data-excalihub-sync>${debugFlag}${getInjectedScript()}</script>`;
+  const injected = html.includes('</body>')
+    ? html.replace('</body>', `${script}</body>`)
+    : html + script;
+
+  return new Response(injected, {
+    status: res.status,
+    headers: res.headers,
   });
 }
