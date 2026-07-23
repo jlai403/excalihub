@@ -26,6 +26,9 @@ function buildFileData(elements: string, appState?: string | null): string {
   }
 
   return JSON.stringify({
+    type: 'excalidraw',
+    version: 2,
+    source: 'https://excalihub',
     elements: parsedElements,
     appState: parsedAppState,
     files: {},

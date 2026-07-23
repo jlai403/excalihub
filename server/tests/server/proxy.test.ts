@@ -116,6 +116,39 @@ describe('proxyMiddleware', () => {
       const [, opts] = fetchMock.mock.calls[0];
       expect(opts.body).toBeUndefined();
     });
+
+    it('injects sync script into HTML responses', async () => {
+      createSpace('Space', 'space');
+      fetchMock = mock(() =>
+        new Response('<html><body><h1>Hello</h1></body></html>', {
+          headers: { 'content-type': 'text/html' },
+        })
+      );
+      globalThis.fetch = fetchMock as typeof globalThis.fetch;
+
+      const res = await makeApp().request('/', {
+        headers: { host: 'space.excalihub.example.com' },
+      });
+      const body = await res.text();
+      expect(body).toContain('excalihub-sync');
+      expect(body).toContain('</body>');
+    });
+
+    it('does not inject into non-HTML responses', async () => {
+      createSpace('Space', 'space');
+      fetchMock = mock(() =>
+        new Response('{"status":"ok"}', {
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+      globalThis.fetch = fetchMock as typeof globalThis.fetch;
+
+      const res = await makeApp().request('/', {
+        headers: { host: 'space.excalihub.example.com' },
+      });
+      const body = await res.text();
+      expect(body).not.toContain('excalihub-sync');
+    });
   });
 
   describe('non-matching hosts', () => {
