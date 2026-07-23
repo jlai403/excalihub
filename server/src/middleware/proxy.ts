@@ -47,6 +47,8 @@ async function serveHub(c: Context, next: Next) {
 }
 
 let injectedScript: string | null = null;
+let injectedBubbleCss: string | null = null;
+let injectedBubbleScript: string | null = null;
 
 function getInjectedScript(): string {
   if (!injectedScript) {
@@ -56,6 +58,26 @@ function getInjectedScript(): string {
     );
   }
   return injectedScript;
+}
+
+function getInjectedBubbleCss(): string {
+  if (!injectedBubbleCss) {
+    injectedBubbleCss = readFileSync(
+      resolve(import.meta.dirname, '../inject/hub-bubble.css'),
+      'utf-8'
+    );
+  }
+  return injectedBubbleCss;
+}
+
+function getInjectedBubbleScript(): string {
+  if (!injectedBubbleScript) {
+    injectedBubbleScript = readFileSync(
+      resolve(import.meta.dirname, '../inject/hub-bubble.js'),
+      'utf-8'
+    );
+  }
+  return injectedBubbleScript;
 }
 
 async function proxyToExcalidraw(c: Context, subdomain: string) {
@@ -82,10 +104,13 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
 
   const html = await res.text();
   const debugFlag = env.NODE_ENV !== 'production' ? 'window.__EXCALIHUB_DEBUG = true;' : '';
-  const script = `<script data-excalihub-sync>${debugFlag}${getInjectedScript()}</script>`;
+  const bubbleCss = `<style data-excalihub-bubble>${getInjectedBubbleCss()}</style>`;
+  const bubbleScript = `<script data-excalihub-bubble>${getInjectedBubbleScript()}</script>`;
+  const syncScript = `<script data-excalihub-sync>${debugFlag}${getInjectedScript()}</script>`;
+  const injection = `${bubbleCss}${bubbleScript}${syncScript}`;
   const injected = html.includes('</body>')
-    ? html.replace('</body>', `${script}</body>`)
-    : html + script;
+    ? html.replace('</body>', `${injection}</body>`)
+    : html + injection;
 
   return new Response(injected, {
     status: res.status,
