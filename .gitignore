@@ -9,3 +9,4 @@ package-lock.json
 data/
 data-e2e/
 tests/e2e/test-results/
+docs/superpowers/
