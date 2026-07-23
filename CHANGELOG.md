@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.5](https://github.com/jlai403/excalihub/compare/v0.1.4...v0.1.5) (2026-07-23)
+
+
+### Bug Fixes
+
+* add actions:write permission to release-please ([90ed79f](https://github.com/jlai403/excalihub/commit/90ed79f9654dac4f93a65cc7c9ea580bd4ecda8d))
+
 ## [0.1.4](https://github.com/jlai403/excalihub/compare/v0.1.3...v0.1.4) (2026-07-23)
 
 
