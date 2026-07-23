@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.3](https://github.com/jlai403/excalihub/compare/v0.1.2...v0.1.3) (2026-07-23)
+
+
+### Bug Fixes
+
+* auto-trigger Docker publish via workflow_dispatch after release ([d19ff65](https://github.com/jlai403/excalihub/commit/d19ff65086e0284a243740fb04e68c4efc8473bf))
+
 ## [0.1.2](https://github.com/jlai403/excalihub/compare/v0.1.1...v0.1.2) (2026-07-23)
 
 
