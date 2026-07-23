@@ -43,6 +43,32 @@ Workflow: `.github/workflows/ci.yml`
 - `lint` — droast Dockerfile lint (gated on test)
 - `build` — docker build . (gated on test)
 
+### Release Workflow
+
+Uses [release-please](https://github.com/googleapis/release-please) for automated releases.
+
+**Flow:**
+1. Push conventional commits to `main`
+2. release-please opens a release PR with changelog + version bump
+3. Review and merge the release PR
+4. release-please creates tag `v*`
+5. `docker-publish.yml` runs tests, builds Docker image, pushes to `ghcr.io/jlai/excalihub`
+6. GitHub Release created with auto-generated changelog
+
+**Conventional Commits:**
+- `feat:` — minor version bump
+- `fix:` — patch version bump
+- `feat!:` or `BREAKING CHANGE:` — major version bump
+- `chore:`, `docs:`, `refactor:` — no release (but included in changelog)
+
+**Docker Image Tags:**
+- `ghcr.io/jlai/excalihub:v0.2.0` — exact version
+- `ghcr.io/jlai/excalihub:latest` — most recent stable release
+
+**Config Files:**
+- `.github/release-please-config.json` — release-please configuration
+- `.github/.release-please-manifest.json` — version tracking
+
 ## Project Structure
 
 ```
