@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.2](https://github.com/jlai403/excalihub/compare/v0.1.1...v0.1.2) (2026-07-23)
+
+
+### Bug Fixes
+
+* add workflow_dispatch to docker-publish, revert Quick Start to clone-based ([7767e60](https://github.com/jlai403/excalihub/commit/7767e60a8888acc52bda62222aa24f58e8346ae1))
+
 ## [0.1.1](https://github.com/jlai403/excalihub/compare/v0.1.0...v0.1.1) (2026-07-23)
 
 
