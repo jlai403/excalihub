@@ -1,0 +1,4 @@
+services:
+  excalihub:
+    environment:
+      - BASE_DOMAIN=localhost
