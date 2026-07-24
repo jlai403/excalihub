@@ -9,6 +9,10 @@ export function createApp(): Hono {
 
   app.use('*', logger());
   app.use('*', cors());
+  app.use('*', async (c, next) => {
+    await next();
+    c.header('X-Content-Type-Options', 'nosniff');
+  });
   app.use('*', proxyMiddleware());
   app.route('/api', api);
   app.get('/health', async (c) => {
