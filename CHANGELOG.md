@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.6](https://github.com/jlai403/excalihub/compare/v0.1.5...v0.1.6) (2026-07-24)
+
+
+### Bug Fixes
+
+* correct dist path in Dockerfile CMD ([3ed4d2d](https://github.com/jlai403/excalihub/commit/3ed4d2d7d65fa5b7667c7fa933d95a5b77d3b3b8))
+
 ## [0.1.5](https://github.com/jlai403/excalihub/compare/v0.1.4...v0.1.5) (2026-07-23)
 
 
