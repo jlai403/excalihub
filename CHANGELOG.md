@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.7](https://github.com/jlai403/excalihub/compare/v0.1.6...v0.1.7) (2026-07-24)
+
+
+### Features
+
+* add docker-compose.local.yml for local dev with localhost ([354b275](https://github.com/jlai403/excalihub/commit/354b27559278715899e26cf05d85080d7ee959a3))
+
+
+### Bug Fixes
+
+* set Content-Type on static responses, add X-Content-Type-Options nosniff ([21d10d3](https://github.com/jlai403/excalihub/commit/21d10d31fbbcd1651ed3a5f2ad53391dd4d8898c))
+
 ## [0.1.6](https://github.com/jlai403/excalihub/compare/v0.1.5...v0.1.6) (2026-07-24)
 
 
