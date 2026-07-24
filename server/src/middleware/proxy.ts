@@ -42,7 +42,11 @@ async function serveHub(c: Context, next: Next) {
 
   const filePath = `./dist/public${url.pathname === '/' ? '/index.html' : url.pathname}`;
   const file = Bun.file(filePath);
-  if (await file.exists()) return new Response(file);
+  if (await file.exists()) {
+    return new Response(file, {
+      headers: { 'Content-Type': file.type },
+    });
+  }
   return next();
 }
 
