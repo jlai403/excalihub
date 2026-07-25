@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.8](https://github.com/jlai403/excalihub/compare/v0.1.7...v0.1.8) (2026-07-25)
+
+
+### Bug Fixes
+
+* derive hub host from window.location.hostname instead of build-time env vars ([6777fc7](https://github.com/jlai403/excalihub/commit/6777fc743f16fdf7916b0f6ce59179628bc7229b))
+
 ## [0.1.7](https://github.com/jlai403/excalihub/compare/v0.1.6...v0.1.7) (2026-07-24)
 
 
