@@ -7,6 +7,7 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 
 ## Rules
 
+- **`main` is protected.** Direct pushes are blocked. All changes must go through a branch PR to `main`.
 - **All tests must pass before pushing.** Run `bun test` and `bun test:e2e` and confirm green before any commit.
 
 ## Stack
@@ -165,3 +166,10 @@ hub/                  — Astro static site (pages, layouts)
 - Fixed label visibility: `labelClass` changed from `const` to `$derived` so it reacts to `pinned` state
 - Bumped collapsed sidebar width from `w-12` (48px) to `w-14` (56px) for icon breathing room
 - Added `navItemClass` (`$derived`) with fixed `pl-[14px] pr-2` — icons centered in collapsed sidebar, stationary on hover/pin
+
+### 2026-07-25 — Space links fix + e2e test cleanup
+- Fixed space links using hardcoded domain: `Layout.astro` now uses `window.location.hostname` instead of build-time `import.meta.env` (which only exposes `VITE_`-prefixed vars)
+- Renamed e2e specs `*.spec.ts` → `*.e2e.ts` to prevent `bun test` from picking up Playwright files
+- Added `testMatch: "**/*.e2e.ts"` to `playwright.config.ts`
+- Updated e2e proxy test to navigate to hub host for subdomain link assertion
+- Documented protected `main` branch rule in AGENTS.md
