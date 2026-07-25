@@ -2,8 +2,6 @@
 import '../styles/globals.css';
 import Sidebar from '../components/Sidebar.svelte';
 
-const hubHost = `${import.meta.env.HUB_SUBDOMAIN || 'excalihub'}.${import.meta.env.BASE_DOMAIN || 'localhost'}`;
-
 interface Props {
   title: string;
 }
@@ -13,13 +11,13 @@ const currentPath = Astro.url.pathname;
 ---
 
 <!doctype html>
-<html lang="en" data-hub-host={hubHost}>
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title} | ExcaliHub</title>
     <script is:inline>
-      window.__hubHost = document.documentElement.dataset.hubHost;
+      window.__hubHost = window.location.hostname;
       (() => {
         const t = localStorage.getItem("theme") || "system";
         const dark =
