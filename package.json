@@ -10,7 +10,6 @@
     "dev:hub": "bun run --filter hub dev -- --force",
     "dev:excalidraw": "docker run --rm -p 8080:80 excalidraw/excalidraw:latest",
     "build": "bun run --filter hub build && bun build server/src/index.ts --outdir dist --target bun",
-    "start": "bun run dist/server/index.js",
     "test": "bun test server/tests/",
     "test:watch": "bun test server/tests/ --watch",
     "test:e2e": "bun playwright test",
