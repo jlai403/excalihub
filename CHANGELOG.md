@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.9](https://github.com/jlai403/excalihub/compare/v0.1.8...v0.1.9) (2026-07-27)
+
+
+### Bug Fixes
+
+* correct inject path in Dockerfile and remove broken start script ([6d98a56](https://github.com/jlai403/excalihub/commit/6d98a56325ed5816d603e5b52621f06e4f630dbf))
+* correct inject path in Dockerfile and remove broken start script ([3810599](https://github.com/jlai403/excalihub/commit/38105996bced1483aafab429a9febf03a1b1b935))
+
 ## [0.1.8](https://github.com/jlai403/excalihub/compare/v0.1.7...v0.1.8) (2026-07-26)
 
 
