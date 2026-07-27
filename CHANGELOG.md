@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.10](https://github.com/jlai403/excalihub/compare/v0.1.9...v0.1.10) (2026-07-27)
+
+
+### Bug Fixes
+
+* add Host header to Docker healthcheck so proxy recognizes it ([43813da](https://github.com/jlai403/excalihub/commit/43813da23e84ef85be8c7c23a8e3c5dcfbd1e507))
+* add Host header to Docker healthcheck so proxy recognizes it ([e43c6c9](https://github.com/jlai403/excalihub/commit/e43c6c912a59b7c27fd16e52bd65b19e639dfeab))
+
 ## [0.1.9](https://github.com/jlai403/excalihub/compare/v0.1.8...v0.1.9) (2026-07-27)
 
 
