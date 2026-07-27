@@ -20,7 +20,7 @@ ENV NODE_ENV=production
 WORKDIR /app
 
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server/src/inject ./dist/inject
+COPY --from=builder /app/server/src/inject ./inject
 
 RUN mkdir -p /data && chown -R bun:bun /data /app
 
