@@ -1,0 +1,140 @@
+#hub-commit-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+#hub-commit-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  width: 100%;
+  max-width: 480px;
+  margin: 16px;
+  overflow: hidden;
+}
+
+#hub-commit-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+#hub-commit-modal-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+#hub-commit-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background 0.1s ease;
+}
+
+#hub-commit-modal-close:hover {
+  background: #f0f0f0;
+}
+
+#hub-commit-modal-body {
+  padding: 20px;
+}
+
+#hub-commit-modal-message {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  transition: border-color 0.15s ease;
+}
+
+#hub-commit-modal-message:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#hub-commit-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 20px;
+  border-top: 1px solid #e5e5e5;
+  background: #fafafa;
+}
+
+#hub-commit-modal-cancel {
+  padding: 8px 16px;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+#hub-commit-modal-cancel:hover {
+  background: #f5f5f5;
+}
+
+#hub-commit-modal-submit {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #3b82f6;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+#hub-commit-modal-submit:hover {
+  background: #2563eb;
+}
+
+#hub-commit-modal-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+#hub-commit-modal-status {
+  padding: 12px 20px;
+  font-size: 14px;
+  text-align: center;
+}
+
+#hub-commit-modal-status.success {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+#hub-commit-modal-status.error {
+  background: #fef2f2;
+  color: #991b1b;
+}

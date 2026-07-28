@@ -2,8 +2,14 @@ import { Hono } from 'hono';
 import { env } from '~/env.js';
 import * as SpaceRepo from '~/repos/space.js';
 import * as BackupRepo from '~/repos/backup.js';
+import * as GitRepo from '~/repos/git.js';
 import * as SpaceService from '~/services/space.js';
 import * as BackupService from '~/services/backup.js';
+import {
+  connectGitRepo,
+  commitAndPush,
+  disconnectGitRepo,
+} from '~/services/git.js';
 
 const api = new Hono();
 
@@ -133,6 +139,62 @@ api.get('/backups/:filename', async (c) => {
       'Content-Disposition': `attachment; filename="${filename}"`,
     },
   });
+});
+
+api.get('/git/config', (c) => {
+  const config = GitRepo.getGitConfig();
+  if (!config) {
+    return c.json({ repoUrl: '', connected: false, connectedAt: null });
+  }
+  return c.json(config);
+});
+
+api.get('/git/ssh-key', (c) => {
+  const publicKey = GitRepo.getSSHPublicKey();
+  return c.json({ publicKey });
+});
+
+api.post('/git/connect', async (c) => {
+  const body = await c.req.json();
+  const { repoUrl } = body;
+
+  if (!repoUrl || typeof repoUrl !== 'string') {
+    return c.json({ error: 'Repository URL is required' }, 400);
+  }
+
+  const result = await connectGitRepo(repoUrl);
+  if (!result.success) {
+    return c.json({ error: result.error }, 400);
+  }
+
+  return c.json({ success: true });
+});
+
+api.post('/git/commit', async (c) => {
+  const body = await c.req.json();
+  const { subdomain, excalidrawData, pngBase64, message } = body;
+
+  if (!subdomain || !excalidrawData || !message) {
+    return c.json({ error: 'Missing required fields' }, 400);
+  }
+
+  const result = await commitAndPush(
+    subdomain,
+    excalidrawData,
+    pngBase64,
+    message
+  );
+
+  if (!result.success) {
+    return c.json({ error: result.error }, 400);
+  }
+
+  return c.json({ success: true });
+});
+
+api.post('/git/disconnect', async (c) => {
+  await disconnectGitRepo();
+  return c.json({ success: true });
 });
 
 export default api;

@@ -2,6 +2,7 @@ import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { initSpaces } from './space.js';
 import { initBackups } from './backup.js';
+import { initGitConfig } from './git.js';
 
 export function initRepos(dataDir: string): void {
   const spacesDir = join(dataDir, 'spaces');
@@ -10,7 +11,9 @@ export function initRepos(dataDir: string): void {
   }
   initSpaces(dataDir);
   initBackups(dataDir);
+  initGitConfig(dataDir);
 }
 
 export * from './space.js';
 export * from './backup.js';
+export * from './git.js';
