@@ -34,7 +34,7 @@
   height: 40px;
   border: none;
   border-radius: 8px;
-  background: transparent;
+  background: hsl(var(--hub-primary) / 0.12);
   cursor: pointer;
   pointer-events: auto;
   color: hsl(var(--hub-primary));
@@ -42,7 +42,7 @@
   flex-shrink: 0;
 }
 .ex-menu-btn:hover {
-  background: hsl(var(--hub-accent) / 0.6);
+  background: hsl(var(--hub-primary));
 }
 .ex-menu-btn img,
 .ex-menu-btn svg {
