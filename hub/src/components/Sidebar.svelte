@@ -41,7 +41,7 @@
 
 <aside class="group/sidebar flex flex-col h-screen {pinned ? 'w-48' : 'w-14 hover:w-48'} shrink-0 border-r border-border bg-sidebar text-sidebar-foreground transition-all duration-200 overflow-hidden">
   <div class="flex items-center h-12 px-3 shrink-0">
-    <span class="text-sidebar-primary text-lg font-semibold leading-none">◆</span>
+    <img src="/excalihub-icon.png" class="size-5 shrink-0" alt="ExcaliHub" />
     <span class={labelClass + " ml-2 text-sm font-semibold"}>
       ExcaliHub
     </span>
