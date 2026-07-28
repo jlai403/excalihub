@@ -61,7 +61,12 @@
     btn.innerHTML = '<img src="/excalihub-icon.png" alt="ExcaliHub" width="20" height="20">';
     btn.title = 'ExcaliHub menu';
 
-    anchor.insertAdjacentElement('afterend', btn);
+    const container = anchor.closest('.excalidraw-ui-top-left');
+    if (container) {
+      container.appendChild(btn);
+    } else {
+      anchor.insertAdjacentElement('afterend', btn);
+    }
 
     dropdown = buildDropdown();
     if (document.querySelector('.excalidraw.theme--dark') || document.body.classList.contains('theme--dark')) {

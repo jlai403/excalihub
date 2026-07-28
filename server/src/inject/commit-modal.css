@@ -39,6 +39,7 @@
   pointer-events: auto;
   color: hsl(var(--hub-primary));
   transition: background 0.1s;
+  margin-left: 4px;
   flex-shrink: 0;
 }
 .ex-menu-btn:hover {
