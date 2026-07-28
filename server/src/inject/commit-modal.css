@@ -26,6 +26,12 @@
   --hub-success-bg: 142 76% 36%;
 }
 
+.dropdown-menu-event-wrapper {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
 .ex-menu-btn {
   display: inline-flex;
   align-items: center;

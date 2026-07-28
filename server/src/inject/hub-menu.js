@@ -51,37 +51,19 @@
 
   let isOpen = false;
   let dropdown = null;
-  let btn = null;
-  let anchorParent = null;
-
-  function positionButton() {
-    const anchor = document.querySelector('[data-testid="main-menu-trigger"]');
-    if (!anchor || !btn || !anchorParent) return;
-    const anchorRect = anchor.getBoundingClientRect();
-    const parentRect = anchorParent.getBoundingClientRect();
-    btn.style.left = `${anchorRect.right - parentRect.left + 8}px`;
-    btn.style.top = `${anchorRect.top - parentRect.top + (anchorRect.height - 40) / 2}px`;
-  }
 
   function init() {
     const anchor = document.querySelector('[data-testid="main-menu-trigger"]');
     if (!anchor) return setTimeout(init, 200);
 
-    btn = document.createElement('button');
+    const btn = document.createElement('button');
     btn.className = 'ex-menu-btn';
     btn.innerHTML = '<img src="/excalihub-icon.png" alt="ExcaliHub" width="20" height="20">';
     btn.title = 'ExcaliHub menu';
 
-    const mobileContainer = anchor.closest('.excalidraw-ui-top-left');
-    const positionedParent = anchor.closest('div[style*="position: relative"], [style*="position:relative"]');
-
-    if (mobileContainer) {
-      mobileContainer.appendChild(btn);
-    } else if (positionedParent) {
-      anchorParent = positionedParent;
-      anchorParent.appendChild(btn);
-      btn.style.position = 'absolute';
-      positionButton();
+    const container = anchor.closest('.excalidraw-ui-top-left');
+    if (container) {
+      container.appendChild(btn);
     } else {
       anchor.insertAdjacentElement('afterend', btn);
     }
@@ -107,7 +89,6 @@
     });
 
     window.addEventListener('resize', () => {
-      if (anchorParent) positionButton();
       if (isOpen && dropdown) positionDropdown(btn, dropdown);
     });
   }
