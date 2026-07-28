@@ -12,15 +12,15 @@
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
       action: () => { window.location.href = `${protocol}//${hubHost}`; },
     },
-  ];
-
-  if (gitEnabled) {
-    items.push({
+    {
       label: 'Commit to Git',
+      disabled: !gitEnabled,
       icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><line x1="1.05" y1="12" x2="7" y2="12"/><line x1="17.01" y1="12" x2="22.96" y2="12"/></svg>',
-      action: () => { window.dispatchEvent(new CustomEvent('hub-open-commit-modal')); },
-    });
-  }
+      action: gitEnabled
+        ? () => { window.dispatchEvent(new CustomEvent('hub-open-commit-modal')); }
+        : () => { window.location.href = `${protocol}//${hubHost}/settings`; },
+    },
+  ];
 
   function buildDropdown() {
     const dd = document.createElement('div');
@@ -28,6 +28,10 @@
     items.forEach((item) => {
       const el = document.createElement('button');
       el.className = 'ex-menu-item';
+      if (item.disabled) {
+        el.disabled = true;
+        el.title = 'Configure Git in Settings';
+      }
       el.innerHTML = `${item.icon}<span>${item.label}</span>`;
       el.onclick = () => { dd.style.display = 'none'; isOpen = false; item.action(); };
       dd.appendChild(el);
@@ -54,7 +58,7 @@
 
     const btn = document.createElement('button');
     btn.className = 'ex-menu-btn';
-    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18"/><path d="M3 6h18"/><path d="M3 18h18"/></svg>';
+    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>';
     btn.title = 'ExcaliHub menu';
 
     anchor.insertAdjacentElement('afterend', btn);

@@ -84,6 +84,13 @@
 .ex-menu-item:hover {
   background: hsl(var(--hub-accent) / 0.5);
 }
+.ex-menu-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.ex-menu-item:disabled:hover {
+  background: transparent;
+}
 .ex-menu-item svg {
   width: 16px;
   height: 16px;
