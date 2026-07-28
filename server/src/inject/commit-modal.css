@@ -44,6 +44,7 @@
 .ex-menu-btn:hover {
   background: hsl(var(--hub-accent) / 0.6);
 }
+.ex-menu-btn img,
 .ex-menu-btn svg {
   width: 20px;
   height: 20px;
