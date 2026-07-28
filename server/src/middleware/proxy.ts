@@ -143,7 +143,7 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
   const gitConfig = getGitConfig();
   const gitEnabled = gitConfig?.connected ? 'true' : 'false';
   const menuCss = `<style data-excalihub-menu>${getInjectedMenuCss()}</style>`;
-  const menuScript = `<script data-excalihub-menu>window.__GIT_ENABLED = '${gitEnabled}';${getInjectedMenuScript()}</script>`;
+  const menuScript = `<script data-excalihub-menu>window.__GIT_ENABLED = '${gitEnabled}';window.__hubHost = '${hubHost}';${getInjectedMenuScript()}</script>`;
   const commitModalScript = `<script data-excalihub-commit-modal>${getInjectedCommitModalScript()}</script>`;
 
   const syncScript = `<script data-excalihub-sync>${debugFlag}${getInjectedScript()}</script>`;
