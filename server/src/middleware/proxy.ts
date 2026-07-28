@@ -103,6 +103,19 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
 
   const url = new URL(c.req.url);
 
+  if (url.pathname === '/excalihub-icon.png') {
+    const iconPath = resolve(
+      import.meta.dirname,
+      env.NODE_ENV === 'production' ? './public/excalihub-icon.png' : '../../hub/public/excalihub-icon.png'
+    );
+    const file = Bun.file(iconPath);
+    if (await file.exists()) {
+      return new Response(file, {
+        headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=31536000, immutable' },
+      });
+    }
+  }
+
   if (url.pathname === '/sw.js' || url.pathname === '/sw.js.map') {
     return new Response(
       url.pathname === '/sw.js.map'
