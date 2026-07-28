@@ -8,19 +8,14 @@
     disconnectGitRepo,
   } from "$lib/stores/git.svelte";
 
-  let gitConfig = $state(getGitConfig());
-  let sshPublicKey = $state(getSSHPublicKey());
+  let gitConfig = $derived(getGitConfig());
+  let sshPublicKey = $derived(getSSHPublicKey());
   let repoUrl = $state("");
   let loading = $state(false);
   let error = $state("");
   let copied = $state(false);
 
-  onMount(async () => {
-    await loadGitConfig();
-    gitConfig = getGitConfig();
-    sshPublicKey = getSSHPublicKey();
-    repoUrl = gitConfig.repoUrl;
-  });
+  onMount(loadGitConfig);
 
   async function handleConnect() {
     if (!repoUrl) {
@@ -32,9 +27,7 @@
     error = "";
 
     const result = await connectGitRepo(repoUrl);
-    if (result.success) {
-      gitConfig = getGitConfig();
-    } else {
+    if (!result.success) {
       error = result.error || "Failed to connect";
     }
 
@@ -44,7 +37,6 @@
   async function handleDisconnect() {
     loading = true;
     await disconnectGitRepo();
-    gitConfig = getGitConfig();
     repoUrl = "";
     loading = false;
   }
