@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { env } from '~/env.js';
 import { getSpaceBySubdomain } from '~/repos/space.js';
+import { getGitConfig } from '~/repos/git.js';
 
 export function proxyMiddleware() {
   const hubHost = `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}`;
@@ -51,8 +52,9 @@ async function serveHub(c: Context, next: Next) {
 }
 
 let injectedScript: string | null = null;
-let injectedBubbleCss: string | null = null;
-let injectedBubbleScript: string | null = null;
+let injectedMenuCss: string | null = null;
+let injectedMenuScript: string | null = null;
+let injectedCommitModalScript: string | null = null;
 
 function getInjectedScript(): string {
   if (!injectedScript) {
@@ -64,24 +66,34 @@ function getInjectedScript(): string {
   return injectedScript;
 }
 
-function getInjectedBubbleCss(): string {
-  if (!injectedBubbleCss) {
-    injectedBubbleCss = readFileSync(
-      resolve(import.meta.dirname, '../inject/hub-bubble.css'),
+function getInjectedMenuCss(): string {
+  if (!injectedMenuCss) {
+    injectedMenuCss = readFileSync(
+      resolve(import.meta.dirname, '../inject/commit-modal.css'),
       'utf-8'
     );
   }
-  return injectedBubbleCss;
+  return injectedMenuCss;
 }
 
-function getInjectedBubbleScript(): string {
-  if (!injectedBubbleScript) {
-    injectedBubbleScript = readFileSync(
-      resolve(import.meta.dirname, '../inject/hub-bubble.js'),
+function getInjectedMenuScript(): string {
+  if (!injectedMenuScript) {
+    injectedMenuScript = readFileSync(
+      resolve(import.meta.dirname, '../inject/hub-menu.js'),
       'utf-8'
     );
   }
-  return injectedBubbleScript;
+  return injectedMenuScript;
+}
+
+function getInjectedCommitModalScript(): string {
+  if (!injectedCommitModalScript) {
+    injectedCommitModalScript = readFileSync(
+      resolve(import.meta.dirname, '../inject/commit-modal.js'),
+      'utf-8'
+    );
+  }
+  return injectedCommitModalScript;
 }
 
 async function proxyToExcalidraw(c: Context, subdomain: string) {
@@ -90,6 +102,16 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
   }
 
   const url = new URL(c.req.url);
+
+  if (url.pathname === '/sw.js' || url.pathname === '/sw.js.map') {
+    return new Response(
+      url.pathname === '/sw.js.map'
+        ? ''
+        : `self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',()=>self.clients.claim());`,
+      { headers: { 'Content-Type': url.pathname.endsWith('.map') ? 'application/json' : 'application/javascript', 'Cache-Control': 'no-store' } }
+    );
+  }
+
   const target = `${env.EXCALIDRAW_CONTAINER}${url.pathname}${url.search}`;
 
   const headers = new Headers(c.req.raw.headers);
@@ -108,16 +130,23 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
 
   const html = await res.text();
   const debugFlag = env.NODE_ENV !== 'production' ? 'window.__EXCALIHUB_DEBUG = true;' : '';
-  const bubbleCss = `<style data-excalihub-bubble>${getInjectedBubbleCss()}</style>`;
-  const bubbleScript = `<script data-excalihub-bubble>${getInjectedBubbleScript()}</script>`;
+  const gitConfig = getGitConfig();
+  const gitEnabled = gitConfig?.connected ? 'true' : 'false';
+  const menuCss = `<style data-excalihub-menu>${getInjectedMenuCss()}</style>`;
+  const menuScript = `<script data-excalihub-menu>window.__GIT_ENABLED = '${gitEnabled}';${getInjectedMenuScript()}</script>`;
+  const commitModalScript = `<script data-excalihub-commit-modal>${getInjectedCommitModalScript()}</script>`;
+
   const syncScript = `<script data-excalihub-sync>${debugFlag}${getInjectedScript()}</script>`;
-  const injection = `${bubbleCss}${bubbleScript}${syncScript}`;
+  const injection = `${menuCss}${menuScript}${commitModalScript}${syncScript}`;
   const injected = html.includes('</body>')
     ? html.replace('</body>', `${injection}</body>`)
     : html + injection;
 
+  const resHeaders = new Headers(res.headers);
+  resHeaders.set('Cache-Control', 'no-store');
+
   return new Response(injected, {
     status: res.status,
-    headers: res.headers,
+    headers: resHeaders,
   });
 }

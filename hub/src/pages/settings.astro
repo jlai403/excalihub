@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import GitSettings from '../components/GitSettings.svelte';
+---
+
+<Layout title="Settings">
+  <div class="max-w-2xl mx-auto p-6">
+    <h1 class="text-2xl font-semibold mb-6">Settings</h1>
+    <GitSettings client:only="svelte" />
+  </div>
+</Layout>

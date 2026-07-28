@@ -134,7 +134,7 @@ describe('proxyMiddleware', () => {
       expect(body).toContain('</body>');
     });
 
-    it('injects bubble CSS into HTML responses', async () => {
+    it('injects menu CSS into HTML responses', async () => {
       createSpace('Space', 'space');
       fetchMock = mock(() =>
         new Response('<html><body></body></html>', {
@@ -147,12 +147,12 @@ describe('proxyMiddleware', () => {
         headers: { host: 'space.excalihub.example.com' },
       });
       const body = await res.text();
-      expect(body).toContain('data-excalihub-bubble');
+      expect(body).toContain('data-excalihub-menu');
       expect(body).toContain('<style');
-      expect(body).toContain('#excalihub-button');
+      expect(body).toContain('#hub-commit-modal-overlay');
     });
 
-    it('injects bubble JS into HTML responses', async () => {
+    it('injects menu JS into HTML responses', async () => {
       createSpace('Space', 'space');
       fetchMock = mock(() =>
         new Response('<html><body></body></html>', {
@@ -165,9 +165,9 @@ describe('proxyMiddleware', () => {
         headers: { host: 'space.excalihub.example.com' },
       });
       const body = await res.text();
-      expect(body).toContain('data-excalihub-bubble');
+      expect(body).toContain('data-excalihub-menu');
       expect(body).toContain('<script');
-      expect(body).toContain('__excalihub_bubble');
+      expect(body).toContain('hub-menu-container');
     });
 
     it('does not inject into non-HTML responses', async () => {
@@ -184,7 +184,7 @@ describe('proxyMiddleware', () => {
       });
       const body = await res.text();
       expect(body).not.toContain('excalihub-sync');
-      expect(body).not.toContain('excalihub-bubble');
+      expect(body).not.toContain('excalihub-menu');
     });
   });
 
