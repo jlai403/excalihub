@@ -1,5 +1,9 @@
 # ExcaliHub
 
+<p align="center">
+  <img src="hub/public/excalihub-logo.png" alt="ExcaliHub" width="600">
+</p>
+
 [![CI](https://github.com/jlai403/excalihub/actions/workflows/ci.yml/badge.svg)](https://github.com/jlai403/excalihub/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Bun](https://img.shields.io/badge/Bun-1.x-f9f0ff?logo=bun&logoColor=black)](https://bun.sh)
