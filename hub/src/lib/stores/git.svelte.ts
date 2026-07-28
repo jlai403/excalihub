@@ -1,27 +1,27 @@
 import type { GitConfig } from "$lib/types";
 
-let gitConfig = $state<GitConfig>({
+let _gitConfig = $state<GitConfig>({
   repoUrl: "",
   connected: false,
   connectedAt: null,
 });
 
-let sshPublicKey = $state<string | null>(null);
+let _sshPublicKey = $state<string | null>(null);
 
 export function getGitConfig(): GitConfig {
-  return gitConfig;
+  return _gitConfig;
 }
 
 export function getSSHPublicKey(): string | null {
-  return sshPublicKey;
+  return _sshPublicKey;
 }
 
 export async function loadGitConfig(): Promise<void> {
   const data = await fetch("/api/git/config").then((r) => r.json());
-  gitConfig = data;
+  _gitConfig = data;
 
   const keyData = await fetch("/api/git/ssh-key").then((r) => r.json());
-  sshPublicKey = keyData.publicKey;
+  _sshPublicKey = keyData.publicKey;
 }
 
 export async function connectGitRepo(
