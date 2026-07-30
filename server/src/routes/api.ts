@@ -150,6 +150,9 @@ api.get('/git/config', (c) => {
 });
 
 api.get('/git/ssh-key', (c) => {
+  if (!GitRepo.isSSHKeyPairGenerated()) {
+    GitRepo.generateSSHKeyPair();
+  }
   const publicKey = GitRepo.getSSHPublicKey();
   return c.json({ publicKey });
 });

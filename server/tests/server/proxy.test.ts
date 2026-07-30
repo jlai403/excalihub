@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { proxyMiddleware } from '../../src/middleware/proxy.js';
 import { createSpace } from '../../src/repos/space.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
+import api from '../../src/routes/api.js';
 
 let fetchMock: ReturnType<typeof mock>;
 let originalFetch: typeof globalThis.fetch;
@@ -10,6 +11,7 @@ let originalFetch: typeof globalThis.fetch;
 function makeApp() {
   const app = new Hono();
   app.use('*', proxyMiddleware());
+  app.route('/api', api);
   app.get('/*', (c) => c.json({ reached: 'next' }));
   return app;
 }
@@ -57,6 +59,20 @@ describe('proxyMiddleware', () => {
   });
 
   describe('subdomain routing', () => {
+    it('bypasses Excalidraw proxy for /api/* paths under subdomain', async () => {
+      createSpace('My Project', 'myproject');
+
+      const res = await makeApp().request('/api/git/config', {
+        headers: { host: 'myproject.excalihub.example.com' },
+      });
+
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toHaveProperty('repoUrl');
+      expect(body).toHaveProperty('connected', false);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
     it('proxies to Excalidraw when space exists', async () => {
       createSpace('My Project', 'myproject');
 

@@ -1,5 +1,8 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { Button } from "$lib/components/ui/button";
+  import * as Dialog from "$lib/components/ui/dialog";
+  import { AlertTriangle } from "@lucide/svelte";
   import {
     getGitConfig,
     getSSHPublicKey,
@@ -14,15 +17,12 @@
   let loading = $state(false);
   let error = $state("");
   let copied = $state(false);
+  let showConfirm = $state(false);
+  let showDisconnectConfirm = $state(false);
 
   onMount(loadGitConfig);
 
   async function handleConnect() {
-    if (!repoUrl) {
-      error = "Repository URL is required";
-      return;
-    }
-
     loading = true;
     error = "";
 
@@ -79,15 +79,61 @@
         </div>
       </div>
 
-      <button
-        onclick={handleDisconnect}
+      <Dialog.Root open={showDisconnectConfirm} onOpenChange={(open) => { if (!open) showDisconnectConfirm = false; }}>
+        <Dialog.Content>
+          <Dialog.Header>
+            <Dialog.Title class="flex items-center gap-2">
+              <AlertTriangle class="size-5 text-destructive" />
+              Disconnect repository?
+            </Dialog.Title>
+            <Dialog.Description>
+              This will stop syncing diagrams to the remote repository. The local data
+              will not be affected, but future commits will not be pushed until you reconnect.
+            </Dialog.Description>
+          </Dialog.Header>
+          <Dialog.Footer>
+            <Button variant="outline" onclick={() => { showDisconnectConfirm = false; }}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onclick={() => { showDisconnectConfirm = false; handleDisconnect(); }}>
+              {loading ? "Disconnecting..." : "Disconnect"}
+            </Button>
+          </Dialog.Footer>
+        </Dialog.Content>
+      </Dialog.Root>
+      <Button
+        variant="destructive"
+        onclick={() => { showDisconnectConfirm = true; }}
         disabled={loading}
-        class="mt-4 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-md transition-colors disabled:opacity-50"
+        class="mt-4"
       >
         {loading ? "Disconnecting..." : "Disconnect"}
-      </button>
+      </Button>
     {:else}
-      <form onsubmit={(e) => { e.preventDefault(); handleConnect(); }} class="space-y-4">
+      <Dialog.Root open={showConfirm} onOpenChange={(open) => { if (!open) showConfirm = false; }}>
+        <Dialog.Content>
+          <Dialog.Header>
+            <Dialog.Title class="flex items-center gap-2">
+              <AlertTriangle class="size-5 text-destructive" />
+              Connect to repository?
+            </Dialog.Title>
+            <Dialog.Description>
+              This will sync all existing spaces to the remote branch
+              <code class="inline-block mx-1 px-1.5 py-0.5 rounded bg-muted text-xs font-mono">{repoUrl}</code>.
+              This may overwrite any existing content on the remote. Are you sure you want to proceed?
+            </Dialog.Description>
+          </Dialog.Header>
+          <Dialog.Footer>
+            <Button variant="outline" onclick={() => { showConfirm = false; }}>
+              Cancel
+            </Button>
+            <Button onclick={() => { showConfirm = false; handleConnect(); }}>
+              {loading ? "Connecting..." : "Connect"}
+            </Button>
+          </Dialog.Footer>
+        </Dialog.Content>
+      </Dialog.Root>
+      <form onsubmit={(e) => { e.preventDefault(); if (!repoUrl) { error = "Repository URL is required"; return; } showConfirm = true; }} class="space-y-4">
         <div class="space-y-2">
           <label for="repoUrl" class="text-sm font-medium">
             Repository URL
@@ -109,13 +155,12 @@
           <p class="text-sm text-destructive">{error}</p>
         {/if}
 
-        <button
+        <Button
           type="submit"
           disabled={loading || !repoUrl}
-          class="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors disabled:opacity-50"
         >
           {loading ? "Connecting..." : "Connect"}
-        </button>
+        </Button>
       </form>
     {/if}
   </div>
@@ -130,21 +175,23 @@
     {#if sshPublicKey}
       <div class="relative">
         <pre class="p-3 rounded-md bg-muted text-xs font-mono break-all whitespace-pre-wrap">{sshPublicKey}</pre>
-        <button
+        <Button
           onclick={copyToClipboard}
-          class="absolute top-2 right-2 p-2 rounded-md hover:bg-background transition-colors"
+          variant="outline"
+          size="icon"
+          class="absolute top-2 right-2"
           title="Copy to clipboard"
         >
           {#if copied}
             <svg class="size-4 text-green-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           {:else}
-            <svg class="size-4 text-muted-foreground" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            <svg class="size-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
           {/if}
-        </button>
+        </Button>
       </div>
     {:else}
       <p class="text-sm text-muted-foreground">
-        SSH key will be generated when you connect to a repository.
+        Generating SSH key...
       </p>
     {/if}
   </div>

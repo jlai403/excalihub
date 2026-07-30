@@ -53,6 +53,7 @@ export async function connectGitRepo(
   HostName github.com
   User git
   IdentityFile ${join(dataDir, 'git-config', 'id_ed25519')}
+  IdentitiesOnly yes
   StrictHostKeyChecking no
 `;
   writeFileSync(sshConfigPath, sshConfig);
@@ -60,6 +61,9 @@ export async function connectGitRepo(
   try {
     const git = simpleGit({
       baseDir: spacesDir,
+      unsafe: {
+        allowUnsafeSshCommand: true,
+      },
       config: [
         `core.sshCommand=ssh -F ${sshConfigPath}`,
         'user.name=ExcaliHub',
@@ -67,14 +71,25 @@ export async function connectGitRepo(
       ],
     });
 
-    if (existsSync(join(spacesDir, '.git'))) {
-      log.info('Git repo already initialized, pulling latest...');
-      await git.pull();
+    if (!existsSync(join(spacesDir, '.git'))) {
+      log.info(`Initializing git repo with remote ${repoUrl}...`);
+      await git.init(['-b', 'main']);
+      await git.addRemote('origin', repoUrl);
     } else {
-      log.info(`Cloning ${repoUrl} into ${spacesDir}...`);
-      await git.clone(repoUrl, spacesDir, {
-        '--depth': '1',
-      });
+      log.info('Git repo already initialized, pulling latest...');
+      await git.remote(['rm', 'origin']).catch(() => {});
+      await git.addRemote('origin', repoUrl);
+      try {
+        await git.pull();
+      } catch {
+        log.info('No changes to pull');
+      }
+    }
+
+    try {
+      await git.raw(['ls-remote', 'origin', 'HEAD']);
+    } catch (err: any) {
+      return { success: false, error: `Cannot access remote repository. Make sure the deploy key is added with write access. (${err.message})` };
     }
 
     setGitConfig({
@@ -126,6 +141,9 @@ export async function commitAndPush(
 
     const git = simpleGit({
       baseDir: spacesDir,
+      unsafe: {
+        allowUnsafeSshCommand: true,
+      },
       config: [
         `core.sshCommand=ssh -F ${sshConfigPath}`,
         'user.name=ExcaliHub',
@@ -135,7 +153,7 @@ export async function commitAndPush(
 
     await git.add(`${subdomain}/`);
     await git.commit(message);
-    await git.push('origin', 'main');
+    await git.push('origin', 'main', { '-u': null });
 
     log.info(`Committed and pushed: ${message}`);
     return { success: true };
