@@ -5,15 +5,19 @@ import { env } from '~/env.js';
 import { getSpaceBySubdomain } from '~/repos/space.js';
 import { getGitConfig } from '~/repos/git.js';
 
-export function proxyMiddleware() {
-  const hubHost = `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}`;
+const hubHost = `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}`;
 
+export function proxyMiddleware() {
   return async (c: Context, next: Next) => {
     const rawHost = c.req.header('host') || '';
     const host = rawHost.replace(/:\d+$/, '');
 
     const subdomain = extractSubdomain(host, hubHost);
-    if (subdomain) return proxyToExcalidraw(c, subdomain);
+    if (subdomain) {
+      const url = new URL(c.req.url);
+      if (url.pathname.startsWith('/api/')) return next();
+      return proxyToExcalidraw(c, subdomain);
+    }
 
     if (host === hubHost || host === env.BASE_DOMAIN) {
       return serveHub(c, next);
