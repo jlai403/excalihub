@@ -173,3 +173,14 @@ hub/                  — Astro static site (pages, layouts)
 - Added `testMatch: "**/*.e2e.ts"` to `playwright.config.ts`
 - Updated e2e proxy test to navigate to hub host for subdomain link assertion
 - Documented protected `main` branch rule in AGENTS.md
+
+### 2026-07-31 — Git integration: deploy key fix + backup/git separation
+- **Deploy key fix**: added `IdentitiesOnly yes` to SSH config template (`git.ts`) + existing `data/git-config/.ssh/config` — forces SSH to use the app's `id_ed25519` only, ignoring ssh-agent keys (was `ERROR: Repository not found`)
+- **Backup/git separation**: auto-backups (5s loop, 7-4-12 retention, hash dedup) no longer dirty git
+  - `prepareSpacesRepo()` writes `.gitignore` (`*/backups/`), untracks committed backups on connect (one-time cleanup, `git rm -r --cached --ignore-unmatch '**/backups/*'` — note trailing-slash pathspec silently no-ops)
+  - `commitAndPush` overwrites canonical `{subdomain}.excalidraw`/`.png` instead of timestamped copies
+  - `getSpaceGitStatus()` returns `{ lastCommitAt, lastCommitMessage, hasUncommittedChanges }`; dirty signal = `latestBackupTs > lastCommitAt` (timestamp parsed from `latest_backup` filename), no porcelain count
+- `GET /api/spaces/:id/git-status` endpoint (404 unknown space, `null` when not connected)
+- Space cards: status-based icons (`GitCommitHorizontal` amber = unsaved, `CircleCheckBig` green = synced, `GitBranch` gray = no commits), relative time + absolute time tooltip
+- Tooltip component (`hub/src/lib/components/ui/tooltip/`) requires `Tooltip.Provider` ancestor (bits-ui v2 error: `Context "Tooltip.Provider" not found`)
+- `prepareSpacesRepo` tested in `service.test.ts` (real git repo via `simple-git`); 4 git-status API tests
