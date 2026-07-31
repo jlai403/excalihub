@@ -205,7 +205,7 @@ describe('commitAndPush', () => {
         'ls-tree',
         '-r',
         '--name-only',
-        'HEAD',
+        'refs/heads/main',
       ])
     ).split('\n');
     expect(remoteTree).toContain('.gitignore');
