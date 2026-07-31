@@ -48,6 +48,9 @@ export async function connectGitRepo(
 
   const dataDir = getDataDir();
   const spacesDir = join(dataDir, 'spaces');
+  if (!existsSync(spacesDir)) {
+    mkdirSync(spacesDir, { recursive: true });
+  }
 
   if (!isSSHKeyPairGenerated()) {
     try {
@@ -95,12 +98,17 @@ export async function connectGitRepo(
       log.info(`Initializing git repo with remote ${repoUrl}...`);
       await git.init(['-b', 'main']);
       await git.addRemote('origin', repoUrl);
+      try {
+        await git.pull(['origin', 'main', '--allow-unrelated-histories']);
+      } catch {
+        log.info('Remote has no history to pull');
+      }
     } else {
       log.info('Git repo already initialized, pulling latest...');
       await git.remote(['rm', 'origin']).catch(() => {});
       await git.addRemote('origin', repoUrl);
       try {
-        await git.pull();
+        await git.pull(['origin', 'main']);
       } catch {
         log.info('No changes to pull');
       }
