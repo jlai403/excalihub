@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
+import { writeFileSync } from 'fs';
+import { join } from 'path';
+import simpleGit from 'simple-git';
 import { createApp } from '../../src/app.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import { createApiHelper, type ApiHelper } from '../helpers/request.js';
 import { SpaceFixture } from '../fixtures/index.js';
+import { setGitConfig, getDataDir } from '../../src/repos/git.js';
 
 let app: ReturnType<typeof createApp>;
 let api: ApiHelper;
@@ -147,6 +151,102 @@ describe('GET /api/spaces/:id/backups', () => {
   it('returns 404 when space not found', async () => {
     const res = await api.get('/api/spaces/nonexistent-id/backups');
     expect(res.status).toBe(404);
+  });
+});
+
+describe('GET /api/spaces/:id/git-status', () => {
+  it('returns 404 when space not found', async () => {
+    const res = await api.get('/api/spaces/nonexistent-id/git-status');
+    expect(res.status).toBe(404);
+  });
+
+  it('returns null when git not connected', async () => {
+    await fixture.addSpace('Test').execute();
+
+    const res = await api.get(`/api/spaces/${fixture.spaceIds[0]}/git-status`);
+    expect(res.status).toBe(200);
+    expect(await api.json(res)).toBeNull();
+  });
+
+  it('returns commit message, time, and synced state when connected', async () => {
+    await fixture.addSpace('GitTest').execute();
+    const space = fixture.spaceByName('GitTest')!;
+
+    setGitConfig({
+      repoUrl: 'git@github.com:user/repo.git',
+      connected: true,
+      connectedAt: new Date().toISOString(),
+    });
+
+    const spacesDir = join(getDataDir(), 'spaces');
+    const git = simpleGit({ baseDir: spacesDir });
+    await git.init(['-b', 'main']);
+    await git.raw(['config', 'user.name', 'Test']);
+    await git.raw(['config', 'user.email', 'test@example.com']);
+    writeFileSync(join(spacesDir, space.subdomain, 'meta.json'), '{"x":1}\n');
+    await git.add('.');
+    await git.commit('Update space content');
+
+    const res = await api.get(`/api/spaces/${fixture.spaceIds[0]}/git-status`);
+    expect(res.status).toBe(200);
+    const body = await api.json(res);
+    expect(body.lastCommitMessage).toBe('Update space content');
+    expect(body.lastCommitAt).toBeDefined();
+    expect(body.hasUncommittedChanges).toBe(false);
+  });
+
+  it('reports unsaved changes when a backup is newer than the last commit', async () => {
+    await fixture.addSpace('GitTest').execute();
+    const space = fixture.spaceByName('GitTest')!;
+
+    setGitConfig({
+      repoUrl: 'git@github.com:user/repo.git',
+      connected: true,
+      connectedAt: new Date().toISOString(),
+    });
+
+    const spacesDir = join(getDataDir(), 'spaces');
+    const git = simpleGit({ baseDir: spacesDir });
+    await git.init(['-b', 'main']);
+    await git.raw(['config', 'user.name', 'Test']);
+    await git.raw(['config', 'user.email', 'test@example.com']);
+    writeFileSync(join(spacesDir, space.subdomain, 'meta.json'), '{"x":1}\n');
+    await git.add('.');
+    await git.commit('Initial commit');
+
+    await fixture
+      .addBackup('GitTest', { elements: JSON.stringify([{ id: '1' }]) })
+      .execute();
+
+    const res = await api.get(`/api/spaces/${fixture.spaceIds[0]}/git-status`);
+    expect(res.status).toBe(200);
+    const body = await api.json(res);
+    expect(body.hasUncommittedChanges).toBe(true);
+  });
+
+  it('reports unsaved changes when backups exist but no commit yet', async () => {
+    await fixture
+      .addSpace('GitTest')
+      .addBackup('GitTest', { elements: JSON.stringify([{ id: '1' }]) })
+      .execute();
+
+    setGitConfig({
+      repoUrl: 'git@github.com:user/repo.git',
+      connected: true,
+      connectedAt: new Date().toISOString(),
+    });
+
+    const spacesDir = join(getDataDir(), 'spaces');
+    const git = simpleGit({ baseDir: spacesDir });
+    await git.init(['-b', 'main']);
+    await git.raw(['config', 'user.name', 'Test']);
+    await git.raw(['config', 'user.email', 'test@example.com']);
+
+    const res = await api.get(`/api/spaces/${fixture.spaceIds[0]}/git-status`);
+    expect(res.status).toBe(200);
+    const body = await api.json(res);
+    expect(body.lastCommitMessage).toBeNull();
+    expect(body.hasUncommittedChanges).toBe(true);
   });
 });
 

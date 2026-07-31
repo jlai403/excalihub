@@ -9,6 +9,7 @@ import {
   connectGitRepo,
   commitAndPush,
   disconnectGitRepo,
+  getSpaceGitStatus,
 } from '~/services/git.js';
 
 const api = new Hono();
@@ -88,6 +89,15 @@ api.get('/spaces/:id/backups', async (c) => {
 
   const backups = BackupRepo.getBackupsBySpaceId(space.subdomain);
   return c.json(backups);
+});
+
+api.get('/spaces/:id/git-status', async (c) => {
+  const id = c.req.param('id');
+  const space = SpaceRepo.getSpaceById(id);
+  if (!space) return c.json({ error: 'Space not found' }, 404);
+
+  const status = await getSpaceGitStatus(space.subdomain);
+  return c.json(status);
 });
 
 api.post('/backup', async (c) => {
