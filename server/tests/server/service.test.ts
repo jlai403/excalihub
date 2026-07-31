@@ -6,8 +6,8 @@ import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import * as SpaceService from '~/services/space.js';
 import * as BackupService from '~/services/backup.js';
 import * as BackupRepo from '~/repos/backup.js';
-import { getDataDir } from '~/repos/git.js';
-import { prepareSpacesRepo } from '~/services/git.js';
+import { getDataDir, setGitConfig } from '~/repos/git.js';
+import { prepareSpacesRepo, commitAndPush } from '~/services/git.js';
 
 beforeEach(() => {
   setupTestDb();
@@ -161,5 +161,55 @@ describe('prepareSpacesRepo', () => {
         index: 'D',
       }),
     ]);
+  });
+});
+
+describe('commitAndPush', () => {
+  it('writes .gitignore and untracks backups on a pre-feature repo', async () => {
+    setGitConfig({
+      repoUrl: 'git@github.com:user/repo.git',
+      connected: true,
+      connectedAt: new Date().toISOString(),
+    });
+
+    const dataDir = getDataDir();
+    const spacesDir = join(dataDir, 'spaces');
+    const spaceDir = join(spacesDir, 'testspace');
+    mkdirSync(join(spaceDir, 'backups'), { recursive: true });
+    writeFileSync(join(spaceDir, 'meta.json'), '{}\n');
+    writeFileSync(join(spaceDir, 'backups', 'old.excalidraw'), '{}');
+
+    const remoteDir = join(dataDir, 'remote.git');
+    await simpleGit({ baseDir: dataDir }).raw(['init', '--bare', remoteDir]);
+
+    const git = simpleGit({ baseDir: spacesDir });
+    await git.init(['-b', 'main']);
+    await git.raw(['config', 'user.name', 'Test']);
+    await git.raw(['config', 'user.email', 'test@example.com']);
+    await git.add('.');
+    await git.commit('initial');
+    await git.addRemote('origin', remoteDir);
+
+    const result = await commitAndPush(
+      'testspace',
+      '{"elements":[]}',
+      null,
+      'Update testspace',
+    );
+    expect(result).toEqual({ success: true });
+
+    expect(existsSync(join(spacesDir, '.gitignore'))).toBe(true);
+
+    const remoteTree = (
+      await simpleGit({ baseDir: remoteDir }).raw([
+        'ls-tree',
+        '-r',
+        '--name-only',
+        'HEAD',
+      ])
+    ).split('\n');
+    expect(remoteTree).toContain('.gitignore');
+    expect(remoteTree).toContain('testspace/testspace.excalidraw');
+    expect(remoteTree.some((f) => f.includes('backups'))).toBe(false);
   });
 });

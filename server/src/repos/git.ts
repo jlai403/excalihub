@@ -42,6 +42,7 @@ function writeConfigAtomic(cfg: GitConfig): void {
 
 export function initGitConfig(dir: string): void {
   dataDir = dir;
+  config = null;
   const dirPath = gitConfigDir();
 
   if (!existsSync(dirPath)) {

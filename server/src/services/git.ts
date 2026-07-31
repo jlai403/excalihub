@@ -172,6 +172,8 @@ export async function commitAndPush(
       ],
     });
 
+    await prepareSpacesRepo(git, spacesDir);
+
     await git.add(['.gitignore', `${subdomain}/`]);
     await git.commit(message);
     await git.push('origin', 'main', { '-u': null });
