@@ -1,4 +1,4 @@
-import simpleGit from 'simple-git';
+import simpleGit, { type SimpleGit } from 'simple-git';
 import { existsSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { log } from '~/logger.js';
@@ -11,6 +11,26 @@ import {
   isSSHKeyPairGenerated,
   getDataDir,
 } from '~/repos/git.js';
+import { getSpaceBySubdomain } from '~/repos/space.js';
+
+const SPACES_GITIGNORE = '*/backups/\n';
+
+export async function prepareSpacesRepo(
+  git: SimpleGit,
+  spacesDir: string,
+): Promise<void> {
+  writeFileSync(join(spacesDir, '.gitignore'), SPACES_GITIGNORE);
+
+  const hasCommits = await git
+    .raw(['rev-parse', '--verify', 'HEAD'])
+    .then(() => true)
+    .catch(() => false);
+  if (hasCommits) {
+    await git
+      .raw(['rm', '-r', '--cached', '--ignore-unmatch', '**/backups/*'])
+      .catch(() => {});
+  }
+}
 
 export async function connectGitRepo(
   repoUrl: string
@@ -86,6 +106,8 @@ export async function connectGitRepo(
       }
     }
 
+    await prepareSpacesRepo(git, spacesDir);
+
     try {
       await git.raw(['ls-remote', 'origin', 'HEAD']);
     } catch (err: any) {
@@ -126,12 +148,11 @@ export async function commitAndPush(
   }
 
   try {
-    const timestamp = Date.now();
-    const excalidrawPath = join(spaceDir, `${subdomain}-${timestamp}.excalidraw`);
+    const excalidrawPath = join(spaceDir, `${subdomain}.excalidraw`);
     writeFileSync(excalidrawPath, excalidrawData);
 
     if (pngBase64) {
-      const pngPath = join(spaceDir, `${subdomain}-${timestamp}.png`);
+      const pngPath = join(spaceDir, `${subdomain}.png`);
       const pngBuffer = Buffer.from(pngBase64, 'base64');
       writeFileSync(pngPath, pngBuffer);
     }
@@ -151,7 +172,7 @@ export async function commitAndPush(
       ],
     });
 
-    await git.add(`${subdomain}/`);
+    await git.add(['.gitignore', `${subdomain}/`]);
     await git.commit(message);
     await git.push('origin', 'main', { '-u': null });
 
@@ -160,6 +181,61 @@ export async function commitAndPush(
   } catch (err: any) {
     log.error('Git commit/push failed:', err);
     return { success: false, error: err.message };
+  }
+}
+
+export type SpaceGitStatus = {
+  lastCommitAt: string | null;
+  lastCommitMessage: string | null;
+  hasUncommittedChanges: boolean;
+};
+
+export async function getSpaceGitStatus(
+  subdomain: string
+): Promise<SpaceGitStatus | null> {
+  const config = getGitConfig();
+  if (!config?.connected) return null;
+
+  const dataDir = getDataDir();
+  const spacesDir = join(dataDir, 'spaces');
+
+  if (!existsSync(join(spacesDir, '.git'))) return null;
+
+  try {
+    const git = simpleGit({ baseDir: spacesDir });
+
+    const logResult = await git
+      .raw(['log', '-1', '--format=%cI|%s', '--', `${subdomain}/`])
+      .catch(() => '');
+
+    const logLine = logResult.trim();
+    let lastCommitAt: string | null = null;
+    let lastCommitMessage: string | null = null;
+    if (logLine) {
+      const [at, ...msgParts] = logLine.split('|');
+      lastCommitAt = at;
+      lastCommitMessage = msgParts.join('|');
+    }
+
+    const space = getSpaceBySubdomain(subdomain);
+    const latestBackupTs = space?.latest_backup
+      ? parseInt(space.latest_backup.match(/^(\d+)-/)?.[1] ?? '0', 10)
+      : null;
+
+    let hasUncommittedChanges = false;
+    if (latestBackupTs !== null) {
+      const lastCommitTs = lastCommitAt ? Date.parse(lastCommitAt) : null;
+      if (lastCommitTs === null) {
+        hasUncommittedChanges = true;
+      } else {
+        hasUncommittedChanges = latestBackupTs > lastCommitTs;
+      }
+    }
+
+    return { lastCommitAt, lastCommitMessage, hasUncommittedChanges };
+  } catch (err: any) {
+    log.error(`Failed to get git status for ${subdomain}:`, err);
+    return null;
   }
 }
 
