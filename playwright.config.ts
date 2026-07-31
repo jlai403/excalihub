@@ -40,6 +40,9 @@ export default defineConfig({
       url: "http://localhost:4321",
       reuseExistingServer: true,
       timeout: 120_000,
+      env: {
+        ASTRO_DEV_BACKGROUND: "1",
+      },
     },
   ],
 });

@@ -184,3 +184,13 @@ hub/                  — Astro static site (pages, layouts)
 - Space cards: status-based icons (`GitCommitHorizontal` amber = unsaved, `CircleCheckBig` green = synced, `GitBranch` gray = no commits), relative time + absolute time tooltip
 - Tooltip component (`hub/src/lib/components/ui/tooltip/`) requires `Tooltip.Provider` ancestor (bits-ui v2 error: `Context "Tooltip.Provider" not found`)
 - `prepareSpacesRepo` tested in `service.test.ts` (real git repo via `simple-git`); 4 git-status API tests
+
+### 2026-07-31 — Git integration e2e (Stream B)
+- **`tests/e2e/git.e2e.ts`**: 7-test serial Playwright spec — invalid URL rejection, connect, no-commits badge, commit→synced badge, unsaved-changes badge, remote commit verification (GitHub API), disconnect
+- **Ephemeral deploy key per run**: `beforeAll` registers the app's fresh ed25519 pubkey as deploy key `excalihub-e2e` on `jlai403/excalihub-ci` (fine-grained PAT), `afterAll` deletes it; stale `excalihub-e2e` keys swept each project
+- **Token provisioning**: `E2E_GIT_TOKEN` (fine-grained PAT: `Administration: R/W` for deploy keys + `Contents: R/W`) stored as repo secret + 1Password item; resolved locally via `.env.schema` → `exec('op read "op://dev/github PAT jlai403-excalihub-ci/add more/password"')` (varlock plugin `op()` form does NOT resolve — use `exec()`)
+- `bun run test:e2e:local` — varlock-injected local run; spec skips (not fails) when `E2E_GIT_TOKEN` absent
+- **`connectGitRepo` robustness**: `mkdirSync` spaces dir before `simpleGit` (fresh data dir) + pull-merges remote history on first connect (`git pull origin main --allow-unrelated-histories`) so repeated connects/pushes fast-forward (GitHub refuses deleting the default branch)
+- **E2E infra**: `globalSetup.ts` kills stale 8081/4321 listeners before wiping `data-e2e` (stale `bun --watch` orphans + Astro 7 dev daemon survive previous runs); `playwright.config.ts` sets `ASTRO_DEV_BACKGROUND=1` (Astro 7 daemonizes `astro dev` by default — CLI exits 0, breaks Playwright webServer tracking)
+- **E2E git spec space names are per-project AND per-run timestamped** (`Git E2E {project} {Date.now()}`) — otherwise the pull-merged remote history finds prior runs' commits for the same subdomain path, breaking "No commits yet"
+- CI e2e job: `concurrency: ci-e2e` (no cancel-in-progress), `env: E2E_GIT_TOKEN` + `E2E_GIT_REPO=jlai403/excalihub-ci`
