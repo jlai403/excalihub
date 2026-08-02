@@ -7,6 +7,7 @@ import {
 } from "@playwright/test";
 
 const E2E_GIT_TOKEN = process.env.E2E_GIT_TOKEN;
+const E2E_SSH_PRIVATE_KEY = process.env.E2E_SSH_PRIVATE_KEY;
 const [owner, repo] = (process.env.E2E_GIT_REPO ?? "jlai403/excalihub-ci").split(
   "/"
 );
@@ -14,7 +15,6 @@ const repoUrl = `git@github.com:${owner}/${repo}.git`;
 const deployKeyTitle = "excalihub-e2e";
 
 let gh: APIRequestContext;
-let deployKeyId: number | null = null;
 let spaceName = "Git E2E Space";
 
 async function expectOk(res: APIResponse, what: string): Promise<APIResponse> {
@@ -51,7 +51,10 @@ async function createBackup(
 }
 
 test.describe.serial("git integration", () => {
-  test.skip(!E2E_GIT_TOKEN, "E2E_GIT_TOKEN not set — skipping git integration");
+  test.skip(
+    !E2E_GIT_TOKEN || !E2E_SSH_PRIVATE_KEY,
+    "E2E_GIT_TOKEN / E2E_SSH_PRIVATE_KEY not set — skipping git integration"
+  );
 
   test.beforeAll(async ({ request }, testInfo) => {
     spaceName = `Git E2E ${testInfo.project.name} ${Date.now()}`;
@@ -88,26 +91,41 @@ test.describe.serial("git integration", () => {
       "GitHub keys GET"
     );
     const keys = await keysRes.json();
-    for (const key of keys.filter(
-      (k: { title: string }) => k.title === deployKeyTitle
-    )) {
-      await gh.delete(`/repos/${owner}/${repo}/keys/${key.id}`);
-    }
 
-    const regRes = await gh.post(`/repos/${owner}/${repo}/keys`, {
-      data: { title: deployKeyTitle, key: publicKey, read_only: false },
-    });
-    expectOk(regRes, "Deploy key registration");
-    deployKeyId = (await regRes.json()).id;
+    const fingerprint = (s: string) => s.trim().split(/\s+/).slice(0, 2).join(" ");
+
+    const existing = keys.find(
+      (k: { title: string; key: string }) =>
+        k.title === deployKeyTitle && fingerprint(k.key) === fingerprint(publicKey)
+    );
+    if (existing) {
+      console.log(
+        `[git.e2e] ${testInfo.project.name}: reusing deploy key ${existing.id}`
+      );
+    } else {
+      for (const key of keys.filter(
+        (k: { title: string }) => k.title === deployKeyTitle
+      )) {
+        await gh.delete(`/repos/${owner}/${repo}/keys/${key.id}`);
+      }
+      const regRes = await gh.post(`/repos/${owner}/${repo}/keys`, {
+        data: {
+          title: deployKeyTitle,
+          key: fingerprint(publicKey),
+          read_only: false,
+        },
+      });
+      expectOk(regRes, "Deploy key registration");
+      console.log(
+        `[git.e2e] ${testInfo.project.name}: registered new deploy key`
+      );
+    }
   });
 
   test.afterAll(async ({ request }) => {
     await request.post("/api/git/disconnect").catch(() => {});
-    if (gh && deployKeyId !== null) {
-      await gh
-        .delete(`/repos/${owner}/${repo}/keys/${deployKeyId}`)
-        .catch(() => {});
-    }
+    // The excalihub-e2e deploy key is persistent by design — reused (never
+    // deleted) across runs to avoid key-change notifications on every run.
     await gh?.dispose();
   });
 
@@ -181,13 +199,23 @@ test.describe.serial("git integration", () => {
     const space = await findSpace(request, spaceName);
     expect(space).toBeTruthy();
 
-    const res = await expectOk(
-      await gh.get(`/repos/${owner}/${repo}/commits?path=${space.subdomain}/`),
-      "GitHub commits GET"
-    );
-    const commits = await res.json();
-    expect(commits.length).toBeGreaterThanOrEqual(1);
-    expect(commits[0].commit.message).toContain("e2e commit");
+    // The push has completed by now, but the GitHub commits API is
+    // eventually consistent — poll until the commit shows up and assert
+    // on that same response (a second fetch can race back to stale data).
+    await expect
+      .poll(
+        async () => {
+          const res = await gh.get(
+            `/repos/${owner}/${repo}/commits?path=${space.subdomain}/`
+          );
+          if (!res.ok()) return undefined;
+          const body = await res.json();
+          const commit = Array.isArray(body) && body.length > 0 ? body[0] : undefined;
+          return commit?.commit?.message;
+        },
+        { timeout: 15_000 }
+      )
+      .toContain("e2e commit");
   });
 
   test("disconnects and returns to the connect form", async ({ page }) => {
