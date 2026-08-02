@@ -194,3 +194,8 @@ hub/                  — Astro static site (pages, layouts)
 - **E2E infra**: `globalSetup.ts` kills stale 8081/4321 listeners before wiping `data-e2e` (stale `bun --watch` orphans + Astro 7 dev daemon survive previous runs); `playwright.config.ts` sets `ASTRO_DEV_BACKGROUND=1` (Astro 7 daemonizes `astro dev` by default — CLI exits 0, breaks Playwright webServer tracking)
 - **E2E git spec space names are per-project AND per-run timestamped** (`Git E2E {project} {Date.now()}`) — otherwise the pull-merged remote history finds prior runs' commits for the same subdomain path, breaking "No commits yet"
 - CI e2e job: `concurrency: ci-e2e` (no cancel-in-progress), `env: E2E_GIT_TOKEN` + `E2E_GIT_REPO=jlai403/excalihub-ci`
+
+### 2026-08-01 — Git e2e CI green + spec diagnostics
+- Root cause of CI e2e failure: `E2E_GIT_TOKEN` secret on `jlai403/excalihub` held a stale value → `GET /repos/jlai403/excalihub-ci/keys` in `beforeAll` returned non-2xx deterministically (all 3 projects × retries); refreshing the secret value → CI e2e green. Token scope for the spec: `Administration: R/W` (deploy keys) + `Contents: R/W` (commit read) — NO `Actions` needed
+- `git.e2e.ts` diagnostics (kept, useful for future debugging): `expectOk()` helper throws GitHub API `status` + body on non-ok; `/user` auth sanity check asserts `login === jlai403`; `beforeAll` logs `[git.e2e] project/owner/repo/tokenLen` — CI failures are now self-describing
+- CI e2e run pushes `e2e commit`s to `jlai403/excalihub-ci` on every run (per-project × per-run timestamped subdomains); the shared repo accumulates these
