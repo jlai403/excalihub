@@ -3,6 +3,7 @@ import {
   expect,
   request as pwRequest,
   type APIRequestContext,
+  type APIResponse,
 } from "@playwright/test";
 
 const E2E_GIT_TOKEN = process.env.E2E_GIT_TOKEN;
@@ -15,6 +16,13 @@ const deployKeyTitle = "excalihub-e2e";
 let gh: APIRequestContext;
 let deployKeyId: number | null = null;
 let spaceName = "Git E2E Space";
+
+async function expectOk(res: APIResponse, what: string): Promise<APIResponse> {
+  if (!res.ok()) {
+    throw new Error(`${what}: ${res.status()} ${await res.text()}`);
+  }
+  return res;
+}
 
 async function findSpace(request: APIRequestContext, name: string) {
   const spaces = await (await request.get("/api/spaces")).json();
@@ -47,6 +55,9 @@ test.describe.serial("git integration", () => {
 
   test.beforeAll(async ({ request }, testInfo) => {
     spaceName = `Git E2E ${testInfo.project.name} ${Date.now()}`;
+    console.log(
+      `[git.e2e] project=${testInfo.project.name} owner=${owner} repo=${repo} tokenLen=${E2E_GIT_TOKEN?.length ?? 0}`
+    );
     const keyRes = await request.get("/api/git/ssh-key");
     expect(keyRes.ok()).toBeTruthy();
     const { publicKey } = await keyRes.json();
@@ -60,12 +71,22 @@ test.describe.serial("git integration", () => {
       },
     });
 
+    const userRes = await expectOk(
+      await gh.get("/user"),
+      "GitHub /user auth check"
+    );
+    const me = await userRes.json();
+    expect(me.login).toBe("jlai403");
+
     const spaces = await (await request.get("/api/spaces")).json();
     for (const space of spaces) {
       await request.delete(`/api/spaces/${space.id}`);
     }
 
-    const keysRes = await gh.get(`/repos/${owner}/${repo}/keys`);    expect(keysRes.ok()).toBeTruthy();
+    const keysRes = await expectOk(
+      await gh.get(`/repos/${owner}/${repo}/keys`),
+      "GitHub keys GET"
+    );
     const keys = await keysRes.json();
     for (const key of keys.filter(
       (k: { title: string }) => k.title === deployKeyTitle
@@ -76,7 +97,7 @@ test.describe.serial("git integration", () => {
     const regRes = await gh.post(`/repos/${owner}/${repo}/keys`, {
       data: { title: deployKeyTitle, key: publicKey, read_only: false },
     });
-    expect(regRes.status()).toBe(201);
+    expectOk(regRes, "Deploy key registration");
     deployKeyId = (await regRes.json()).id;
   });
 
@@ -160,10 +181,10 @@ test.describe.serial("git integration", () => {
     const space = await findSpace(request, spaceName);
     expect(space).toBeTruthy();
 
-    const res = await gh.get(
-      `/repos/${owner}/${repo}/commits?path=${space.subdomain}/`
+    const res = await expectOk(
+      await gh.get(`/repos/${owner}/${repo}/commits?path=${space.subdomain}/`),
+      "GitHub commits GET"
     );
-    expect(res.ok()).toBeTruthy();
     const commits = await res.json();
     expect(commits.length).toBeGreaterThanOrEqual(1);
     expect(commits[0].commit.message).toContain("e2e commit");
