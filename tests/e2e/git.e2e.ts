@@ -1,28 +1,20 @@
 import {
   test,
   expect,
-  request as pwRequest,
   type APIRequestContext,
-  type APIResponse,
 } from "@playwright/test";
+import { execFileSync } from "child_process";
+import { mkdtempSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join, resolve } from "path";
 
-const E2E_GIT_TOKEN = process.env.E2E_GIT_TOKEN;
 const E2E_SSH_PRIVATE_KEY = process.env.E2E_SSH_PRIVATE_KEY;
 const [owner, repo] = (process.env.E2E_GIT_REPO ?? "jlai403/excalihub-ci").split(
   "/"
 );
 const repoUrl = `git@github.com:${owner}/${repo}.git`;
-const deployKeyTitle = "excalihub-e2e";
 
-let gh: APIRequestContext;
 let spaceName = "Git E2E Space";
-
-async function expectOk(res: APIResponse, what: string): Promise<APIResponse> {
-  if (!res.ok()) {
-    throw new Error(`${what}: ${res.status()} ${await res.text()}`);
-  }
-  return res;
-}
 
 async function findSpace(request: APIRequestContext, name: string) {
   const spaces = await (await request.get("/api/spaces")).json();
@@ -52,81 +44,22 @@ async function createBackup(
 
 test.describe.serial("git integration", () => {
   test.skip(
-    !E2E_GIT_TOKEN || !E2E_SSH_PRIVATE_KEY,
-    "E2E_GIT_TOKEN / E2E_SSH_PRIVATE_KEY not set — skipping git integration"
+    !E2E_SSH_PRIVATE_KEY,
+    "E2E_SSH_PRIVATE_KEY not set — skipping git integration"
   );
 
   test.beforeAll(async ({ request }, testInfo) => {
     spaceName = `Git E2E ${testInfo.project.name} ${Date.now()}`;
-    console.log(
-      `[git.e2e] project=${testInfo.project.name} owner=${owner} repo=${repo} tokenLen=${E2E_GIT_TOKEN?.length ?? 0}`
-    );
-    const keyRes = await request.get("/api/git/ssh-key");
-    expect(keyRes.ok()).toBeTruthy();
-    const { publicKey } = await keyRes.json();
-
-    gh = await pwRequest.newContext({
-      baseURL: "https://api.github.com",
-      extraHTTPHeaders: {
-        Authorization: `Bearer ${E2E_GIT_TOKEN}`,
-        Accept: "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-      },
-    });
-
-    const userRes = await expectOk(
-      await gh.get("/user"),
-      "GitHub /user auth check"
-    );
-    const me = await userRes.json();
-    expect(me.login).toBe("jlai403");
+    console.log(`[git.e2e] project=${testInfo.project.name}`);
 
     const spaces = await (await request.get("/api/spaces")).json();
     for (const space of spaces) {
       await request.delete(`/api/spaces/${space.id}`);
     }
-
-    const keysRes = await expectOk(
-      await gh.get(`/repos/${owner}/${repo}/keys`),
-      "GitHub keys GET"
-    );
-    const keys = await keysRes.json();
-
-    const fingerprint = (s: string) => s.trim().split(/\s+/).slice(0, 2).join(" ");
-
-    const existing = keys.find(
-      (k: { title: string; key: string }) =>
-        k.title === deployKeyTitle && fingerprint(k.key) === fingerprint(publicKey)
-    );
-    if (existing) {
-      console.log(
-        `[git.e2e] ${testInfo.project.name}: reusing deploy key ${existing.id}`
-      );
-    } else {
-      for (const key of keys.filter(
-        (k: { title: string }) => k.title === deployKeyTitle
-      )) {
-        await gh.delete(`/repos/${owner}/${repo}/keys/${key.id}`);
-      }
-      const regRes = await gh.post(`/repos/${owner}/${repo}/keys`, {
-        data: {
-          title: deployKeyTitle,
-          key: fingerprint(publicKey),
-          read_only: false,
-        },
-      });
-      expectOk(regRes, "Deploy key registration");
-      console.log(
-        `[git.e2e] ${testInfo.project.name}: registered new deploy key`
-      );
-    }
   });
 
   test.afterAll(async ({ request }) => {
     await request.post("/api/git/disconnect").catch(() => {});
-    // The excalihub-e2e deploy key is persistent by design — reused (never
-    // deleted) across runs to avoid key-change notifications on every run.
-    await gh?.dispose();
   });
 
   test("rejects an invalid repository URL", async ({ page }) => {
@@ -199,23 +132,54 @@ test.describe.serial("git integration", () => {
     const space = await findSpace(request, spaceName);
     expect(space).toBeTruthy();
 
-    // The push has completed by now, but the GitHub commits API is
-    // eventually consistent — poll until the commit shows up and assert
-    // on that same response (a second fetch can race back to stale data).
-    await expect
-      .poll(
-        async () => {
-          const res = await gh.get(
-            `/repos/${owner}/${repo}/commits?path=${space.subdomain}/`
-          );
-          if (!res.ok()) return undefined;
-          const body = await res.json();
-          const commit = Array.isArray(body) && body.length > 0 ? body[0] : undefined;
-          return commit?.commit?.message;
-        },
-        { timeout: 15_000 }
-      )
-      .toContain("e2e commit");
+    // Verify the push landed by fetching over SSH with the seeded deploy
+    // key (git is strongly consistent, unlike the GitHub REST API).
+    // A standalone temp repo keeps this independent of the app's git state.
+    const sshKey = resolve("data-e2e/git-config/id_ed25519");
+    // IdentityAgent=none: macOS ssh offers agent keys (e.g. the developer's
+    // own GitHub key) BEFORE -i despite IdentitiesOnly=yes, which authenticates
+    // as the wrong user and fails the fetch with "Repository not found".
+    const sshCommand = `ssh -i ${sshKey} -o IdentitiesOnly=yes -o IdentityAgent=none -o StrictHostKeyChecking=no`;
+    const tmp = mkdtempSync(join(tmpdir(), "excalihub-e2e-"));
+    try {
+      execFileSync("git", ["init", "-b", "main"], { cwd: tmp, stdio: "pipe" });
+      execFileSync("git", ["remote", "add", "origin", repoUrl], {
+        cwd: tmp,
+        stdio: "pipe",
+      });
+
+      await expect
+        .poll(
+          async () => {
+            try {
+              execFileSync("git", ["fetch", "origin", "main"], {
+                cwd: tmp,
+                stdio: "pipe",
+                env: { ...process.env, GIT_SSH_COMMAND: sshCommand },
+              });
+              const out = execFileSync(
+                "git",
+                [
+                  "log",
+                  "-1",
+                  "--format=%s",
+                  "FETCH_HEAD",
+                  "--",
+                  `${space.subdomain}/`,
+                ],
+                { cwd: tmp, stdio: "pipe", encoding: "utf8" }
+              );
+              return out.trim();
+            } catch {
+              return undefined;
+            }
+          },
+          { timeout: 15_000 }
+        )
+        .toContain("e2e commit");
+    } finally {
+      rmSync(tmp, { recursive: true, force: true });
+    }
   });
 
   test("disconnects and returns to the connect form", async ({ page }) => {

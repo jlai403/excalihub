@@ -30,7 +30,6 @@ jobs:
       - run: bunx playwright install --with-deps
       - run: bun run test:e2e
         env:
-          E2E_GIT_TOKEN: ${{ secrets.E2E_GIT_TOKEN }}
           E2E_GIT_REPO: jlai403/excalihub-ci
           E2E_SSH_PRIVATE_KEY: ${{ secrets.E2E_SSH_PRIVATE_KEY }}
       - uses: actions/upload-artifact@v7
