@@ -101,7 +101,8 @@ function getInjectedCommitModalScript(): string {
 }
 
 async function proxyToExcalidraw(c: Context, subdomain: string) {
-  if (!getSpaceBySubdomain(subdomain)) {
+  const space = getSpaceBySubdomain(subdomain);
+  if (!space) {
     return c.json({ error: 'Space not found' }, 404);
   }
 
@@ -150,7 +151,7 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
   const menuScript = `<script data-excalihub-menu>window.__GIT_ENABLED = '${gitEnabled}';window.__hubHost = '${hubHost}';${getInjectedMenuScript()}</script>`;
   const commitModalScript = `<script data-excalihub-commit-modal>${getInjectedCommitModalScript()}</script>`;
 
-  const syncScript = `<script data-excalihub-sync>${debugFlag}${getInjectedScript()}</script>`;
+  const syncScript = `<script data-excalihub-sync>${debugFlag}window.__SPACE_NAME = ${JSON.stringify(space.name)};${getInjectedScript()}</script>`;
   const injection = `${menuCss}${menuScript}${commitModalScript}${syncScript}`;
   const injected = html.includes('</body>')
     ? html.replace('</body>', `${injection}</body>`)

@@ -39,4 +39,15 @@ test.describe.serial("proxy routing", () => {
     });
     expect(response.status()).toBe(404);
   });
+
+  test("space page sets Excalidraw tab title to the space name", async ({ page }) => {
+    const createRes = await page.request.post("/api/spaces", {
+      data: { name: "Tab Title Test" },
+    });
+    expect(createRes.ok()).toBeTruthy();
+    const space = await createRes.json();
+
+    await page.goto(`http://${space.subdomain}.excalihub.localhost:8081/`);
+    await expect(page).toHaveTitle("Tab Title Test · Excalidraw");
+  });
 });

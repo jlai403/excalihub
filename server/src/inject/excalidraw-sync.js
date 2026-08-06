@@ -7,6 +7,20 @@
   const subdomain = parts[0];
   const hubDomain = parts.slice(1).join('.');
 
+  const spaceName = window.__SPACE_NAME ?? '';
+  const DESIRED_TITLE = spaceName ? `${spaceName} · Excalidraw` : null;
+  if (DESIRED_TITLE) document.title = DESIRED_TITLE;
+
+  function updateTabTitle() {
+    if (!DESIRED_TITLE || document.title === DESIRED_TITLE) return;
+    try {
+      const appState = JSON.parse(localStorage.getItem('excalidraw-state') || '{}');
+      if (!appState.name) document.title = DESIRED_TITLE;
+    } catch {
+      document.title = DESIRED_TITLE;
+    }
+  }
+
   async function sendBackup(elements, appState) {
     if (!elements) return;
 
@@ -31,6 +45,8 @@
   let lastAppState = null;
 
   setInterval(() => {
+    updateTabTitle();
+
     const elements = localStorage.getItem('excalidraw');
     const appState = localStorage.getItem('excalidraw-state');
     if (elements !== lastElements || appState !== lastAppState) {
