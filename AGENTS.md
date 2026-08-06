@@ -219,3 +219,9 @@ hub/                  — Astro static site (pages, layouts)
 - **op reference gotcha**: `(` is an invalid character in `op://` references — item titles must avoid parentheses (`excalihub-ci ssh key (raw)` fails; renamed to `example-ssh-key`).
 - **New GitHub deploy key on `jlai403/excalihub-ci`**: pubkey `ssh-ed25519 ...example-pubkey-tail` (fp `SHA256:example-fingerprint`), private key = the recovered seed (`deadbeef...`). `E2E_SSH_PRIVATE_KEY` secret on `jlai403/excalihub` updated to the OpenSSH-format key.
 - **Verified**: `bun run test:e2e:local` 51/51 + `bun test` 79 pass with the new key; CI green. Old 1P item `example-ssh-key` deleted; old deploy key id `000000000` pending deletion.
+
+### 2026-08-06 — Space name in Excalidraw tab title
+- `proxyToExcalidraw` now captures the space (`const space = getSpaceBySubdomain(subdomain)`) and injects `window.__SPACE_NAME = ${JSON.stringify(space.name)}` into the sync-script wrapper (`proxy.ts:153`), alongside `__EXCALIHUB_DEBUG`.
+- `excalidraw-sync.js` sets `document.title = \`${spaceName} · Excalidraw\`` at boot and re-asserts it in the existing 5s interval — but only when the scene has no custom name (parses `localStorage['excalidraw-state']` → `appState.name`), so a user-renamed scene keeps Excalidraw's own title.
+- **E2E proxy no longer needs Docker**: new `tests/e2e/excalidraw-stub.ts` serves a minimal HTML page on `:8099`; `playwright.config.ts` points `EXCALIDRAW_CONTAINER` at it and registers it as a webServer (`reuseExistingServer: true`). This lets the proxy-injection path be tested without the `excalidraw/excalidraw:latest` container (CI runners have no Docker).
+- New e2e test `space page sets Excalidraw tab title to the space name` (`proxy.e2e.ts`) asserts `page.toHaveTitle("Tab Title Test · Excalidraw")` after navigating to a space subdomain. Unit test asserts `window.__SPACE_NAME = "Space"` in the injected HTML. 54 e2e (3 projects) + 79 unit pass.

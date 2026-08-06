@@ -147,6 +147,7 @@ describe('proxyMiddleware', () => {
       });
       const body = await res.text();
       expect(body).toContain('excalihub-sync');
+      expect(body).toContain('window.__SPACE_NAME = "Space"');
       expect(body).toContain('</body>');
     });
 
