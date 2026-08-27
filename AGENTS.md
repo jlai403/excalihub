@@ -225,3 +225,12 @@ hub/                  — Astro static site (pages, layouts)
 - `excalidraw-sync.js` sets `document.title = \`${spaceName} · Excalidraw\`` at boot and re-asserts it in the existing 5s interval — but only when the scene has no custom name (parses `localStorage['excalidraw-state']` → `appState.name`), so a user-renamed scene keeps Excalidraw's own title.
 - **E2E proxy no longer needs Docker**: new `tests/e2e/excalidraw-stub.ts` serves a minimal HTML page on `:8099`; `playwright.config.ts` points `EXCALIDRAW_CONTAINER` at it and registers it as a webServer (`reuseExistingServer: true`). This lets the proxy-injection path be tested without the `excalidraw/excalidraw:latest` container (CI runners have no Docker).
 - New e2e test `space page sets Excalidraw tab title to the space name` (`proxy.e2e.ts`) asserts `page.toHaveTitle("Tab Title Test · Excalidraw")` after navigating to a space subdomain. Unit test asserts `window.__SPACE_NAME = "Space"` in the injected HTML. 54 e2e (3 projects) + 79 unit pass.
+
+### 2026-08-27 — Bun 1.4.0 + TypeScript 7
+- Upgraded Bun 1.3.14 → 1.4.0 (rewritten in Rust, Node 26.3 compat) and pinned to `1.4.0` everywhere: new `.bun-version` file, `Dockerfile` (`oven/bun:1.4.0`, builder + runtime), CI `oven-sh/setup-bun` `bun-version: 1.4.0` (was `latest`)
+- TypeScript 6.0.3 → 7.0.2 (native Go compiler — `tsc` is the Go build now). Removed TS7-removed options: `ignoreDeprecations` (root `tsconfig.json`), `baseUrl` (server + hub `tsconfig.json`)
+- Added `@types/bun` + `"bun"` in root tsconfig `types` — Bun globals (`Bun.serve`/`Bun.file`/`Bun.build`) were never typed; repo had **no typecheck before**
+- Removed duplicate dead `getLatestBackupHash` from `server/src/repos/backup.ts` (was ambiguous with the canonical `space.ts` version; test now imports from `space.js`)
+- Added typecheck: root `typecheck`/`typecheck:server` = `tsc --noEmit -p server` (tsc7), `typecheck:hub` = `astro check`. Hub pins `typescript@^6.0.0` because `astro check` needs TS6's programmatic API (TS7 ships none until 7.1 — withastro/roadmap#1321). Typecheck now runs in CI `test` job
+- Playwright fix: hub webServer now sets `ASTRO_DEV_BACKGROUND=false` — Astro 7.1 auto-daemonizes its dev server under AI-agent environments (opencode + Bun 1.4), which made Playwright abort on "webServer exited early"
+- Verified on Bun 1.4: typecheck clean (tsc7 + astro check), 70 unit + 30 e2e pass, `build` + `docker build` green, runtime `/health` 200, `droast` clean
