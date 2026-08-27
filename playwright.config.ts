@@ -48,7 +48,7 @@ export default defineConfig({
       reuseExistingServer: true,
       timeout: 120_000,
       env: {
-        ASTRO_DEV_BACKGROUND: "1",
+        ASTRO_DEV_BACKGROUND: "false",
       },
     },
   ],

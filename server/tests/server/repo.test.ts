@@ -12,8 +12,8 @@ import {
   createBackup,
   getBackupsBySpaceId,
   getBackupById,
-  getLatestBackupHash,
 } from '../../src/repos/backup.js';
+import { getLatestBackupHash } from '../../src/repos/space.js';
 
 beforeEach(() => {
   setupTestDb();
