@@ -11,8 +11,9 @@ jobs:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.4.0
       - run: bun install --frozen-lockfile
+      - run: bun run typecheck
       - run: bun test server/tests/
 
   e2e:
@@ -22,7 +23,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.4.0
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps
       - run: bun run test:e2e

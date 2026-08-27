@@ -173,3 +173,12 @@ hub/                  — Astro static site (pages, layouts)
 - Added `testMatch: "**/*.e2e.ts"` to `playwright.config.ts`
 - Updated e2e proxy test to navigate to hub host for subdomain link assertion
 - Documented protected `main` branch rule in AGENTS.md
+
+### 2026-08-27 — Bun 1.4.0 + TypeScript 7
+- Upgraded Bun 1.3.14 → 1.4.0 (rewritten in Rust, Node 26.3 compat) and pinned to `1.4.0` everywhere: new `.bun-version` file, `Dockerfile` (`oven/bun:1.4.0`, builder + runtime), CI `oven-sh/setup-bun` `bun-version: 1.4.0` (was `latest`)
+- TypeScript 6.0.3 → 7.0.2 (native Go compiler — `tsc` is the Go build now). Removed TS7-removed options: `ignoreDeprecations` (root `tsconfig.json`), `baseUrl` (server + hub `tsconfig.json`)
+- Added `@types/bun` + `"bun"` in root tsconfig `types` — Bun globals (`Bun.serve`/`Bun.file`/`Bun.build`) were never typed; repo had **no typecheck before**
+- Removed duplicate dead `getLatestBackupHash` from `server/src/repos/backup.ts` (was ambiguous with the canonical `space.ts` version; test now imports from `space.js`)
+- Added typecheck: root `typecheck`/`typecheck:server` = `tsc --noEmit -p server` (tsc7), `typecheck:hub` = `astro check`. Hub pins `typescript@^6.0.0` because `astro check` needs TS6's programmatic API (TS7 ships none until 7.1 — withastro/roadmap#1321). Typecheck now runs in CI `test` job
+- Playwright fix: hub webServer now sets `ASTRO_DEV_BACKGROUND=false` — Astro 7.1 auto-daemonizes its dev server under AI-agent environments (opencode + Bun 1.4), which made Playwright abort on "webServer exited early"
+- Verified on Bun 1.4: typecheck clean (tsc7 + astro check), 70 unit + 30 e2e pass, `build` + `docker build` green, runtime `/health` 200, `droast` clean
