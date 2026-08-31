@@ -12,7 +12,7 @@ export default defineConfig({
   globalSetup: "./tests/e2e/globalSetup.ts",
 
   use: {
-    baseURL: "http://localhost:8081",
+    baseURL: "http://excalihub.localhost:8081",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
