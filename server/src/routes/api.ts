@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { env } from '~/env.js';
+import { env, envSchema } from '~/env.js';
 import * as SpaceRepo from '~/repos/space.js';
 import * as BackupRepo from '~/repos/backup.js';
 import * as GitRepo from '~/repos/git.js';
@@ -15,7 +15,11 @@ import {
 const api = new Hono();
 
 api.get('/config', (c) => {
-  return c.json({ hubHost: `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}` });
+  const e = envSchema.parse(process.env);
+  const hubHost = e.HUB_SUBDOMAIN
+    ? `${e.HUB_SUBDOMAIN}.${e.BASE_DOMAIN}`
+    : e.BASE_DOMAIN;
+  return c.json({ hubHost });
 });
 
 api.get('/spaces', async (c) => {
