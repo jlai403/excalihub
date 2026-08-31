@@ -1,25 +1,32 @@
 import { Context, Next } from 'hono';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
-import { env } from '~/env.js';
+import { env, envSchema } from '~/env.js';
 import { getSpaceBySubdomain } from '~/repos/space.js';
 import { getGitConfig } from '~/repos/git.js';
 
-const hubHost = `${env.HUB_SUBDOMAIN}.${env.BASE_DOMAIN}`;
+function hubHostFor(e: { HUB_SUBDOMAIN: string; BASE_DOMAIN: string }): string {
+  return e.HUB_SUBDOMAIN ? `${e.HUB_SUBDOMAIN}.${e.BASE_DOMAIN}` : '';
+}
 
 export function proxyMiddleware() {
   return async (c: Context, next: Next) => {
+    const e = envSchema.parse(process.env);
     const rawHost = c.req.header('host') || '';
     const host = rawHost.replace(/:\d+$/, '');
+    const url = new URL(c.req.url);
+    const hubHost = hubHostFor(e);
+
+    // API routes are host-independent — serve them regardless of which
+    // subdomain/apex the request arrived on.
+    if (url.pathname.startsWith('/api/')) return next();
 
     const subdomain = extractSubdomain(host, hubHost);
     if (subdomain) {
-      const url = new URL(c.req.url);
-      if (url.pathname.startsWith('/api/')) return next();
       return proxyToExcalidraw(c, subdomain);
     }
 
-    if (host === hubHost || host === env.BASE_DOMAIN) {
+    if (host === hubHost || (!e.HUB_SUBDOMAIN && host === e.BASE_DOMAIN)) {
       return serveHub(c, next);
     }
 
@@ -28,6 +35,7 @@ export function proxyMiddleware() {
 }
 
 function extractSubdomain(host: string, hubHost: string): string | null {
+  if (!hubHost) return null;
   const suffix = `.${hubHost}`;
   if (!host.endsWith(suffix)) return null;
   return host.slice(0, -suffix.length);
@@ -148,7 +156,7 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
   const gitConfig = getGitConfig();
   const gitEnabled = gitConfig?.connected ? 'true' : 'false';
   const menuCss = `<style data-excalihub-menu>${getInjectedMenuCss()}</style>`;
-  const menuScript = `<script data-excalihub-menu>window.__GIT_ENABLED = '${gitEnabled}';window.__hubHost = '${hubHost}';${getInjectedMenuScript()}</script>`;
+  const menuScript = `<script data-excalihub-menu>window.__GIT_ENABLED = '${gitEnabled}';window.__hubHost = '${hubHostFor(envSchema.parse(process.env))}';${getInjectedMenuScript()}</script>`;
   const commitModalScript = `<script data-excalihub-commit-modal>${getInjectedCommitModalScript()}</script>`;
 
   const syncScript = `<script data-excalihub-sync>${debugFlag}window.__SPACE_NAME = ${JSON.stringify(space.name)};${getInjectedScript()}</script>`;

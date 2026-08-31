@@ -39,13 +39,12 @@ describe('proxyMiddleware', () => {
       expect(fetchMock).toHaveBeenCalledOnce();
     });
 
-    it('serves hub via fetch for bare example.com', async () => {
+    it('returns 404 for bare example.com when HUB_SUBDOMAIN is set', async () => {
       const res = await makeApp().request('/', {
         headers: { host: 'example.com' },
       });
-      const body = await res.text();
-      expect(body).toBe('ok');
-      expect(fetchMock).toHaveBeenCalledOnce();
+      expect(res.status).toBe(404);
+      expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('bypasses hub serving for /api/* paths', async () => {
@@ -54,6 +53,48 @@ describe('proxyMiddleware', () => {
       });
       const body = await res.json();
       expect(body.reached).toBe('next');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('hub routing without HUB_SUBDOMAIN', () => {
+    const originalHubSubdomain = process.env.HUB_SUBDOMAIN;
+
+    beforeEach(() => {
+      process.env.HUB_SUBDOMAIN = '';
+    });
+
+    afterEach(() => {
+      if (originalHubSubdomain === undefined) {
+        delete process.env.HUB_SUBDOMAIN;
+      } else {
+        process.env.HUB_SUBDOMAIN = originalHubSubdomain;
+      }
+    });
+
+    it('serves hub via fetch for bare example.com when no subdomain configured', async () => {
+      const res = await makeApp().request('/', {
+        headers: { host: 'example.com' },
+      });
+      const body = await res.text();
+      expect(body).toBe('ok');
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it('serves hub via fetch for default BASE_DOMAIN when no subdomain configured', async () => {
+      const res = await makeApp().request('/', {
+        headers: { host: process.env.BASE_DOMAIN },
+      });
+      const body = await res.text();
+      expect(body).toBe('ok');
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it('does not route unknown hosts to hub when no subdomain configured', async () => {
+      const res = await makeApp().request('/', {
+        headers: { host: 'random.other.com' },
+      });
+      expect(res.status).toBe(404);
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });
