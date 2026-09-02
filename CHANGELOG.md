@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.12](https://github.com/jlai403/excalihub/compare/v0.1.11...v0.1.12) (2026-09-02)
+
+
+### Bug Fixes
+
+* serve hub directory routes in production + production-mode CI e2e ([15baa43](https://github.com/jlai403/excalihub/commit/15baa43da1f04f3c0f385cdb07063e27fef36e76))
+* serve hub directory routes in production + production-mode CI e2e ([38c3422](https://github.com/jlai403/excalihub/commit/38c3422adf90a8a498f83ed96b809e89af47481f))
+
 ## [0.1.11](https://github.com/jlai403/excalihub/compare/v0.1.10...v0.1.11) (2026-09-02)
 
 
