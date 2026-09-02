@@ -27,7 +27,7 @@ export function proxyMiddleware() {
     }
 
     if (host === hubHost || (!e.HUB_SUBDOMAIN && host === e.BASE_DOMAIN)) {
-      return serveHub(c, next, e);
+      return serveHub(c, next);
     }
 
     return c.json({ error: 'Not found' }, 404);
@@ -41,11 +41,8 @@ function extractSubdomain(host: string, hubHost: string): string | null {
   return host.slice(0, -suffix.length);
 }
 
-async function serveHub(
-  c: Context,
-  next: Next,
-  e: { NODE_ENV: string; HUB_PORT: number }
-) {
+async function serveHub(c: Context, next: Next) {
+  const e = envSchema.parse(process.env);
   const url = new URL(c.req.url);
 
   if (url.pathname.startsWith('/api/')) {
