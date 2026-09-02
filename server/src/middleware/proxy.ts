@@ -27,7 +27,7 @@ export function proxyMiddleware() {
     }
 
     if (host === hubHost || (!e.HUB_SUBDOMAIN && host === e.BASE_DOMAIN)) {
-      return serveHub(c, next);
+      return serveHub(c, next, e);
     }
 
     return c.json({ error: 'Not found' }, 404);
@@ -41,15 +41,19 @@ function extractSubdomain(host: string, hubHost: string): string | null {
   return host.slice(0, -suffix.length);
 }
 
-async function serveHub(c: Context, next: Next) {
+async function serveHub(
+  c: Context,
+  next: Next,
+  e: { NODE_ENV: string; HUB_PORT: number }
+) {
   const url = new URL(c.req.url);
 
   if (url.pathname.startsWith('/api/')) {
     return next();
   }
 
-  if (env.NODE_ENV !== 'production') {
-    const res = await fetch(`http://localhost:${env.HUB_PORT}${url.pathname}${url.search}`);
+  if (e.NODE_ENV !== 'production') {
+    const res = await fetch(`http://localhost:${e.HUB_PORT}${url.pathname}${url.search}`);
     return new Response(res.body, { status: res.status, headers: res.headers });
   }
 
@@ -58,6 +62,14 @@ async function serveHub(c: Context, next: Next) {
   if (await file.exists()) {
     return new Response(file, {
       headers: { 'Content-Type': file.type },
+    });
+  }
+
+  const indexPath = `./dist/public${url.pathname}/index.html`;
+  const indexFile = Bun.file(indexPath);
+  if (await indexFile.exists()) {
+    return new Response(indexFile, {
+      headers: { 'Content-Type': indexFile.type },
     });
   }
   return next();
