@@ -29,7 +29,8 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 | `bun run start` | Run production server |
 | `bun test` | Run unit/integration test suite |
 | `bun test --watch` | Run tests in watch mode |
-| `bun test:e2e` | Run Playwright e2e tests (chromium, firefox, webkit) |
+| `bun test:e2e` | Run Playwright e2e tests (chromium, firefox, webkit) in **dev** mode |
+| `bun run test:e2e:prod` | Build + run Playwright e2e in **production** mode (used by CI) |
 | `docker compose up --build` | Full deployment |
 | `droast Dockerfile` | Lint Dockerfile |
 
@@ -243,3 +244,12 @@ hub/                  — Astro static site (pages, layouts)
 - **Tests**: `proxy.test.ts` — bare `example.com` now asserts 404 with `HUB_SUBDOMAIN` set; added a `hub routing without HUB_SUBDOMAIN` block (mutates `process.env.HUB_SUBDOMAIN`, proving the live read works). Full suite 82 unit pass + typecheck clean.
 - **Docs**: README Quick Start + Homelab Deployment updated (step 5 = Access, step 6 = Up) to state the hub-subdomain restriction. This is why dev flows should always use `excalihub.localhost`.
 - **Regression fix (same day)**: initial implementation read `process.env.HUB_SUBDOMAIN`/`BASE_DOMAIN` directly, bypassing the zod defaults in `env.ts` — in dev/e2e those vars aren't exported, so `getHubHost()` returned `''` and `excalihub.localhost` + `/api/*` broke (404). Fixed by resolving env through `envSchema.parse(process.env)` per request: exported `envSchema` from `env.ts`, `hubHostFor(e)` helper in `proxy.ts`, and `/config` uses the schema too. Also moved the `/api/*` pass-through to the top of `proxyMiddleware` so API routes are host-independent (dev Astro dev-server proxies `/api` to Hono with the apex `Host: localhost:4321`, which previously fell through the hub-subdomain gate → "Failed to load spaces").
+
+### 2026-09-02 — Production serveHub 404 fix + production-mode CI e2e
+- **Bug**: `/settings` (and any non-root Astro page) returned 404 in production. `serveHub` static path was `./dist/public{pathname}` — but Astro outputs directory routes (`settings/index.html`, `archived/index.html`), so `Bun.file(".../settings")` doesn't exist → fell through to Hono 404. Untested because no test set `NODE_ENV=production` (all tests/e2e ran the dev fetch-to-Astro path).
+- **`proxy.ts` `serveHub`**: added `{path}/index.html` fallback after the direct path miss; refactored to take the live-parsed env `e` (per-request `envSchema.parse`) instead of the frozen `env` snapshot for `NODE_ENV`/`HUB_PORT` (matches the 2026-08-31 live-read pattern).
+- **Unit test**: new `hub routing in production` block in `proxy.test.ts` — sets `process.env.NODE_ENV='production'`, writes a `dist/public` fixture (root, `settings/index.html`, `archived/index.html`), asserts root/directory serving + `next()` fall-through for missing files.
+- **Prod e2e**: new `playwright.prod.config.ts` — serves the hub from `bun run dist/index.js` with `NODE_ENV=production` (no Astro dev server), plus the excalidraw stub on `:8099`. The webServer command copies `server/src/inject` → `./inject` before boot, mirroring the Docker runtime layout (`/app/inject`) where the bundled server resolves injection files from `dist/../inject`. `inject/` added to `.gitignore`.
+- **Scripts**: `bun run test:e2e:prod` = `bun run build && bun playwright test --config playwright.prod.config.ts`. Local dev e2e unchanged (`bun run test:e2e` → dev config).
+- **CI**: `ci.yml` e2e job now runs `bun run test:e2e:prod` (build + production-mode Playwright across 3 browsers) instead of the dev-mode `test:e2e`, keeping `E2E_GIT_REPO` + `E2E_SSH_PRIVATE_KEY`.
+- **Verified**: 86 unit pass (+4), typecheck clean, `bun run test:e2e` (dev) and `test:e2e:prod` (prod) both green; prod run incl. git spec via varlock = 54 pass.
