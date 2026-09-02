@@ -19,6 +19,12 @@ ENV NODE_ENV=production
 
 WORKDIR /app
 
+# Git + OpenSSH tooling required at runtime (simple-git, ssh-keygen, ssh).
+# Must run as root before dropping to the non-root bun user.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git openssh-client \
+ && rm -rf /var/lib/apt/lists/*
+
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/server/src/inject ./inject
 

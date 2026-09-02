@@ -1,5 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
+process.env.E2E_DOCKER = "1";
+
 export default defineConfig({
   testDir: "./tests/e2e",
   testMatch: "**/*.e2e.ts",
@@ -9,7 +11,10 @@ export default defineConfig({
   workers: 1,
   reporter: process.env.CI ? "dot" : "list",
   outputDir: "./tests/e2e/test-results",
+  // globalSetup builds + runs the app from the built Docker image and seeds
+  // data-e2e (incl. the SSH deploy key). globalTeardown removes the container.
   globalSetup: "./tests/e2e/globalSetup.ts",
+  globalTeardown: "./tests/e2e/globalTeardown.ts",
 
   use: {
     baseURL: "http://excalihub.localhost:8081",
@@ -24,22 +29,9 @@ export default defineConfig({
   ],
 
   webServer: [
-    {
-      command:
-        "mkdir -p ./inject && cp -R server/src/inject/. ./inject/ && bun run dist/index.js",
-      url: "http://localhost:8081/api/config",
-      reuseExistingServer: false,
-      timeout: 30_000,
-      env: {
-        NODE_ENV: "production",
-        PORT: "8081",
-        HOST: "127.0.0.1",
-        DATA_DIR: "./data-e2e",
-        BASE_DOMAIN: "localhost",
-        HUB_SUBDOMAIN: "excalihub",
-        EXCALIDRAW_CONTAINER: "http://localhost:8099",
-      },
-    },
+    // Only the Excalidraw stub runs on the host (Playwright manages it fine).
+    // The excalihub app itself is the Docker container started in globalSetup,
+    // which proxies to this stub via host.docker.internal:8099.
     {
       command: "bun run tests/e2e/excalidraw-stub.ts",
       url: "http://localhost:8099",
