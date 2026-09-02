@@ -6,6 +6,7 @@
   import {
     getGitConfig,
     getSSHPublicKey,
+    getSSHError,
     loadGitConfig,
     connectGitRepo,
     disconnectGitRepo,
@@ -13,6 +14,7 @@
 
   let gitConfig = $derived(getGitConfig());
   let sshPublicKey = $derived(getSSHPublicKey());
+  let sshError = $derived(getSSHError());
   let repoUrl = $state("");
   let loading = $state(false);
   let error = $state("");
@@ -189,6 +191,8 @@
           {/if}
         </Button>
       </div>
+    {:else if sshError}
+      <p class="text-sm text-destructive">{sshError}</p>
     {:else}
       <p class="text-sm text-muted-foreground">
         Generating SSH key...
