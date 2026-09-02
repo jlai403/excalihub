@@ -3,9 +3,16 @@
   import * as Card from "$lib/components/ui/card";
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
-  import { Archive } from "@lucide/svelte";
+  import * as Tooltip from "$lib/components/ui/tooltip";
+  import { Archive, CircleCheckBig, GitBranch, GitCommitHorizontal } from "@lucide/svelte";
   import CreateSpaceForm from "./CreateSpaceForm.svelte";
   import { getSpaces, loadSpaces, addSpace, archiveSpace } from "$lib/stores/spaces.svelte";
+
+  type SpaceGitStatus = {
+    lastCommitAt: string | null;
+    lastCommitMessage: string | null;
+    hasUncommittedChanges: boolean;
+  };
 
   let loading = $state(true);
   let error: string | null = $state(null);
@@ -13,6 +20,8 @@
   let createOpen = $state(false);
   let archiveTarget = $state<string | null>(null);
   let actionLoading = $state(false);
+  let gitConnected = $state(false);
+  let gitStatuses = $state(new Map<string, SpaceGitStatus>());
 
   const spaces = $derived(getSpaces());
 
@@ -22,9 +31,27 @@
       await loadSpaces();
     } catch {
       error = "Failed to load spaces";
-    } finally {
       loading = false;
+      return;
     }
+
+    const gitConfig = await fetch("/api/git/config")
+      .then((r) => r.json())
+      .catch(() => null);
+    if (gitConfig?.connected) {
+      gitConnected = true;
+      const statuses = await Promise.all(
+        spaces.map(async (space) => {
+          const res = await fetch(`/api/spaces/${space.id}/git-status`);
+          if (!res.ok) return null;
+          return [space.id, (await res.json()) as SpaceGitStatus] as const;
+        })
+      );
+      gitStatuses = new Map(
+        statuses.filter((s): s is [string, SpaceGitStatus] => s !== null)
+      );
+    }
+    loading = false;
   });
 
   function handleCreated(space: Parameters<typeof addSpace>[0]) {
@@ -43,6 +70,20 @@
     const match = filename.match(/^(\d+)-/);
     if (!match) return "Unknown";
     return new Date(parseInt(match[1])).toLocaleDateString();
+  }
+
+  function formatRelativeTime(iso: string): string {
+    const diff = Date.now() - new Date(iso).getTime();
+    const minutes = Math.floor(diff / 60000);
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    const months = Math.floor(days / 30);
+    if (months < 12) return `${months}mo ago`;
+    return `${Math.floor(months / 12)}y ago`;
   }
 </script>
 
@@ -67,7 +108,8 @@
   </Card.Root>
 {:else}
   <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-    {#each spaces as space (space.id)}
+    <Tooltip.Provider>
+      {#each spaces as space (space.id)}
       <Card.Root>
         <Card.Header>
           <Card.Title>
@@ -89,6 +131,42 @@
           <p class="text-xs text-muted-foreground/60">
             Last Backup: {formatBackupTime(space.latest_backup)}
           </p>
+          {#if gitConnected && gitStatuses.get(space.id)}
+            {@const status = gitStatuses.get(space.id)!}
+            <p class="mt-1.5 flex items-center gap-1.5 text-xs">
+              {#if status.lastCommitMessage}
+                {#if status.hasUncommittedChanges}
+                  <GitCommitHorizontal class="size-3.5 shrink-0 text-amber-500" />
+                {:else}
+                  <CircleCheckBig class="size-3.5 shrink-0 text-green-500" />
+                {/if}
+              {:else}
+                <GitBranch class="size-3.5 shrink-0 text-muted-foreground/60" />
+              {/if}
+              {#if status.lastCommitMessage}
+                <span class="text-muted-foreground/60 truncate" title={status.lastCommitMessage}>
+                  {status.lastCommitMessage}
+                </span>
+              {:else}
+                <span class="text-muted-foreground/60">No commits yet</span>
+              {/if}
+              {#if status.lastCommitAt}
+                <Tooltip.Root>
+                  <Tooltip.Trigger>
+                    <span class="text-muted-foreground/60 whitespace-nowrap">
+                      · {formatRelativeTime(status.lastCommitAt)}
+                    </span>
+                  </Tooltip.Trigger>
+                  <Tooltip.Content>
+                    {new Date(status.lastCommitAt).toLocaleString()}
+                  </Tooltip.Content>
+                </Tooltip.Root>
+              {/if}
+              {#if status.lastCommitMessage && status.hasUncommittedChanges}
+                <span class="text-amber-500 whitespace-nowrap">· unsaved changes</span>
+              {/if}
+            </p>
+          {/if}
           <div class="mt-3">
             <Dialog.Root open={archiveTarget === space.id} onOpenChange={(open) => { if (!open) archiveTarget = null; }}>
               <Dialog.Trigger>
@@ -117,5 +195,6 @@
         </Card.Content>
       </Card.Root>
     {/each}
+    </Tooltip.Provider>
   </div>
 {/if}

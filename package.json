@@ -13,14 +13,20 @@
     "test": "bun test server/tests/",
     "test:watch": "bun test server/tests/ --watch",
     "test:e2e": "bun playwright test",
+    "test:e2e:local": "varlock run -- bun playwright test",
     "test:e2e:ui": "bun playwright test --ui",
     "test:e2e:debug": "bun playwright test --debug",
-    "test:report": "bun playwright show-report"
+    "test:report": "bun playwright show-report",
+    "typecheck": "bun run typecheck:server && bun run typecheck:hub",
+    "typecheck:server": "tsc --noEmit -p server/tsconfig.json",
+    "typecheck:hub": "bun run --filter hub check"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
+    "@types/bun": "^1.4.0",
     "@types/node": "^20.14.0",
     "concurrently": "^10.0.3",
-    "typescript": "^6.0.0"
+"typescript": "^7.0.2",
+    "varlock": "^1.16.0"
   }
 }

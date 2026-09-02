@@ -13,3 +13,9 @@ export type Backup = {
   hash: string;
   createdAt: string;
 };
+
+export type GitConfig = {
+  repoUrl: string;
+  connected: boolean;
+  connectedAt: string | null;
+};
