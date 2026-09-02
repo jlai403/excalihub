@@ -47,6 +47,15 @@ function startContainer() {
 
   const dataDir = resolve(DATA_DIR);
 
+  // On Linux CI the runner owns data-e2e as a different UID than the
+  // container's bun user (UID 1000), so the bind-mount /data isn't writable
+  // by the app and it crashes at boot (initRepos mkdirSync). Make only the
+  // DIRECTORY TREE world-writable so the container can create files regardless
+  // of host UID — never the file perms, so the seeded SSH private key keeps
+  // its 0600 (SSH rejects world-writable keys). The dir is recreated fresh
+  // each run, so this is safe ephemeral test data.
+  execSync(`find ${dataDir} -type d -exec chmod 777 {} +`);
+
   console.log("[globalSetup] building image...");
   execSync(`docker build . -t ${IMAGE}`, { stdio: "inherit" });
 
@@ -91,7 +100,26 @@ function waitUntilReady() {
     }
     execSync("sleep 0.5");
   }
+  reportContainerFailure();
   throw new Error("Timed out waiting for excalihub container to become ready");
+}
+
+function reportContainerFailure(): void {
+  try {
+    const state = execSync(
+      `docker ps -a --filter name=${CONTAINER} --format '{{.Names}} {{.Status}}'`,
+      { stdio: "pipe" }
+    ).toString();
+    console.log("[globalSetup] container state:\n" + state);
+    const logs = execSync(`docker logs ${CONTAINER} 2>&1 || true`, {
+      stdio: "pipe",
+    })
+      .toString()
+      .trim();
+    if (logs) console.log("[globalSetup] container logs:\n" + logs);
+  } catch {
+    // diagnostics are best-effort
+  }
 }
 
 export default async function globalSetup() {
