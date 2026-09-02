@@ -1,6 +1,6 @@
 import * as z from 'zod/v4-mini';
 
-const envSchema = z.object({
+export const envSchema = z.object({
   NODE_ENV: z._default(z.string(), 'development'),
   DATA_DIR: z._default(z.string(), './data'),
   BASE_DOMAIN: z._default(z.string(), 'localhost'),

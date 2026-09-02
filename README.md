@@ -1,5 +1,9 @@
 # ExcaliHub
 
+<p align="center">
+  <img src="hub/public/excalihub-logo.png" alt="ExcaliHub" width="600">
+</p>
+
 [![CI](https://github.com/jlai403/excalihub/actions/workflows/ci.yml/badge.svg)](https://github.com/jlai403/excalihub/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Bun](https://img.shields.io/badge/Bun-1.x-f9f0ff?logo=bun&logoColor=black)](https://bun.sh)
@@ -55,6 +59,12 @@ Open `http://excalihub.localhost` — no DNS setup needed.
 `*.localhost` resolves to `127.0.0.1` on macOS and Linux out of the box.
 Any space you create will be at `your-space.excalihub.localhost`.
 
+> **Note:** when `HUB_SUBDOMAIN` is set (the default is `excalihub`), the
+> dashboard is reachable **only** via the hub subdomain. The bare root domain
+> (`localhost` here) returns `404` — always load the dashboard through
+> `excalihub.localhost`. If you set `HUB_SUBDOMAIN` to an empty value, the
+> dashboard is served at the bare root domain instead.
+
 ## Configuration
 
 | Variable | Default | Description |
@@ -71,8 +81,9 @@ Any space you create will be at `your-space.excalihub.localhost`.
 1. **DNS** — wildcard `*.excalihub.example.com` → your server IP (A record)
 2. **Ports** — forward 80/443 to the server
 3. **TLS** — add a reverse proxy (Caddy, Nginx Proxy Manager) for Let's Encrypt
-4. **Config** — set `BASE_DOMAIN=example.com` in `docker-compose.yml`
-5. **Up** — `docker compose up --build -d`
+4. **Config** — set `BASE_DOMAIN=example.com` (and `HUB_SUBDOMAIN=excalihub` if you want the hub on a subdomain; leave it empty to serve the hub on the bare root) in `docker-compose.yml`
+5. **Access** — the dashboard is served at `https://excalihub.example.com`. With a `HUB_SUBDOMAIN` set, the bare root (`example.com`) returns `404`, so every space is reached at `your-space.excalihub.example.com`
+6. **Up** — `docker compose up --build -d`
 
 ## Development
 

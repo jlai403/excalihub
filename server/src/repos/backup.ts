@@ -268,9 +268,3 @@ export function getBackupById(
   if (!existsSync(filePath)) return null;
   return { subdomain, data: readFileSync(filePath, 'utf-8') };
 }
-
-export function getLatestBackupHash(subdomain: string): string | null {
-  const space = getSpaceBySubdomain(subdomain);
-  if (!space?.latest_backup) return null;
-  return hashPrefix(space.latest_backup);
-}

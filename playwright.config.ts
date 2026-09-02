@@ -12,7 +12,7 @@ export default defineConfig({
   globalSetup: "./tests/e2e/globalSetup.ts",
 
   use: {
-    baseURL: "http://localhost:8081",
+    baseURL: "http://excalihub.localhost:8081",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
@@ -33,13 +33,23 @@ export default defineConfig({
         PORT: "8081",
         DATA_DIR: "./data-e2e",
         HUB_PORT: "4321",
+        EXCALIDRAW_CONTAINER: "http://localhost:8099",
       },
+    },
+    {
+      command: "bun run tests/e2e/excalidraw-stub.ts",
+      url: "http://localhost:8099",
+      reuseExistingServer: true,
+      timeout: 15_000,
     },
     {
       command: "bun run dev:hub",
       url: "http://localhost:4321",
       reuseExistingServer: true,
       timeout: 120_000,
+      env: {
+        ASTRO_DEV_BACKGROUND: "false",
+      },
     },
   ],
 });
