@@ -4,6 +4,8 @@ import { proxyMiddleware } from '../../src/middleware/proxy.js';
 import { createSpace } from '../../src/repos/space.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import api from '../../src/routes/api.js';
+import { mkdirSync, writeFileSync, rmSync } from 'fs';
+import { join } from 'path';
 
 let fetchMock: ReturnType<typeof mock>;
 let originalFetch: typeof globalThis.fetch;
@@ -95,6 +97,66 @@ describe('proxyMiddleware', () => {
         headers: { host: 'random.other.com' },
       });
       expect(res.status).toBe(404);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('hub routing in production', () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    const publicDir = join(process.cwd(), 'dist', 'public');
+
+    beforeEach(() => {
+      process.env.NODE_ENV = 'production';
+      mkdirSync(join(publicDir, 'settings'), { recursive: true });
+      mkdirSync(join(publicDir, 'archived'), { recursive: true });
+      writeFileSync(join(publicDir, 'index.html'), '<h1>home</h1>');
+      writeFileSync(join(publicDir, 'settings', 'index.html'), '<h1>settings</h1>');
+      writeFileSync(join(publicDir, 'archived', 'index.html'), '<h1>archived</h1>');
+    });
+
+    afterEach(() => {
+      if (originalNodeEnv === undefined) {
+        delete process.env.NODE_ENV;
+      } else {
+        process.env.NODE_ENV = originalNodeEnv;
+      }
+      rmSync(publicDir, { recursive: true, force: true });
+    });
+
+    it('serves static index.html for the root path', async () => {
+      const res = await makeApp().request('/', {
+        headers: { host: 'excalihub.example.com' },
+      });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('<h1>home</h1>');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('falls back to {path}/index.html for directory routes', async () => {
+      const res = await makeApp().request('/settings', {
+        headers: { host: 'excalihub.example.com' },
+      });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('<h1>settings</h1>');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('serves nested directory routes', async () => {
+      const res = await makeApp().request('/archived', {
+        headers: { host: 'excalihub.example.com' },
+      });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('<h1>archived</h1>');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('falls through to next() for missing static files', async () => {
+      const res = await makeApp().request('/missing', {
+        headers: { host: 'excalihub.example.com' },
+      });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.reached).toBe('next');
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });
