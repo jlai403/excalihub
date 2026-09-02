@@ -8,6 +8,7 @@ dist/
 package-lock.json
 data/
 data-e2e/
+inject/
 tests/e2e/test-results/
 docs/superpowers/
 .codegraph/
