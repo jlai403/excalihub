@@ -1,5 +1,40 @@
 # Changelog
 
+## [0.1.11](https://github.com/jlai403/excalihub/compare/v0.1.10...v0.1.11) (2026-09-02)
+
+
+### Features
+
+* add Git integration with commit modal and fix SW caching ([a3f1c8b](https://github.com/jlai403/excalihub/commit/a3f1c8b393b67e3805c1ab94572d292d7501a9ff))
+* add Git integration with commit modal and fix SW caching ([2150c6d](https://github.com/jlai403/excalihub/commit/2150c6de78dfd0bc4d60ced9790913812fe4ac30))
+* add logo and icon assets ([a9b3198](https://github.com/jlai403/excalihub/commit/a9b31982c92ff2af305fb2acfef86c4327c580d9))
+* **e2e:** git integration end-to-end tests ([b20f4c2](https://github.com/jlai403/excalihub/commit/b20f4c2a4ace4784242d2610da80cda12c74765e))
+* separate git commits from auto-backups ([7702d07](https://github.com/jlai403/excalihub/commit/7702d079160edbfcad3747e0fb6d608bd429ef8e))
+* show space name in Excalidraw tab title ([4fba534](https://github.com/jlai403/excalihub/commit/4fba534d2152e6e50d2fee4df51254ac48256848))
+* use excalihub-icon.png for menu button; serve via proxy ([fc684b2](https://github.com/jlai403/excalihub/commit/fc684b27588135dacdda1a8b792c280cb3f9637d))
+* use Satoshi as body font, Excalifont for brand text ([d129708](https://github.com/jlai403/excalihub/commit/d1297080ec0af0b33d923837d7c362c64f6beff7))
+
+
+### Bug Fixes
+
+* absolute position button within position:relative toolbar parent ([50357c5](https://github.com/jlai403/excalihub/commit/50357c59c2f892c978cfebdbcde055ded674dec3))
+* add IdentitiesOnly yes to SSH config to force deploy key use ([14756a3](https://github.com/jlai403/excalihub/commit/14756a3b384929987e6b416e80fa6cc3ee728db0))
+* always show Commit to Git (greyed out when unconfigured); use 4-square icon ([cfa6b31](https://github.com/jlai403/excalihub/commit/cfa6b314399d332bd057e495d5bd0a2aedfc7beb))
+* append button to .excalidraw-ui-top-left for row layout; add 4px margin ([b133e1d](https://github.com/jlai403/excalihub/commit/b133e1d279847ef68f7b9c21983f6e53c39107ac))
+* bump favicon to 512x512 and sidebar icon to size-6 ([79e5c0b](https://github.com/jlai403/excalihub/commit/79e5c0b64ac6ff93fa1770c823610ee836fd31cd))
+* bump sidebar icon to 50px ([8a89fbd](https://github.com/jlai403/excalihub/commit/8a89fbd5cdbce9b6e3a9a78d300266fc81928efc))
+* **e2e:** navigate hub tests via excalihub.localhost base URL ([a3405b8](https://github.com/jlai403/excalihub/commit/a3405b8431bc03617f701f7f6c520ad64d6862da))
+* **e2e:** reuse persistent deploy key via secret-backed stable keypair ([4a5a570](https://github.com/jlai403/excalihub/commit/4a5a570e3086f37839b275ce33d6d3e9a0ac9991))
+* inject __hubHost from proxy so Back to ExcaliHub links correctly ([9365a4a](https://github.com/jlai403/excalihub/commit/9365a4acb4acb18e8bdca905cca95c9765c495cc))
+* remove white background from logo/icon images ([a915b8d](https://github.com/jlai403/excalihub/commit/a915b8d6bd550be08d99889a855d647a7d326a5e))
+* resolve bare-remote HEAD assertion in commitAndPush test ([5bdbaa9](https://github.com/jlai403/excalihub/commit/5bdbaa90ce2326297d3a03196b0af5196ef04623))
+* restrict hub to its subdomain when configured ([93adb40](https://github.com/jlai403/excalihub/commit/93adb4036d8318e9371b0cec0bec917658b42e4d))
+* self-heal gitignore in commitAndPush for pre-feature repos ([4db11ef](https://github.com/jlai403/excalihub/commit/4db11ef4db0c3f8d7ffc188985507cd21f2fd366))
+* serve 40x40 excalihub-icon.png from inject dir; fix path resolution ([433352a](https://github.com/jlai403/excalihub/commit/433352acf3ad85ea811df052ff2c6ff2dfd9b883))
+* use CSS flex on dropdown-menu-event-wrapper instead of JS absolute positioning ([59b2693](https://github.com/jlai403/excalihub/commit/59b2693a1cd82d4ee2a02f4ffee6af7862207853))
+* use Satoshi for sidebar brand text ([e2b6e9b](https://github.com/jlai403/excalihub/commit/e2b6e9beafe2aa3f58cabf0339e8745f799a84cd))
+* use size-10 (40px) for sidebar icon ([c90769d](https://github.com/jlai403/excalihub/commit/c90769d0bfac436ee6a054ece9ae998a424e121c))
+
 ## [0.1.10](https://github.com/jlai403/excalihub/compare/v0.1.9...v0.1.10) (2026-07-27)
 
 
