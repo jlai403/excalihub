@@ -9,7 +9,7 @@
   const spaces = $derived(getSpaces());
 
   function handleKeydown(e: KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    if (e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "k") {
       e.preventDefault();
       open = !open;
     }
