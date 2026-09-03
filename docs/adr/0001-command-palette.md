@@ -1,4 +1,4 @@
-# 0001: Command palette (Ctrl+K trigger)
+# 0001: Command palette (Cmd+K / Super+K / Ctrl+K trigger)
 
 ## Status
 
@@ -8,9 +8,11 @@ Accepted
 
 ExcaliHub needed a keyboard-driven command palette for navigating spaces, triggering actions, and changing settings without leaving the keyboard.
 
-## Trigger: Ctrl+K (not Cmd+K)
+## Trigger: Cmd+K / Super+K / Ctrl+K
 
-The palette opens on `Ctrl+K`. On macOS, `Cmd+K` is Zen Browser's own "Focus Search" chrome shortcut, handled at the browser layer above the page DOM — no site JS can override it. Plain `Ctrl+K` is free on macOS, so it is the trigger, with `metaKey` explicitly excluded to avoid `Cmd+K` firing the toggle.
+The palette opens on `Cmd+K` (macOS), `Super+K` (Linux), and `Ctrl+K` (Windows) — all reported by the browser as `metaKey` or `ctrlKey`, so a single `(metaKey || ctrlKey)` guard covers every platform chord.
+
+The listener is registered in the **capture phase** (via `$effect` + `window.addEventListener("keydown", handler, { capture: true })`) and calls `preventDefault()` + `stopImmediatePropagation()`. This is how sites like Loom win the shortcut over Zen Browser's soft "Focus Search" binding: Zen treats `Cmd+K` as page-interceptable (unlike hard-reserved keys such as `Cmd+T`/`Cmd+W`), so a capture-phase handler that stops propagation blocks Zen's chrome handler. If `Cmd+K` were a hard-reserved key, no site code could override it.
 
 ## Decisions
 

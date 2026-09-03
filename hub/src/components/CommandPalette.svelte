@@ -9,11 +9,17 @@
   const spaces = $derived(getSpaces());
 
   function handleKeydown(e: KeyboardEvent) {
-    if (e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "k") {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
+      e.stopImmediatePropagation();
       open = !open;
     }
   }
+
+  $effect(() => {
+    window.addEventListener("keydown", handleKeydown, { capture: true });
+    return () => window.removeEventListener("keydown", handleKeydown, true);
+  });
 
   function close() {
     open = false;
@@ -54,8 +60,6 @@
     setThemeState(t);
   }
 </script>
-
-<svelte:window onkeydown={handleKeydown} />
 
 <Command.Dialog bind:open>
   <Command.Input placeholder="Type a command or search..." />
