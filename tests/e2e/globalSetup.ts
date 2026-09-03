@@ -85,24 +85,32 @@ function startContainer(privateKey: string, publicKey: string) {
 }
 
 // The bind-mounted key file is owned by the host runner UID, which on Linux CI
-// is a different UID than the container's bun user (UID 1000). SSH refuses any
-// key it can't read with 0600 owned by its own user, so the in-container app
-// can't use the host-owned file. Re-write the key INSIDE the container as the
-// container's own user so ownership (and perms) are correct for SSH. Both the
-// private key (0600) and the public key (0644) must exist — the app's
+// is a different UID than the container's bun user (UID 1000) — so the bun
+// process can't write/own it and SSH refuses a 0600 key it doesn't own. The
+// container itself still runs as bun (no --user root on `docker run`); only
+// this one-shot seed escalates to root to write the host-owned files and then
+// chowns them to UID 1000 so the app + SSH (still UID 1000) own them. Both the
+// private key (0600) and public key (0644) must exist — the app's
 // isSSHKeyPairGenerated() requires both, else it regenerates a new key that
 // won't match the GitHub deploy key.
 function seedContainerKey(privateKey: string, publicKey: string) {
   const key = privateKey.endsWith("\n") ? privateKey : `${privateKey}\n`;
+  const pub = publicKey.endsWith("\n") ? publicKey : `${publicKey}\n`;
   execSync(
-    `printf %s '${key}' | docker exec -i ${CONTAINER} sh -c 'mkdir -p /data/git-config && umask 177 && cat > /data/git-config/id_ed25519 && chmod 600 /data/git-config/id_ed25519'`,
+    `printf %s '${key}' | docker exec -i --user root ${CONTAINER} sh -c 'umask 177 && cat > /data/git-config/id_ed25519 && chmod 600 /data/git-config/id_ed25519'`,
     { stdio: "inherit" }
   );
   execSync(
-    `printf %s '${publicKey}\n' | docker exec -i ${CONTAINER} sh -c 'cat > /data/git-config/id_ed25519.pub && chmod 644 /data/git-config/id_ed25519.pub'`,
+    `printf %s '${pub}' | docker exec -i --user root ${CONTAINER} sh -c 'cat > /data/git-config/id_ed25519.pub && chmod 644 /data/git-config/id_ed25519.pub'`,
     { stdio: "inherit" }
   );
-  console.log("[globalSetup] seeded SSH key inside container");
+  // Hand ownership to the container's bun user (UID 1000) so SSH accepts the
+  // 0600 key; the running app stays UID 1000. Root is only used for this seed.
+  execSync(
+    `docker exec --user root ${CONTAINER} chown 1000:1000 /data/git-config/id_ed25519 /data/git-config/id_ed25519.pub`,
+    { stdio: "inherit" }
+  );
+  console.log("[globalSetup] seeded SSH key inside container (owned by UID 1000)");
 }
 
 function waitUntilReady() {
