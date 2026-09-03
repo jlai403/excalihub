@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.13](https://github.com/jlai403/excalihub/compare/v0.1.12...v0.1.13) (2026-09-03)
+
+
+### Bug Fixes
+
+* install git+openssh in runtime image and run e2e in the container ([dfa9d4c](https://github.com/jlai403/excalihub/commit/dfa9d4c0e349f9c39f74f77c7f4bd320fa0d0953))
+* install git+openssh in runtime image and run e2e in the container ([76eefbd](https://github.com/jlai403/excalihub/commit/76eefbddb56dc0b144ecc23a8118994af1b6b2b1))
+* make bind-mounted data dir writable in docker e2e on Linux CI ([51b4077](https://github.com/jlai403/excalihub/commit/51b4077ee154dcf995eb7b4fe45430fb3acb862b))
+* seed SSH key inside container so git connect works on Linux CI ([2fd6819](https://github.com/jlai403/excalihub/commit/2fd6819c63706a63c5756910eb96f369f3494e90))
+* seed SSH key via root docker-exec + chown 1000 to fix git connect on Linux CI ([bde4ad4](https://github.com/jlai403/excalihub/commit/bde4ad405b0478e401b5dfdcdb622e150e11d86f))
+
 ## [0.1.12](https://github.com/jlai403/excalihub/compare/v0.1.11...v0.1.12) (2026-09-02)
 
 
