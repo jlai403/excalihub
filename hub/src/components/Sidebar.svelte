@@ -15,6 +15,9 @@
   onMount(async () => {
     hubHost = window.__hubHost;
     pinned = localStorage.getItem("sidebar-pinned") === "true";
+    window.addEventListener("sidebar-pin-change", () => {
+      pinned = localStorage.getItem("sidebar-pinned") === "true";
+    });
     try {
       await loadSpaces();
     } catch {
@@ -25,6 +28,7 @@
   function togglePin() {
     pinned = !pinned;
     localStorage.setItem("sidebar-pinned", String(pinned));
+    window.dispatchEvent(new Event("sidebar-pin-change"));
   }
 
   function handleCreated(space: Parameters<typeof addSpace>[0]) {
