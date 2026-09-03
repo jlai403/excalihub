@@ -3,18 +3,20 @@
   import ThemeToggle from "./ThemeToggle.svelte";
   import CreateSpaceForm from "./CreateSpaceForm.svelte";
   import { getSpaces, loadSpaces, addSpace } from "$lib/stores/spaces.svelte";
-  import { getCreateSpaceOpen, setCreateSpaceOpen } from "$lib/stores/ui.svelte";
+  import { getCreateSpaceOpen, setCreateSpaceOpen, setPaletteOpen } from "$lib/stores/ui.svelte";
 
   let { currentPath = "/" }: { currentPath?: string } = $props();
 
   let hubHost = $state("");
   let pinned = $state(true);
+  let isMac = $state(false);
 
   const spaces = $derived(getSpaces());
   const createSpaceOpen = $derived(getCreateSpaceOpen());
 
   onMount(async () => {
     hubHost = window.__hubHost;
+    isMac = /Mac|iPhone|iPad/.test(navigator.platform);
     pinned = localStorage.getItem("sidebar-pinned") === "true";
     window.addEventListener("sidebar-pin-change", () => {
       pinned = localStorage.getItem("sidebar-pinned") === "true";
@@ -133,7 +135,16 @@
 
   <div class="mx-3 my-2 h-px bg-sidebar-border shrink-0"></div>
 
-  <div class="flex items-center h-12 px-3 shrink-0">
+  <div class="flex items-center justify-between h-12 px-3 shrink-0">
+    <span class={labelClass + " shrink-0"}>
+      <button
+        onclick={() => setPaletteOpen(true)}
+        title="Open command palette"
+        class="inline-flex items-center rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground/70 hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+      >
+        <kbd class="font-sans">{isMac ? "⌘K" : "Ctrl K"}</kbd>
+      </button>
+    </span>
     <ThemeToggle />
   </div>
 </aside>

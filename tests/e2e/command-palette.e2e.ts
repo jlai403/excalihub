@@ -46,6 +46,16 @@ test.describe.serial("command-palette", () => {
     await expect(page.getByPlaceholder("Type a command or search...")).toBeVisible();
   });
 
+  test("Shortcut hint in sidebar opens the palette", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    const hint = page.getByTitle("Open command palette");
+    await expect(hint).toBeVisible();
+
+    await hint.click();
+    await expect(page.getByPlaceholder("Type a command or search...")).toBeVisible();
+  });
+
   test("Fuzzy filter narrows results", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
