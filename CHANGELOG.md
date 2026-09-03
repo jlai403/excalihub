@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.14](https://github.com/jlai403/excalihub/compare/v0.1.13...v0.1.14) (2026-09-03)
+
+
+### Features
+
+* support self-hosted git repos (not just GitHub) ([1342445](https://github.com/jlai403/excalihub/commit/13424459d87811c491d7216329fb06b70e4d316c))
+* support self-hosted git repos (not just GitHub) ([1a376ef](https://github.com/jlai403/excalihub/commit/1a376ef218023a4a67e1bd56fc7cf1977a7dc26d))
+
 ## [0.1.13](https://github.com/jlai403/excalihub/compare/v0.1.12...v0.1.13) (2026-09-03)
 
 
