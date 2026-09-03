@@ -1,6 +1,7 @@
 ---
 import '../styles/globals.css';
 import Sidebar from '../components/Sidebar.svelte';
+import CommandPalette from '../components/CommandPalette.svelte';
 
 interface Props {
   title: string;
@@ -35,5 +36,6 @@ const currentPath = Astro.url.pathname;
         <slot />
       </main>
     </div>
+    <CommandPalette client:only="svelte" />
   </body>
 </html>
