@@ -1,4 +1,4 @@
-# 0001: Cmd+K command palette
+# 0001: Command palette (Ctrl+K trigger)
 
 ## Status
 
@@ -7,6 +7,10 @@ Accepted
 ## Context
 
 ExcaliHub needed a keyboard-driven command palette for navigating spaces, triggering actions, and changing settings without leaving the keyboard.
+
+## Trigger: Ctrl+K (not Cmd+K)
+
+The palette opens on `Ctrl+K`. On macOS, `Cmd+K` is Zen Browser's own "Focus Search" chrome shortcut, handled at the browser layer above the page DOM — no site JS can override it. Plain `Ctrl+K` is free on macOS, so it is the trigger, with `metaKey` explicitly excluded to avoid `Cmd+K` firing the toggle.
 
 ## Decisions
 
