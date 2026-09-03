@@ -1,18 +1,27 @@
 <script lang="ts">
   import * as Command from "$lib/components/ui/command";
   import { getSpaces } from "$lib/stores/spaces.svelte";
-  import { setCreateSpaceOpen } from "$lib/stores/ui.svelte";
+  import { setCreateSpaceOpen, getPaletteOpen, setPaletteOpen } from "$lib/stores/ui.svelte";
   import { setThemeState } from "$lib/stores/theme.svelte";
   import { LayoutGrid, Archive, Settings, Plus, Globe, Monitor, Sun, Moon, Pin, PinOff, GitBranch } from "@lucide/svelte";
 
-  let open = $state(false);
   const spaces = $derived(getSpaces());
+  let open = $state(getPaletteOpen());
+
+  $effect(() => {
+    open = getPaletteOpen();
+  });
+
+  function handleOpenChange(value: boolean) {
+    open = value;
+    setPaletteOpen(value);
+  }
 
   function handleKeydown(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
       e.stopImmediatePropagation();
-      open = !open;
+      handleOpenChange(!getPaletteOpen());
     }
   }
 
@@ -22,7 +31,7 @@
   });
 
   function close() {
-    open = false;
+    handleOpenChange(false);
   }
 
   function goToDashboard() {
@@ -61,7 +70,7 @@
   }
 </script>
 
-<Command.Dialog bind:open>
+<Command.Dialog open={open} onOpenChange={handleOpenChange}>
   <Command.Input placeholder="Type a command or search..." />
   <Command.List>
     <Command.Empty>No results found.</Command.Empty>
