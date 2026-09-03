@@ -1,4 +1,46 @@
-(() => {
+// Build the commit payload from Excalidraw's localStorage state.
+//
+// Excalidraw stores the scene as a bare elements array under `excalidraw` and
+// the appState object under `excalidraw-state` (see excalidraw-app/LocalData.ts
+// and app_constants.ts). A `{ elements, appState }` wrapper is also accepted
+// for robustness.
+function buildCommitData(elementsRaw, appStateRaw) {
+  let parsed;
+  try {
+    parsed = elementsRaw ? JSON.parse(elementsRaw) : null;
+  } catch (e) {
+    console.error('Failed to read Excalidraw data:', e);
+    return null;
+  }
+  if (!parsed) return null;
+
+  const elements = Array.isArray(parsed) ? parsed : parsed.elements || [];
+
+  let appState = {};
+  if (appStateRaw) {
+    try {
+      appState = JSON.parse(appStateRaw);
+    } catch {
+      appState = {};
+    }
+  } else if (!Array.isArray(parsed) && parsed.appState) {
+    appState = parsed.appState;
+  }
+
+  return JSON.stringify({
+    type: 'excalidraw',
+    version: 2,
+    source: 'excalihub',
+    elements,
+    appState,
+  });
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = { buildCommitData };
+}
+
+(typeof window !== 'undefined' && typeof document !== 'undefined' ? (() => {
   if (document.getElementById('hub-commit-modal-overlay')) return;
 
   const protocol = window.location.protocol;
@@ -7,22 +49,10 @@
   const host = port ? `${hostname}:${port}` : hostname;
 
   function getExcalidrawData() {
-    try {
-      const state = localStorage.getItem('excalidraw');
-      if (state) {
-        const parsed = JSON.parse(state);
-        return JSON.stringify({
-          type: 'excalidraw',
-          version: 2,
-          source: 'excalihub',
-          elements: parsed.elements || [],
-          appState: parsed.appState || {},
-        });
-      }
-    } catch (e) {
-      console.error('Failed to read Excalidraw data:', e);
-    }
-    return null;
+    return buildCommitData(
+      localStorage.getItem('excalidraw'),
+      localStorage.getItem('excalidraw-state'),
+    );
   }
 
   function getSubdomainFromUrl() {
@@ -152,4 +182,5 @@
   }
 
   window.addEventListener('hub-open-commit-modal', createModal);
-})();
+})()
+  : undefined);
