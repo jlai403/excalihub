@@ -7,7 +7,11 @@ import * as SpaceService from '~/services/space.js';
 import * as BackupService from '~/services/backup.js';
 import * as BackupRepo from '~/repos/backup.js';
 import { getDataDir, setGitConfig } from '~/repos/git.js';
-import { prepareSpacesRepo, commitAndPush } from '~/services/git.js';
+import {
+  prepareSpacesRepo,
+  commitAndPush,
+  parseRepoUrl,
+} from '~/services/git.js';
 
 beforeEach(() => {
   setupTestDb();
@@ -211,5 +215,43 @@ describe('commitAndPush', () => {
     expect(remoteTree).toContain('.gitignore');
     expect(remoteTree).toContain('testspace/testspace.excalidraw');
     expect(remoteTree.some((f) => f.includes('backups'))).toBe(false);
+  });
+});
+
+describe('parseRepoUrl', () => {
+  it('parses a GitHub scp-style url without a port', () => {
+    expect(parseRepoUrl('git@github.com:user/repo.git')).toEqual({
+      host: 'github.com',
+    });
+  });
+
+  it('parses a self-hosted scp-style url', () => {
+    expect(
+      parseRepoUrl('git@git.ts.jlai.ca:jlai/excalihub-spaces.git'),
+    ).toEqual({ host: 'git.ts.jlai.ca' });
+  });
+
+  it('parses an ssh:// url with an explicit port', () => {
+    expect(
+      parseRepoUrl('ssh://git@git.ts.jlai.ca:443/jlai/excalihub-spaces.git'),
+    ).toEqual({ host: 'git.ts.jlai.ca', port: 443 });
+  });
+
+  it('parses an ssh:// url without an explicit port', () => {
+    expect(parseRepoUrl('ssh://git@git.ts.jlai.ca/jlai/repo.git')).toEqual({
+      host: 'git.ts.jlai.ca',
+    });
+  });
+
+  it('rejects https urls', () => {
+    expect(parseRepoUrl('https://github.com/foo/bar')).toBeNull();
+  });
+
+  it('rejects urls without a .git suffix', () => {
+    expect(parseRepoUrl('git@github.com:user/repo')).toBeNull();
+  });
+
+  it('rejects non-ssh hosts', () => {
+    expect(parseRepoUrl('https://git.ts.jlai.ca/jlai/repo.git')).toBeNull();
   });
 });

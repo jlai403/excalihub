@@ -263,3 +263,11 @@ hub/                  — Astro static site (pages, layouts)
 - **Graceful errors**: `generateSSHKeyPair` wraps `ssh-keygen` in try/catch with a readable "install openssh-client" error; `/api/git/ssh-key` returns `{error}` (500) instead of an opaque throw; the store (`git.svelte.ts`) retains `_sshError`; `GitSettings.svelte` renders the error instead of the indefinite "Generating SSH key..." spinner.
 - **Regression test**: `hub.e2e.ts` "settings renders the SSH public key" asserts `/settings` shows text matching `^ssh-ed25519 ` (and not "Generating SSH key..."). Runs unconditionally (not gated on `E2E_SSH_PRIVATE_KEY`), so it catches the missing-`ssh-keygen` class even without the git deploy key.
 - **To redeploy the fix** to `excalihub.ts.jlai.ca`: rebuild + republish the image (`docker-publish.yml`) and re-run the external rollout — the repo only owns the image.
+
+### 2026-09-02 — Git integration supports self-hosted hosts (not just GitHub)
+- `connectGitRepo` URL validation was hardcoded to `git@github\.com:...` and the generated SSH config wrote a fixed `Host github.com` block — self-hosted repos (e.g. `git.ts.jlai.ca`) were rejected with "Invalid repository URL".
+- Added `parseRepoUrl()` (`server/src/services/git.ts`) accepting both `git@host:user/repo.git` (SCP) and `ssh://git@host[:port]/user/repo.git` (URL form — the only form where `:443` is a real port; in SCP form the colon splits host from path so `:443` would become a path dir, not a port). Returns `{ host, port? }`.
+- SSH config now writes `Host <host>` / `HostName <host>` / `Port <port>` (only when present) so a non-standard port like 443 resolves, while GitHub keeps connecting on port 22.
+- UI copy in `GitSettings.svelte` generalized off "GitHub": placeholder/helper + intro + deploy-key text now say "repository".
+- 7 new `parseRepoUrl` unit tests (SCP GitHub, SCP self-hosted, ssh:// with/without port, rejects https/non-.git/non-ssh). 93 unit pass (+7), typecheck clean, 57 docker e2e pass.
+- To use `git.ts.jlai.ca` over its port-443 SSH, enter `ssh://git@git.ts.jlai.ca:443/jlai/excalihub-spaces.git` (NOT the scp-with-443 form).
