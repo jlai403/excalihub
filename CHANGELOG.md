@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.15](https://github.com/jlai403/excalihub/compare/v0.1.14...v0.1.15) (2026-09-03)
+
+
+### Bug Fixes
+
+* commit modal reads bare elements array from Excalidraw localStorage ([a0574b1](https://github.com/jlai403/excalihub/commit/a0574b1d84d406a86934db1ea3180ed8ef84fb9f))
+* commit modal reads bare elements array from Excalidraw localStorage ([b3ae8a2](https://github.com/jlai403/excalihub/commit/b3ae8a2a2995698e2a6ebf14b66b819b27c1c770))
+
 ## [0.1.14](https://github.com/jlai403/excalihub/compare/v0.1.13...v0.1.14) (2026-09-03)
 
 
