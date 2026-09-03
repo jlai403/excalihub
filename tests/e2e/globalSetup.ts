@@ -42,7 +42,7 @@ function assertDocker() {
   }
 }
 
-function startContainer() {
+function startContainer(privateKey: string, publicKey: string) {
   assertDocker();
 
   const dataDir = resolve(DATA_DIR);
@@ -51,9 +51,9 @@ function startContainer() {
   // container's bun user (UID 1000), so the bind-mount /data isn't writable
   // by the app and it crashes at boot (initRepos mkdirSync). Make only the
   // DIRECTORY TREE world-writable so the container can create files regardless
-  // of host UID — never the file perms, so the seeded SSH private key keeps
-  // its 0600 (SSH rejects world-writable keys). The dir is recreated fresh
-  // each run, so this is safe ephemeral test data.
+  // of host UID — never the file perms, so the SSH private key keeps its 0600
+  // (SSH rejects world-writable keys). The dir is recreated fresh each run, so
+  // this is safe ephemeral test data.
   execSync(`find ${dataDir} -type d -exec chmod 777 {} +`);
 
   console.log("[globalSetup] building image...");
@@ -81,6 +81,28 @@ function startContainer() {
   execSync(run, { stdio: "inherit" });
 
   waitUntilReady();
+  seedContainerKey(privateKey, publicKey);
+}
+
+// The bind-mounted key file is owned by the host runner UID, which on Linux CI
+// is a different UID than the container's bun user (UID 1000). SSH refuses any
+// key it can't read with 0600 owned by its own user, so the in-container app
+// can't use the host-owned file. Re-write the key INSIDE the container as the
+// container's own user so ownership (and perms) are correct for SSH. Both the
+// private key (0600) and the public key (0644) must exist — the app's
+// isSSHKeyPairGenerated() requires both, else it regenerates a new key that
+// won't match the GitHub deploy key.
+function seedContainerKey(privateKey: string, publicKey: string) {
+  const key = privateKey.endsWith("\n") ? privateKey : `${privateKey}\n`;
+  execSync(
+    `printf %s '${key}' | docker exec -i ${CONTAINER} sh -c 'mkdir -p /data/git-config && umask 177 && cat > /data/git-config/id_ed25519 && chmod 600 /data/git-config/id_ed25519'`,
+    { stdio: "inherit" }
+  );
+  execSync(
+    `printf %s '${publicKey}\n' | docker exec -i ${CONTAINER} sh -c 'cat > /data/git-config/id_ed25519.pub && chmod 644 /data/git-config/id_ed25519.pub'`,
+    { stdio: "inherit" }
+  );
+  console.log("[globalSetup] seeded SSH key inside container");
 }
 
 function waitUntilReady() {
@@ -128,12 +150,12 @@ export default async function globalSetup() {
   rmSync(DATA_DIR, { recursive: true, force: true });
   mkdirSync(DATA_DIR, { recursive: true });
 
-  // Seed the app with a stable SSH keypair so the e2e deploy key
-  // (excalihub-e2e on jlai403/excalihub-ci) is reused across runs
-  // instead of being re-registered (and re-notifying) every run.
+  // The git e2e deploy key (excalihub-e2e on jlai403/excalihub-ci) is reused
+  // across runs instead of being re-registered (and re-notifying) every run.
   // The private key comes from E2E_SSH_PRIVATE_KEY (repo secret in CI,
   // 1Password via varlock locally) — never committed to the repo.
   const privateKey = process.env.E2E_SSH_PRIVATE_KEY;
+  let publicKey = "";
   if (privateKey) {
     const gitConfigDir = join(DATA_DIR, "git-config");
     mkdirSync(gitConfigDir, { recursive: true });
@@ -141,14 +163,14 @@ export default async function globalSetup() {
     const key = privateKey.endsWith("\n") ? privateKey : `${privateKey}\n`;
     writeFileSync(keyPath, key);
     chmodSync(keyPath, 0o600);
-    const pubKey = execSync(`ssh-keygen -y -f ${keyPath}`).toString().trim();
-    writeFileSync(join(gitConfigDir, "id_ed25519.pub"), pubKey);
+    publicKey = execSync(`ssh-keygen -y -f ${keyPath}`).toString().trim();
+    writeFileSync(join(gitConfigDir, "id_ed25519.pub"), publicKey);
   }
 
   // The docker e2e config serves the app from the built image. Hand the
   // container lifecycle here (build + run + wait) instead of Playwright's
   // webServer, which can't reliably manage a container's lifecycle.
   if (process.env.E2E_DOCKER === "1") {
-    startContainer();
+    startContainer(privateKey || "", publicKey);
   }
 }
