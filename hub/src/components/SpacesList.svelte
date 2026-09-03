@@ -5,9 +5,8 @@
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { Archive, CircleCheckBig, GitBranch, GitCommitHorizontal } from "@lucide/svelte";
-  import CreateSpaceForm from "./CreateSpaceForm.svelte";
-  import { getSpaces, loadSpaces, addSpace, archiveSpace } from "$lib/stores/spaces.svelte";
-  import { getCreateSpaceOpen, setCreateSpaceOpen } from "$lib/stores/ui.svelte";
+  import { getSpaces, loadSpaces, archiveSpace } from "$lib/stores/spaces.svelte";
+  import { setCreateSpaceOpen } from "$lib/stores/ui.svelte";
 
   type SpaceGitStatus = {
     lastCommitAt: string | null;
@@ -24,7 +23,6 @@
   let gitStatuses = $state(new Map<string, SpaceGitStatus>());
 
   const spaces = $derived(getSpaces());
-  const createSpaceOpen = $derived(getCreateSpaceOpen());
 
   onMount(async () => {
     hubHost = window.__hubHost;
@@ -55,10 +53,6 @@
     loading = false;
   });
 
-  function handleCreated(space: Parameters<typeof addSpace>[0]) {
-    addSpace(space);
-  }
-
   async function handleArchive(id: string) {
     actionLoading = true;
     await archiveSpace(id);
@@ -87,8 +81,6 @@
     return `${Math.floor(months / 12)}y ago`;
   }
 </script>
-
-<CreateSpaceForm open={createSpaceOpen} onOpenChange={setCreateSpaceOpen} onCreated={handleCreated} />
 
 <h2 class="text-2xl font-semibold mb-6">Spaces</h2>
 
