@@ -147,4 +147,16 @@ test.describe.serial("hub", () => {
     await page.getByRole("link", { name: "Spaces" }).click();
     await expect(page).toHaveURL("/");
   });
+
+  test("settings renders the SSH public key", async ({ page }) => {
+    await page.goto("/settings");
+    const heading = page.getByRole("heading", { name: "SSH Public Key" });
+    await expect(heading).toBeVisible();
+
+    // The runtime must have generated an ed25519 keypair (ssh-keygen present
+    // in the image). Guards the "Generating SSH key..." dead-end where the
+    // container lacked ssh-keygen.
+    await expect(page.getByText(/^ssh-ed25519 /)).toBeVisible();
+    await expect(page.getByText("Generating SSH key...")).not.toBeVisible();
+  });
 });

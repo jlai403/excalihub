@@ -4,9 +4,9 @@ import {
   type APIRequestContext,
 } from "@playwright/test";
 import { execFileSync } from "child_process";
-import { mkdtempSync, rmSync } from "fs";
+import { mkdtempSync, rmSync, writeFileSync, chmodSync } from "fs";
 import { tmpdir } from "os";
-import { join, resolve } from "path";
+import { join } from "path";
 
 const E2E_SSH_PRIVATE_KEY = process.env.E2E_SSH_PRIVATE_KEY;
 const [owner, repo] = (process.env.E2E_GIT_REPO ?? "jlai403/excalihub-ci").split(
@@ -135,13 +135,20 @@ test.describe.serial("git integration", () => {
     // Verify the push landed by fetching over SSH with the seeded deploy
     // key (git is strongly consistent, unlike the GitHub REST API).
     // A standalone temp repo keeps this independent of the app's git state.
-    const sshKey = resolve("data-e2e/git-config/id_ed25519");
-    // IdentityAgent=none: macOS ssh offers agent keys (e.g. the developer's
-    // own GitHub key) BEFORE -i despite IdentitiesOnly=yes, which authenticates
-    // as the wrong user and fails the fetch with "Repository not found".
-    const sshCommand = `ssh -i ${sshKey} -o IdentitiesOnly=yes -o IdentityAgent=none -o StrictHostKeyChecking=no`;
+    // The key is re-materialized from E2E_SSH_PRIVATE_KEY into the temp dir
+    // (host-owned, 0600) rather than reading the container-owned key at
+    // data-e2e/git-config/id_ed25519, which the host user can't read on CI.
     const tmp = mkdtempSync(join(tmpdir(), "excalihub-e2e-"));
     try {
+      const sshKey = join(tmp, "id_ed25519");
+      const rawKey = process.env.E2E_SSH_PRIVATE_KEY ?? "";
+      writeFileSync(sshKey, rawKey.endsWith("\n") ? rawKey : `${rawKey}\n`);
+      chmodSync(sshKey, 0o600);
+      // IdentityAgent=none: macOS ssh offers agent keys (e.g. the developer's
+      // own GitHub key) BEFORE -i despite IdentitiesOnly=yes, which authenticates
+      // as the wrong user and fails the fetch with "Repository not found".
+      const sshCommand = `ssh -i ${sshKey} -o IdentitiesOnly=yes -o IdentityAgent=none -o StrictHostKeyChecking=no`;
+
       execFileSync("git", ["init", "-b", "main"], { cwd: tmp, stdio: "pipe" });
       execFileSync("git", ["remote", "add", "origin", repoUrl], {
         cwd: tmp,

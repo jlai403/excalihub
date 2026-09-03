@@ -164,11 +164,15 @@ api.get('/git/config', (c) => {
 });
 
 api.get('/git/ssh-key', (c) => {
-  if (!GitRepo.isSSHKeyPairGenerated()) {
-    GitRepo.generateSSHKeyPair();
+  try {
+    if (!GitRepo.isSSHKeyPairGenerated()) {
+      GitRepo.generateSSHKeyPair();
+    }
+    const publicKey = GitRepo.getSSHPublicKey();
+    return c.json({ publicKey });
+  } catch (err: any) {
+    return c.json({ error: err.message }, 500);
   }
-  const publicKey = GitRepo.getSSHPublicKey();
-  return c.json({ publicKey });
 });
 
 api.post('/git/connect', async (c) => {

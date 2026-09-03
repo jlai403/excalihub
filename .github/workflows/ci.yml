@@ -29,7 +29,9 @@ jobs:
           bun-version: 1.4.0
       - run: bun install --frozen-lockfile
       - run: bunx playwright install --with-deps
-      - run: bun run test:e2e:prod
+      # test:e2e:docker builds the image (in globalSetup) and runs the suite
+      # against the container, so it doubles as the image build gate.
+      - run: bun run test:e2e:docker
         env:
           E2E_GIT_REPO: jlai403/excalihub-ci
           E2E_SSH_PRIVATE_KEY: ${{ secrets.E2E_SSH_PRIVATE_KEY }}
@@ -48,10 +50,3 @@ jobs:
         with:
           files: Dockerfile
           min-severity: info
-
-  build:
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - run: docker build .
