@@ -42,10 +42,12 @@
   function pinSidebar() {
     localStorage.setItem("sidebar-pinned", "true");
     window.dispatchEvent(new Event("sidebar-pin-change"));
+    close();
   }
   function unpinSidebar() {
     localStorage.setItem("sidebar-pinned", "false");
     window.dispatchEvent(new Event("sidebar-pin-change"));
+    close();
   }
   function selectTheme(t: "system" | "light" | "dark") {
     close();
