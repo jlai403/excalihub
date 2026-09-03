@@ -7,6 +7,7 @@
   import { Archive, CircleCheckBig, GitBranch, GitCommitHorizontal } from "@lucide/svelte";
   import CreateSpaceForm from "./CreateSpaceForm.svelte";
   import { getSpaces, loadSpaces, addSpace, archiveSpace } from "$lib/stores/spaces.svelte";
+  import { getCreateSpaceOpen, setCreateSpaceOpen } from "$lib/stores/ui.svelte";
 
   type SpaceGitStatus = {
     lastCommitAt: string | null;
@@ -17,13 +18,13 @@
   let loading = $state(true);
   let error: string | null = $state(null);
   let hubHost = $state("");
-  let createOpen = $state(false);
   let archiveTarget = $state<string | null>(null);
   let actionLoading = $state(false);
   let gitConnected = $state(false);
   let gitStatuses = $state(new Map<string, SpaceGitStatus>());
 
   const spaces = $derived(getSpaces());
+  const createSpaceOpen = $derived(getCreateSpaceOpen());
 
   onMount(async () => {
     hubHost = window.__hubHost;
@@ -87,7 +88,7 @@
   }
 </script>
 
-<CreateSpaceForm bind:open={createOpen} onCreated={handleCreated} />
+<CreateSpaceForm open={createSpaceOpen} onOpenChange={setCreateSpaceOpen} onCreated={handleCreated} />
 
 <h2 class="text-2xl font-semibold mb-6">Spaces</h2>
 
@@ -103,7 +104,7 @@
   <Card.Root>
     <Card.Content class="py-12 text-center">
       <p class="mb-4 text-muted-foreground">No spaces yet</p>
-      <Button onclick={() => (createOpen = true)}>Create your first space</Button>
+      <Button onclick={() => setCreateSpaceOpen(true)}>Create your first space</Button>
     </Card.Content>
   </Card.Root>
 {:else}
