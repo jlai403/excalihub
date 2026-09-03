@@ -104,4 +104,113 @@ test.describe.serial("command-palette", () => {
     await page.getByPlaceholder("Type a command or search...").fill("palette space");
     await expect(page.getByRole("option", { name: "Palette Space" })).toBeVisible();
   });
+
+  test("Navigate action goes to Dashboard", async ({ page }) => {
+    await page.goto("/archived");
+    await page.waitForLoadState("networkidle");
+    await expect(page).toHaveURL(/\/archived/);
+    await openPalette(page);
+    await expect(page.getByPlaceholder("Type a command or search...")).toBeVisible();
+
+    await page.getByPlaceholder("Type a command or search...").fill("dashboard");
+    await page.getByRole("option", { name: "Dashboard", exact: true }).click();
+
+    await expect(page).toHaveURL(/\/$/);
+  });
+
+  test("Navigate action goes to Archived", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    await openPalette(page);
+    await expect(page.getByPlaceholder("Type a command or search...")).toBeVisible();
+
+    await page.getByPlaceholder("Type a command or search...").fill("archived");
+    await page.getByRole("option", { name: "Archived", exact: true }).click();
+
+    await expect(page).toHaveURL(/\/archived/);
+  });
+
+  test("Space item opens the space in a new tab", async ({ page }) => {
+    const createRes = await page.request.post("/api/spaces", {
+      data: { name: "Open in Tab" },
+    });
+    expect(createRes.ok()).toBeTruthy();
+    const { subdomain } = await createRes.json();
+
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    await page.evaluate(() => {
+      const w = window as unknown as { __openedUrls: string[]; open: (url: string) => void };
+      w.__openedUrls = [];
+      w.open = (url: string) => {
+        w.__openedUrls.push(url);
+        return null;
+      };
+    });
+
+    await openPalette(page);
+    await expect(page.getByPlaceholder("Type a command or search...")).toBeVisible();
+
+    await page.getByPlaceholder("Type a command or search...").fill("open in tab");
+    await page.getByRole("option", { name: "Open in Tab", exact: true }).click();
+
+    const openedUrls = await page.evaluate(() => (window as unknown as { __openedUrls: string[] }).__openedUrls);
+    expect(openedUrls[0]).toMatch(new RegExp(`${subdomain}\\.excalihub\\.localhost`));
+  });
+
+  test("Sidebar unpin and pin from the palette", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    const aside = page.locator("aside");
+
+    await expect(aside).toHaveClass(/w-48/);
+    await expect(aside).not.toHaveClass(/w-14/);
+    await openPalette(page);
+    await expect(page.getByPlaceholder("Type a command or search...")).toBeVisible();
+    await page.getByPlaceholder("Type a command or search...").fill("unpin");
+    await page.getByRole("option", { name: "Unpin", exact: true }).click();
+    await expect(page.getByPlaceholder("Type a command or search...")).not.toBeVisible();
+    await expect(aside).toHaveClass(/w-14/);
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem("sidebar-pinned")))
+      .toBe("false");
+
+    await openPalette(page);
+    await expect(page.getByPlaceholder("Type a command or search...")).toBeVisible();
+    await page.getByPlaceholder("Type a command or search...").fill("pin");
+    await expect(page.getByRole("option", { name: "Pin", exact: true })).toBeVisible();
+    await page.getByRole("option", { name: "Pin", exact: true }).click();
+    await expect(page.getByPlaceholder("Type a command or search...")).not.toBeVisible();
+    await expect(aside).toHaveClass(/w-48/);
+    await expect(aside).not.toHaveClass(/w-14/);
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem("sidebar-pinned")))
+      .toBe("true");
+  });
+
+  test("Theme selection applies light theme", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    const html = page.locator("html");
+
+    await openPalette(page);
+    await page.getByPlaceholder("Type a command or search...").fill("light");
+    await page.getByRole("option", { name: "Light", exact: true }).click();
+
+    await expect(page.getByPlaceholder("Type a command or search...")).not.toBeVisible();
+    await expect(html).not.toHaveClass(/dark/);
+  });
+
+  test("Theme selection applies system theme", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    const html = page.locator("html");
+
+    await openPalette(page);
+    await page.getByPlaceholder("Type a command or search...").fill("system");
+    await page.getByRole("option", { name: "System", exact: true }).click();
+
+    await expect(page.getByPlaceholder("Type a command or search...")).not.toBeVisible();
+    await expect(html).not.toHaveClass(/dark/);
+  });
 });
