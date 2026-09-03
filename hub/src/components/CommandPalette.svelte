@@ -2,7 +2,7 @@
   import * as Command from "$lib/components/ui/command";
   import { getSpaces } from "$lib/stores/spaces.svelte";
   import { setCreateSpaceOpen } from "$lib/stores/ui.svelte";
-  import { setTheme } from "$lib/utils/theme";
+  import { setThemeState } from "$lib/stores/theme.svelte";
   import { LayoutGrid, Archive, Settings, Plus, Globe, Monitor, Sun, Moon, Pin, PinOff, GitBranch } from "@lucide/svelte";
 
   let open = $state(false);
@@ -49,7 +49,7 @@
   }
   function selectTheme(t: "system" | "light" | "dark") {
     close();
-    setTheme(t);
+    setThemeState(t);
   }
 </script>
 
