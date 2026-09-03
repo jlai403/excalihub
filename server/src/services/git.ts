@@ -15,6 +15,27 @@ import { getSpaceBySubdomain } from '~/repos/space.js';
 
 const SPACES_GITIGNORE = '*/backups/\n';
 
+export type RepoUrl = { host: string; port?: number };
+
+export function parseRepoUrl(url: string): RepoUrl | null {
+  const scp = url.match(/^git@([\w.-]+):([\w.-]+\/[\w.\/-]+\.git)$/);
+  if (scp) {
+    return { host: scp[1] };
+  }
+
+  const sshUrl = url.match(
+    /^ssh:\/\/git@([\w.-]+)(?::(\d+))?\/([\w.-]+\/[\w.\/-]+\.git)$/,
+  );
+  if (sshUrl) {
+    return {
+      host: sshUrl[1],
+      ...(sshUrl[2] ? { port: parseInt(sshUrl[2], 10) } : {}),
+    };
+  }
+
+  return null;
+}
+
 export async function prepareSpacesRepo(
   git: SimpleGit,
   spacesDir: string,
@@ -39,12 +60,14 @@ export async function connectGitRepo(
     return { success: false, error: 'Repository URL is required' };
   }
 
-  if (!repoUrl.match(/^git@github\.com:[\w.-]+\/[\w.-]+\.git$/)) {
+  const parsed = parseRepoUrl(repoUrl);
+  if (!parsed) {
     return {
       success: false,
-      error: 'Invalid repository URL. Expected format: git@github.com:user/repo.git',
+      error: 'Invalid repository URL. Expected format: git@host:user/repo.git or ssh://git@host[:port]/user/repo.git',
     };
   }
+  const { host, port } = parsed;
 
   const dataDir = getDataDir();
   const spacesDir = join(dataDir, 'spaces');
@@ -72,9 +95,10 @@ export async function connectGitRepo(
   }
 
   const sshConfigPath = join(sshDir, 'config');
-  const sshConfig = `Host github.com
-  HostName github.com
-  User git
+  const portLine = port ? `  Port ${port}\n` : '';
+  const sshConfig = `Host ${host}
+  HostName ${host}
+${portLine}  User git
   IdentityFile ${join(dataDir, 'git-config', 'id_ed25519')}
   IdentitiesOnly yes
   StrictHostKeyChecking no
