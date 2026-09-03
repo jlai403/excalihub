@@ -1,38 +1,23 @@
 <script lang="ts">
   import { Monitor, Moon, Sun } from "@lucide/svelte";
-
-  type Theme = "system" | "light" | "dark";
+  import { type Theme, applyTheme, getTheme, setTheme } from "$lib/utils/theme";
 
   let theme: Theme = $state("system");
-
-  function getSystemTheme(): "light" | "dark" {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches
-      ? "dark"
-      : "light";
-  }
-
-  function applyTheme(t: Theme) {
-    const resolved = t === "system" ? getSystemTheme() : t;
-    document.documentElement.classList.toggle("dark", resolved === "dark");
-  }
 
   function cycle() {
     const order: Theme[] = ["system", "light", "dark"];
     theme = order[(order.indexOf(theme) + 1) % 3];
-    localStorage.setItem("theme", theme);
-    applyTheme(theme);
+    setTheme(theme);
   }
 
   $effect(() => {
-    const saved = localStorage.getItem("theme") as Theme | null;
-    const initial = saved || "system";
+    const initial = getTheme();
     theme = initial;
     applyTheme(initial);
 
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => {
-      const current = (localStorage.getItem("theme") as Theme) || "system";
-      if (current === "system") applyTheme("system");
+      if (getTheme() === "system") applyTheme("system");
     };
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
