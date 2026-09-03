@@ -47,6 +47,10 @@
     localStorage.setItem("sidebar-pinned", "false");
     window.dispatchEvent(new Event("sidebar-pin-change"));
   }
+  function selectTheme(t: "system" | "light" | "dark") {
+    close();
+    setTheme(t);
+  }
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -84,13 +88,13 @@
     <Command.Separator />
 
     <Command.Group heading="Theme">
-      <Command.Item onSelect={() => setTheme("system")}>
+      <Command.Item onSelect={() => selectTheme("system")}>
         <Monitor class="mr-2 size-4" /> System
       </Command.Item>
-      <Command.Item onSelect={() => setTheme("light")}>
+      <Command.Item onSelect={() => selectTheme("light")}>
         <Sun class="mr-2 size-4" /> Light
       </Command.Item>
-      <Command.Item onSelect={() => setTheme("dark")}>
+      <Command.Item onSelect={() => selectTheme("dark")}>
         <Moon class="mr-2 size-4" /> Dark
       </Command.Item>
     </Command.Group>
