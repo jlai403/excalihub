@@ -56,9 +56,9 @@
   <div class="rounded-lg border border-border bg-card p-6">
     <h2 class="text-lg font-medium mb-4">Git Integration</h2>
     <p class="text-sm text-muted-foreground mb-4">
-      Connect to a GitHub repository to commit and push your diagrams. The server
-      generates an SSH key automatically — add the public key below as a deploy
-      key in your repository.
+      Connect to a git repository over SSH to commit and push your diagrams.
+      The server generates an SSH key automatically — add the public key below as
+      a deploy key in your repository.
     </p>
 
     {#if gitConfig.connected}
@@ -144,12 +144,12 @@
             id="repoUrl"
             type="text"
             bind:value={repoUrl}
-            placeholder="git@github.com:user/repo.git"
+            placeholder="git@host:user/repo.git"
             disabled={loading}
             class="w-full px-3 py-2 rounded-md border border-border bg-background text-sm placeholder:text-muted-foreground disabled:opacity-50"
           />
           <p class="text-xs text-muted-foreground">
-            SSH format: git@github.com:user/repo.git
+            SSH format: git@host:user/repo.git, or ssh://git@host:port/user/repo.git for a non-default port
           </p>
         </div>
 
@@ -170,8 +170,7 @@
   <div class="rounded-lg border border-border bg-card p-6">
     <h2 class="text-lg font-medium mb-4">SSH Public Key</h2>
     <p class="text-sm text-muted-foreground mb-4">
-      Add this key as a deploy key in your GitHub repository settings with
-      write access.
+      Add this key as a deploy key in your repository settings with write access.
     </p>
 
     {#if sshPublicKey}
