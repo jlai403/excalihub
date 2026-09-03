@@ -1,17 +1,18 @@
 import { test, expect, type Page } from "@playwright/test";
 
-async function openPalette(page: Page) {
-  await page.evaluate(() => {
+async function openPalette(page: Page, modifier: "ctrl" | "meta" = "ctrl") {
+  await page.evaluate(({ modifier }) => {
+    const ctrl = modifier === "ctrl";
     window.dispatchEvent(
       new KeyboardEvent("keydown", {
         key: "k",
-        ctrlKey: true,
-        metaKey: false,
+        ctrlKey: ctrl,
+        metaKey: !ctrl,
         bubbles: true,
         cancelable: true,
       })
     );
-  });
+  }, { modifier });
 }
 
 test.describe.serial("command-palette", () => {
@@ -34,6 +35,14 @@ test.describe.serial("command-palette", () => {
     await page.waitForLoadState("networkidle");
     await expect(page.getByPlaceholder("Type a command or search...")).not.toBeVisible();
     await openPalette(page);
+    await expect(page.getByPlaceholder("Type a command or search...")).toBeVisible();
+  });
+
+  test("Cmd/Super+K (meta) opens the palette", async ({ page }) => {
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByPlaceholder("Type a command or search...")).not.toBeVisible();
+    await openPalette(page, "meta");
     await expect(page.getByPlaceholder("Type a command or search...")).toBeVisible();
   });
 
