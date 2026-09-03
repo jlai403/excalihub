@@ -91,10 +91,16 @@ export function generateSSHKeyPair(): string {
     mkdirSync(dir, { recursive: true });
   }
 
-  execSync(
-    `ssh-keygen -t ed25519 -f "${privateKeyPath()}" -N "" -C "excalihub"`,
-    { stdio: 'pipe' }
-  );
+  try {
+    execSync(
+      `ssh-keygen -t ed25519 -f "${privateKeyPath()}" -N "" -C "excalihub"`,
+      { stdio: 'pipe' }
+    );
+  } catch (err: any) {
+    throw new Error(
+      'Failed to generate SSH key. The ssh-keygen binary is missing in this environment — ensure openssh-client is installed in the container.'
+    );
+  }
 
   chmodSync(privateKeyPath(), 0o600);
 

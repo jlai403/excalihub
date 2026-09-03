@@ -7,6 +7,7 @@ let _gitConfig = $state<GitConfig>({
 });
 
 let _sshPublicKey = $state<string | null>(null);
+let _sshError = $state<string | null>(null);
 
 export function getGitConfig(): GitConfig {
   return _gitConfig;
@@ -16,12 +17,23 @@ export function getSSHPublicKey(): string | null {
   return _sshPublicKey;
 }
 
+export function getSSHError(): string | null {
+  return _sshError;
+}
+
 export async function loadGitConfig(): Promise<void> {
+  _sshError = null;
   const data = await fetch("/api/git/config").then((r) => r.json());
   _gitConfig = data;
 
-  const keyData = await fetch("/api/git/ssh-key").then((r) => r.json());
-  _sshPublicKey = keyData.publicKey;
+  const keyRes = await fetch("/api/git/ssh-key");
+  const keyData = await keyRes.json().catch(() => ({}));
+  if (keyRes.ok && keyData.publicKey) {
+    _sshPublicKey = keyData.publicKey;
+  } else {
+    _sshPublicKey = null;
+    _sshError = keyData.error || "Could not load SSH public key";
+  }
 }
 
 export async function connectGitRepo(

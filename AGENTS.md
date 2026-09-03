@@ -30,7 +30,7 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 | `bun test` | Run unit/integration test suite |
 | `bun test --watch` | Run tests in watch mode |
 | `bun test:e2e` | Run Playwright e2e tests (chromium, firefox, webkit) in **dev** mode |
-| `bun run test:e2e:prod` | Build + run Playwright e2e in **production** mode (used by CI) |
+| `bun run test:e2e:docker` | Build + run Playwright e2e in **production** mode inside the **Docker image** (used by CI) |
 | `docker compose up --build` | Full deployment |
 | `droast Dockerfile` | Lint Dockerfile |
 
@@ -253,3 +253,13 @@ hub/                  — Astro static site (pages, layouts)
 - **Scripts**: `bun run test:e2e:prod` = `bun run build && bun playwright test --config playwright.prod.config.ts`. Local dev e2e unchanged (`bun run test:e2e` → dev config).
 - **CI**: `ci.yml` e2e job now runs `bun run test:e2e:prod` (build + production-mode Playwright across 3 browsers) instead of the dev-mode `test:e2e`, keeping `E2E_GIT_REPO` + `E2E_SSH_PRIVATE_KEY`.
 - **Verified**: 86 unit pass (+4), typecheck clean, `bun run test:e2e` (dev) and `test:e2e:prod` (prod) both green; prod run incl. git spec via varlock = 54 pass.
+
+### 2026-09-02 — e2e runs in the Docker image + missing-runtime-binary fix
+- **Bug**: `/settings` showed "Generating SSH key..." forever — no key to copy. Root cause: the `oven/bun:1.4.0` runtime image (Debian 13) ships **no `ssh-keygen`/`ssh`/`git`** (the app shells out to `ssh-keygen` to make the deploy key). `/api/git/ssh-key` 500'd, the store kept `null`, and `GitSettings.svelte`'s `{:else}` spinner rendered forever. The whole Git integration (connect/commit) was broken in production for the same reason.
+- **`Dockerfile`**: runtime stage now `apt-get install -y --no-install-recommends git openssh-client` before `USER bun` (root install step). `openssh-client` = `ssh-keygen` + `ssh`; `git` for simple-git.
+- **`e2e:prod` → `e2e:docker`**: renamed `test:e2e:prod` → `test:e2e:docker`, `playwright.prod.config.ts` → `playwright.docker.config.ts`. e2e now runs against the **built Docker image**, not the host bundle — so missing runtime binaries are actually caught. Sets `E2E_DOCKER=1`.
+- **Container lifecycle** (`globalSetup.ts` + new `globalTeardown.ts`): `globalSetup` seeds `data-e2e` (SSH deploy key), `docker build . -t excalihub:e2e`, then `docker run -d --rm --name excalihub-e2e -p 8081:8081 --add-host host.docker.internal:host-gateway -v $PWD/data-e2e:/data -e ...`, polling `/api/config` until ready. `globalTeardown` does `docker rm -f`. The excalidraw stub stays a host webServer on `:8099` (proxied via `host.docker.internal:8099`). The `./inject` copy step is gone — the image bakes `/app/inject`. Throws a clear "use `test:e2e` for host mode" error when no Docker (not silent skip).
+- **CI**: `ci.yml` e2e job runs `bun run test:e2e:docker` (which builds the image in globalSetup, doubling as the image build gate); the standalone `build` job was dropped. `lint` unchanged. Git spec runs in-container (git status/connect/commit against `jlai403/excalihub-ci` via the bind-mounted `data-e2e` SSH key).
+- **Graceful errors**: `generateSSHKeyPair` wraps `ssh-keygen` in try/catch with a readable "install openssh-client" error; `/api/git/ssh-key` returns `{error}` (500) instead of an opaque throw; the store (`git.svelte.ts`) retains `_sshError`; `GitSettings.svelte` renders the error instead of the indefinite "Generating SSH key..." spinner.
+- **Regression test**: `hub.e2e.ts` "settings renders the SSH public key" asserts `/settings` shows text matching `^ssh-ed25519 ` (and not "Generating SSH key..."). Runs unconditionally (not gated on `E2E_SSH_PRIVATE_KEY`), so it catches the missing-`ssh-keygen` class even without the git deploy key.
+- **To redeploy the fix** to `excalihub.ts.jlai.ca`: rebuild + republish the image (`docker-publish.yml`) and re-run the external rollout — the repo only owns the image.
