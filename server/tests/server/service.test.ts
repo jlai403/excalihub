@@ -11,6 +11,8 @@ import {
   prepareSpacesRepo,
   commitAndPush,
   parseRepoUrl,
+  deleteSpaceFromGit,
+  pruneOrphanedSpaces,
 } from '~/services/git.js';
 
 beforeEach(() => {
@@ -215,6 +217,119 @@ describe('commitAndPush', () => {
     expect(remoteTree).toContain('.gitignore');
     expect(remoteTree).toContain('testspace/testspace.excalidraw');
     expect(remoteTree.some((f) => f.includes('backups'))).toBe(false);
+  });
+});
+
+describe('deleteSpaceFromGit', () => {
+  it('removes a space directory from the remote', async () => {
+    setGitConfig({
+      repoUrl: 'git@github.com:user/repo.git',
+      connected: true,
+      connectedAt: new Date().toISOString(),
+    });
+
+    const dataDir = getDataDir();
+    const spacesDir = join(dataDir, 'spaces');
+    const goneDir = join(spacesDir, 'gone-space');
+    mkdirSync(goneDir, { recursive: true });
+    writeFileSync(join(goneDir, 'meta.json'), '{}\n');
+    writeFileSync(join(goneDir, 'gone-space.excalidraw'), '{"elements":[]}\n');
+
+    const remoteDir = join(dataDir, 'remote.git');
+    await simpleGit({ baseDir: dataDir }).raw(['init', '--bare', remoteDir]);
+
+    const git = simpleGit({ baseDir: spacesDir });
+    await git.init(['-b', 'main']);
+    await git.raw(['config', 'user.name', 'Test']);
+    await git.raw(['config', 'user.email', 'test@example.com']);
+    await git.add('.');
+    await git.commit('initial');
+    await git.addRemote('origin', remoteDir);
+    await git.push('origin', 'main');
+
+    const result = await deleteSpaceFromGit('gone-space');
+    expect(result).toEqual({ success: true });
+
+    const remoteTree = (
+      await simpleGit({ baseDir: remoteDir }).raw([
+        'ls-tree',
+        '-r',
+        '--name-only',
+        'refs/heads/main',
+      ])
+    ).split('\n');
+    expect(remoteTree).not.toContain('gone-space/gone-space.excalidraw');
+    expect(remoteTree).not.toContain('gone-space/meta.json');
+  });
+
+  it('returns error when git is not connected', async () => {
+    setGitConfig({
+      repoUrl: '',
+      connected: false,
+      connectedAt: null,
+    });
+    const result = await deleteSpaceFromGit('some-space');
+    expect(result).toEqual({ success: false, error: 'Git not connected' });
+  });
+});
+
+describe('pruneOrphanedSpaces', () => {
+  it('removes tracked space dirs with no live space, keeps live ones', async () => {
+    setGitConfig({
+      repoUrl: 'git@github.com:user/repo.git',
+      connected: true,
+      connectedAt: new Date().toISOString(),
+    });
+
+    const dataDir = getDataDir();
+    const spacesDir = join(dataDir, 'spaces');
+
+    // Seed two tracked dirs as if from prior runs: an orphan and a live space.
+    for (const sub of ['stale-space', 'keep-space']) {
+      const dir = join(spacesDir, sub);
+      mkdirSync(dir, { recursive: true });
+      writeFileSync(join(dir, 'meta.json'), '{}\n');
+      writeFileSync(join(dir, `${sub}.excalidraw`), '{"elements":[]}\n');
+    }
+
+    const remoteDir = join(dataDir, 'remote.git');
+    await simpleGit({ baseDir: dataDir }).raw(['init', '--bare', remoteDir]);
+
+    const git = simpleGit({ baseDir: spacesDir });
+    await git.init(['-b', 'main']);
+    await git.raw(['config', 'user.name', 'Test']);
+    await git.raw(['config', 'user.email', 'test@example.com']);
+    await git.add('.');
+    await git.commit('initial');
+    await git.addRemote('origin', remoteDir);
+    await git.push('origin', 'main');
+
+    // Only keep-space is a live space; stale-space is an orphan.
+    await SpaceService.createSpace('Keep Space');
+
+    const result = await pruneOrphanedSpaces();
+    expect(result).toEqual({ pruned: 1, deleted: ['stale-space'] });
+
+    const remoteTree = (
+      await simpleGit({ baseDir: remoteDir }).raw([
+        'ls-tree',
+        '-r',
+        '--name-only',
+        'refs/heads/main',
+      ])
+    ).split('\n');
+    expect(remoteTree).not.toContain('stale-space/stale-space.excalidraw');
+    expect(remoteTree).toContain('keep-space/keep-space.excalidraw');
+  });
+
+  it('returns empty result when git is not connected', async () => {
+    setGitConfig({
+      repoUrl: '',
+      connected: false,
+      connectedAt: null,
+    });
+    const result = await pruneOrphanedSpaces();
+    expect(result).toEqual({ pruned: 0, deleted: [] });
   });
 });
 
