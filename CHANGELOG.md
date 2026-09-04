@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.17](https://github.com/jlai403/excalihub/compare/v0.1.16...v0.1.17) (2026-09-04)
+
+
+### Features
+
+* **e2e:** readme demo gif with git-commit frames and port cleanup ([e1b3301](https://github.com/jlai403/excalihub/commit/e1b330115525e07deb55c8752f6e44daedbb2ff4))
+* **git:** prune stale space dirs and harden varlock key handling ([fe9ac49](https://github.com/jlai403/excalihub/commit/fe9ac49266b4bd9f004179beec868ecfe3e7b726))
+* **git:** reset to remote history on connect so pushes fast-forward ([3243fd7](https://github.com/jlai403/excalihub/commit/3243fd707b3e32f28fa19bbaffad672c4fa4267d))
+* **hub:** add demo gif scripts, README image, and demo-results gitignore ([1fc5f47](https://github.com/jlai403/excalihub/commit/1fc5f4707a24e41662fb44bec8d181f4a959d378))
+
 ## [0.1.16](https://github.com/jlai403/excalihub/compare/v0.1.15...v0.1.16) (2026-09-04)
 
 
