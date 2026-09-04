@@ -11,7 +11,10 @@ import {
   isSSHKeyPairGenerated,
   getDataDir,
 } from '~/repos/git.js';
-import { getSpaceBySubdomain } from '~/repos/space.js';
+import {
+  getSpaceBySubdomain,
+  getAllSpaces,
+} from '~/repos/space.js';
 
 const SPACES_GITIGNORE = '*/backups/\n';
 
@@ -50,6 +53,28 @@ export async function prepareSpacesRepo(
     await git
       .raw(['rm', '-r', '--cached', '--ignore-unmatch', '**/backups/*'])
       .catch(() => {});
+  }
+}
+
+// Sync local main to the remote branch after init/remote setup. A plain
+// pull aborts when the worktree already holds untracked space dirs the
+// remote also tracks (stable subdomains collide across connects), silently
+// leaving an empty unborn main — the next commit/push was then rejected
+// non-fast-forward. The remote is the source of truth at connect; live
+// scene data lives in the gitignored backups/ dirs and is re-committed on
+// top afterwards.
+export async function syncRemoteHistory(git: SimpleGit): Promise<void> {
+  await git.fetch(['origin']);
+  // Existence must come from the branch list, not rev-parse: simple-git's
+  // raw() resolves missing-ref rev-parses when --quiet suppresses stderr.
+  const remoteBranches = await git.raw(['branch', '-r']);
+  const hasRemoteMain = remoteBranches
+    .split('\n')
+    .some((b) => b.trim() === 'origin/main');
+  if (hasRemoteMain) {
+    await git.reset(['--hard', 'origin/main']);
+  } else {
+    log.info('Remote has no main history to sync');
   }
 }
 
@@ -122,21 +147,13 @@ ${portLine}  User git
       log.info(`Initializing git repo with remote ${repoUrl}...`);
       await git.init(['-b', 'main']);
       await git.addRemote('origin', repoUrl);
-      try {
-        await git.pull(['origin', 'main', '--allow-unrelated-histories']);
-      } catch {
-        log.info('Remote has no history to pull');
-      }
     } else {
-      log.info('Git repo already initialized, pulling latest...');
+      log.info('Git repo already initialized, re-syncing remote...');
       await git.remote(['rm', 'origin']).catch(() => {});
       await git.addRemote('origin', repoUrl);
-      try {
-        await git.pull(['origin', 'main']);
-      } catch {
-        log.info('No changes to pull');
-      }
     }
+
+    await syncRemoteHistory(git);
 
     await prepareSpacesRepo(git, spacesDir);
 
@@ -189,20 +206,7 @@ export async function commitAndPush(
       writeFileSync(pngPath, pngBuffer);
     }
 
-    const sshDir = join(dataDir, 'git-config', '.ssh');
-    const sshConfigPath = join(sshDir, 'config');
-
-    const git = simpleGit({
-      baseDir: spacesDir,
-      unsafe: {
-        allowUnsafeSshCommand: true,
-      },
-      config: [
-        `core.sshCommand=ssh -F ${sshConfigPath}`,
-        'user.name=ExcaliHub',
-        'user.email=excalihub@localhost',
-      ],
-    });
+    const git = connectedGit();
 
     await prepareSpacesRepo(git, spacesDir);
 
@@ -215,6 +219,100 @@ export async function commitAndPush(
   } catch (err: any) {
     log.error('Git commit/push failed:', err);
     return { success: false, error: err.message };
+  }
+}
+
+// Build a simple-git handle with the app's SSH config (deploy key + per-host
+// config) rooted at the spaces dir, which doubles as the git working tree.
+function connectedGit(): SimpleGit {
+  const dataDir = getDataDir();
+  const spacesDir = join(dataDir, 'spaces');
+  const sshConfigPath = join(dataDir, 'git-config', '.ssh', 'config');
+  return simpleGit({
+    baseDir: spacesDir,
+    unsafe: {
+      allowUnsafeSshCommand: true,
+    },
+    config: [
+      `core.sshCommand=ssh -F ${sshConfigPath}`,
+      'user.name=ExcaliHub',
+      'user.email=excalihub@localhost',
+    ],
+  });
+}
+
+// The top-level subdomain directories currently tracked by git (one per
+// previously-committed space), irrespective of whether they still exist on disk.
+async function trackedSpaceDirs(git: SimpleGit): Promise<string[]> {
+  const files = (await git.raw(['ls-files'])).split('\n').filter(Boolean);
+  const dirs = new Set<string>();
+  for (const f of files) {
+    const top = f.split('/')[0];
+    if (top && top !== '.gitignore') dirs.add(top);
+  }
+  return [...dirs];
+}
+
+export async function deleteSpaceFromGit(
+  subdomain: string,
+): Promise<{ success: boolean; error?: string }> {
+  const config = getGitConfig();
+  if (!config?.connected) {
+    return { success: false, error: 'Git not connected' };
+  }
+
+  const dataDir = getDataDir();
+  const spacesDir = join(dataDir, 'spaces');
+
+  try {
+    const git = connectedGit();
+    await prepareSpacesRepo(git, spacesDir);
+    await git.raw(['rm', '-r', '--ignore-unmatch', `${subdomain}/`]);
+    await git.commit(`Delete space ${subdomain}`);
+    await git.push('origin', 'main', { '-u': null });
+
+    log.info(`Deleted and pushed space: ${subdomain}`);
+    return { success: true };
+  } catch (err: any) {
+    log.error(`Git delete space failed for ${subdomain}:`, err);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function pruneOrphanedSpaces(): Promise<{
+  pruned: number;
+  deleted: string[];
+}> {
+  const config = getGitConfig();
+  if (!config?.connected) return { pruned: 0, deleted: [] };
+
+  const dataDir = getDataDir();
+  const spacesDir = join(dataDir, 'spaces');
+
+  try {
+    const git = connectedGit();
+    const tracked = await trackedSpaceDirs(git);
+    const live = new Set(getAllSpaces().map((s) => s.subdomain));
+    const orphans = tracked.filter((dir) => !live.has(dir));
+
+    if (orphans.length === 0) return { pruned: 0, deleted: [] };
+
+    await prepareSpacesRepo(git, spacesDir);
+    for (const dir of orphans) {
+      await git.raw(['rm', '-r', '--ignore-unmatch', `${dir}/`]);
+    }
+    await git.commit(
+      `Prune ${orphans.length} stale space(s): ${orphans.join(', ')}`,
+    );
+    await git.push('origin', 'main', { '-u': null });
+
+    for (const subdomain of orphans) {
+      log.info(`Pruned stale space from git: ${subdomain}`);
+    }
+    return { pruned: orphans.length, deleted: orphans };
+  } catch (err: any) {
+    log.error('Git prune failed:', err);
+    return { pruned: 0, deleted: [] };
   }
 }
 

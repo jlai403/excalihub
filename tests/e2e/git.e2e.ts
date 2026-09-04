@@ -1,3 +1,4 @@
+import "./varlock";
 import {
   test,
   expect,
@@ -8,7 +9,14 @@ import { mkdtempSync, rmSync, writeFileSync, chmodSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 
-const E2E_SSH_PRIVATE_KEY = process.env.E2E_SSH_PRIVATE_KEY;
+// Bun auto-loads .env.local, so without varlock this var holds the bare
+// `exec('op read ...')` expression, not a usable key. Only a real OpenSSH
+// private key (from `varlock run` locally or the CI secret) enables the spec.
+const E2E_SSH_PRIVATE_KEY = process.env.E2E_SSH_PRIVATE_KEY?.startsWith(
+  "-----BEGIN OPENSSH PRIVATE KEY-----"
+)
+  ? process.env.E2E_SSH_PRIVATE_KEY
+  : undefined;
 const [owner, repo] = (process.env.E2E_GIT_REPO ?? "jlai403/excalihub-ci").split(
   "/"
 );

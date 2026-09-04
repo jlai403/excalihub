@@ -9,6 +9,12 @@
 [![Bun](https://img.shields.io/badge/Bun-1.x-f9f0ff?logo=bun&logoColor=black)](https://bun.sh)
 [![Last Commit](https://img.shields.io/github/last-commit/jlai403/excalihub)](https://github.com/jlai403/excalihub/commits/main)
 
+<br>
+
+![ExcaliHub Demo](docs/demo.gif)
+
+<br>
+
 Self-hosted hub for isolated Excalidraw whiteboards with automatic backup.
 
 ExcaliHub gives you a self-hosted dashboard where every whiteboard lives on its own subdomain. Think `project-a.excalihub.example.com`, `team-b.excalihub.example.com` — each backed by a shared Excalidraw instance with automatic backups. Great for homelabs, small teams, or anyone who wants segregated boards without the SaaS.

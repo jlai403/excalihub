@@ -1,32 +1,16 @@
-import { rmSync, mkdirSync, writeFileSync, chmodSync } from "fs";
+import "./varlock";
+import {
+  rmSync,
+  mkdirSync,
+  writeFileSync,
+  chmodSync,
+  mkdtempSync,
+  existsSync,
+} from "fs";
 import { join, resolve } from "path";
 import { execSync } from "child_process";
 
 const DATA_DIR = "./data-e2e";
-
-function killPort(port: number) {
-  const kill = () => {
-    try {
-      const pid = execSync(`lsof -ti :${port}`, { stdio: "pipe" })
-        .toString()
-        .trim();
-      if (pid) process.kill(Number(pid), "SIGTERM");
-    } catch {
-      // nothing listening on the port
-    }
-  };
-
-  kill();
-  const deadline = Date.now() + 5000;
-  while (Date.now() < deadline) {
-    try {
-      execSync(`lsof -ti :${port}`, { stdio: "pipe" });
-      execSync("sleep 0.2");
-    } catch {
-      return;
-    }
-  }
-}
 
 const IMAGE = "excalihub:e2e";
 const CONTAINER = "excalihub-e2e";
@@ -152,9 +136,74 @@ function reportContainerFailure(): void {
   }
 }
 
+// Delete every leftover space directory from the e2e git repo so the remote
+// only ever holds the current run's artifacts. Called BEFORE the run, after
+// data-e2e is wiped (empty live-space set) — so any top-level dir that looks
+// like a space (contains meta.json) is prior-run residue and is pruned. Runs
+// as a standalone git op with the seeded deploy key (the app isn't up yet).
+function pruneRemoteSpaces(privateKey: string) {
+  const repo = process.env.E2E_GIT_REPO ?? "jlai403/excalihub-ci";
+  if (!repo || !repo.includes("/")) {
+    console.warn("[globalSetup] skipping prune: E2E_GIT_REPO is not owner/repo");
+    return;
+  }
+  const repoUrl = `git@github.com:${repo}.git`;
+
+  const tmp = mkdtempSync(join(resolve(DATA_DIR), "prune-"));
+  try {
+    const sshKey = resolve(DATA_DIR, "git-config", "id_ed25519");
+    // IdentityAgent=none: macOS ssh offers agent keys before -i despite
+    // IdentitiesOnly=yes, authenticating as the wrong user. Matches git.e2e.ts.
+    const sshCommand = `ssh -i ${sshKey} -o IdentitiesOnly=yes -o IdentityAgent=none -o StrictHostKeyChecking=no`;
+
+    execSync(`git clone --quiet ${repoUrl} ${join(tmp, "repo")}`, {
+      stdio: "pipe",
+      env: { ...process.env, GIT_SSH_COMMAND: sshCommand },
+    });
+
+    const repoDir = join(tmp, "repo");
+    const entries = execSync("ls -1", { cwd: repoDir, stdio: "pipe" })
+      .toString()
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    // A space dir is identified by a meta.json. Only those get pruned, leaving
+    // any incidental repo files (gitignore, README, etc.) untouched.
+    const spaces = entries.filter((e) =>
+      existsSync(join(repoDir, e, "meta.json")),
+    );
+    if (spaces.length === 0) {
+      console.log("[globalSetup] no stale space dirs to prune");
+      return;
+    }
+
+    const quoted = spaces.map((s) => `"${s}"`).join(" ");
+    execSync(`git rm -r --quiet --ignore-unmatch ${quoted}`, {
+      cwd: repoDir,
+      stdio: "pipe",
+    });
+    execSync(`git commit --quiet -m "Prune ${spaces.length} stale space dirs"`, {
+      cwd: repoDir,
+      stdio: "pipe",
+    });
+    execSync("git push origin main", {
+      cwd: repoDir,
+      stdio: "pipe",
+      env: { ...process.env, GIT_SSH_COMMAND: sshCommand },
+    });
+    console.log(
+      `[globalSetup] pruned ${spaces.length} stale space dir(s) from ${repo}: ${spaces.join(", ")}`,
+    );
+  } catch (err) {
+    // Pruning is best-effort — a stale remote shouldn't fail a test run.
+    console.warn("[globalSetup] git prune failed (continuing):", err.message);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+}
+
 export default async function globalSetup() {
-  killPort(8081);
-  killPort(4321);
   rmSync(DATA_DIR, { recursive: true, force: true });
   mkdirSync(DATA_DIR, { recursive: true });
 
@@ -162,7 +211,13 @@ export default async function globalSetup() {
   // across runs instead of being re-registered (and re-notifying) every run.
   // The private key comes from E2E_SSH_PRIVATE_KEY (repo secret in CI,
   // 1Password via varlock locally) — never committed to the repo.
-  const privateKey = process.env.E2E_SSH_PRIVATE_KEY;
+  // Bun auto-loads .env.local, so without varlock the var holds a bare
+  // `exec('op read ...')` expression rather than a key. Require a real
+  // OpenSSH private key (from `varlock run` locally or the CI secret).
+  const rawKey = process.env.E2E_SSH_PRIVATE_KEY;
+  const privateKey = rawKey?.startsWith("-----BEGIN OPENSSH PRIVATE KEY-----")
+    ? rawKey
+    : undefined;
   let publicKey = "";
   if (privateKey) {
     const gitConfigDir = join(DATA_DIR, "git-config");
@@ -173,6 +228,7 @@ export default async function globalSetup() {
     chmodSync(keyPath, 0o600);
     publicKey = execSync(`ssh-keygen -y -f ${keyPath}`).toString().trim();
     writeFileSync(join(gitConfigDir, "id_ed25519.pub"), publicKey);
+    pruneRemoteSpaces(privateKey);
   }
 
   // The docker e2e config serves the app from the built image. Hand the

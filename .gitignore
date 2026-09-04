@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .env
+.env.local
 *.db
 *.db-journal
 .DS_Store
@@ -10,5 +11,6 @@ data/
 data-e2e/
 inject/
 tests/e2e/test-results/
+tests/e2e/demo-results/
 docs/superpowers/
 .codegraph/

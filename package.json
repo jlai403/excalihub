@@ -14,10 +14,13 @@
     "test:watch": "bun test server/tests/ --watch",
     "test:e2e": "bun playwright test",
     "test:e2e:local": "varlock run -- bun playwright test",
+    "prune:e2e": "varlock run -- bun run scripts/prune-e2e-repo.ts",
     "test:e2e:docker": "bun run build && bun playwright test --config playwright.docker.config.ts",
     "test:e2e:ui": "bun playwright test --ui",
     "test:e2e:debug": "bun playwright test --debug",
     "test:report": "bun playwright show-report",
+    "demo": "varlock run -- bun playwright test --config demo.config.ts",
+    "demo:gif": "bun run demo && bash scripts/build-demo-gif.sh",
     "typecheck": "bun run typecheck:server && bun run typecheck:hub",
     "typecheck:server": "tsc --noEmit -p server/tsconfig.json",
     "typecheck:hub": "bun run --filter hub check"
