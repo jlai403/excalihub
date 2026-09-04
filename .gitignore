@@ -10,5 +10,6 @@ data/
 data-e2e/
 inject/
 tests/e2e/test-results/
+tests/e2e/demo-results/
 docs/superpowers/
 .codegraph/
