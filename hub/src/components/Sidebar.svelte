@@ -3,18 +3,24 @@
   import ThemeToggle from "./ThemeToggle.svelte";
   import CreateSpaceForm from "./CreateSpaceForm.svelte";
   import { getSpaces, loadSpaces, addSpace } from "$lib/stores/spaces.svelte";
+  import { getCreateSpaceOpen, setCreateSpaceOpen, setPaletteOpen } from "$lib/stores/ui.svelte";
 
   let { currentPath = "/" }: { currentPath?: string } = $props();
 
   let hubHost = $state("");
-  let createOpen = $state(false);
   let pinned = $state(true);
+  let isMac = $state(false);
 
   const spaces = $derived(getSpaces());
+  const createSpaceOpen = $derived(getCreateSpaceOpen());
 
   onMount(async () => {
     hubHost = window.__hubHost;
+    isMac = /Mac|iPhone|iPad/.test(navigator.platform);
     pinned = localStorage.getItem("sidebar-pinned") === "true";
+    window.addEventListener("sidebar-pin-change", () => {
+      pinned = localStorage.getItem("sidebar-pinned") === "true";
+    });
     try {
       await loadSpaces();
     } catch {
@@ -25,6 +31,7 @@
   function togglePin() {
     pinned = !pinned;
     localStorage.setItem("sidebar-pinned", String(pinned));
+    window.dispatchEvent(new Event("sidebar-pin-change"));
   }
 
   function handleCreated(space: Parameters<typeof addSpace>[0]) {
@@ -37,7 +44,7 @@
   const navItemClass = $derived("pl-[14px] pr-2");
 </script>
 
-<CreateSpaceForm bind:open={createOpen} onCreated={handleCreated} />
+<CreateSpaceForm open={createSpaceOpen} onOpenChange={setCreateSpaceOpen} onCreated={handleCreated} />
 
 <aside class="group/sidebar flex flex-col h-screen {pinned ? 'w-48' : 'w-14 hover:w-48'} shrink-0 border-r border-border bg-sidebar text-sidebar-foreground transition-all duration-200 overflow-hidden">
   <div class="flex items-center h-12 px-3 shrink-0">
@@ -118,7 +125,7 @@
 
   <div class="flex flex-col gap-0.5 px-1.5 shrink-0">
     <button
-      onclick={() => (createOpen = true)}
+      onclick={() => setCreateSpaceOpen(true)}
       class="flex items-center gap-2.5 h-8 {navItemClass} rounded-md text-sm font-medium bg-sidebar-primary text-sidebar-primary-foreground hover:opacity-90 transition-opacity cursor-pointer"
     >
       <span class="size-4 flex items-center justify-center shrink-0">+</span>
@@ -128,7 +135,16 @@
 
   <div class="mx-3 my-2 h-px bg-sidebar-border shrink-0"></div>
 
-  <div class="flex items-center h-12 px-3 shrink-0">
+  <div class="flex items-center justify-between h-12 px-3 shrink-0">
+    <span class={labelClass + " shrink-0"}>
+      <button
+        onclick={() => setPaletteOpen(true)}
+        title="Open command palette"
+        class="inline-flex items-center rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground/70 hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
+      >
+        <kbd class="font-sans">{isMac ? "⌘K" : "Ctrl K"}</kbd>
+      </button>
+    </span>
     <ThemeToggle />
   </div>
 </aside>

@@ -9,9 +9,11 @@
   let {
     open = $bindable(false),
     onCreated,
+    onOpenChange,
   }: {
     open: boolean;
     onCreated: (space: Space) => void;
+    onOpenChange?: (open: boolean) => void;
   } = $props();
 
   let name = $state("");
@@ -66,7 +68,7 @@
   }
 </script>
 
-<Dialog.Root {open} onOpenChange={(v) => { open = v; if (!v) reset(); }}>
+<Dialog.Root {open} onOpenChange={(v) => { open = v; onOpenChange?.(v); if (!v) reset(); }}>
   <Dialog.Content>
     <Dialog.Header>
       <Dialog.Title>Create Space</Dialog.Title>
