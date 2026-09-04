@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.16](https://github.com/jlai403/excalihub/compare/v0.1.15...v0.1.16) (2026-09-04)
+
+
+### Features
+
+* add CommandPalette component with Cmd+K palette ([f47511b](https://github.com/jlai403/excalihub/commit/f47511b8f5794cd499b8e4721ce2568e6f8831ed))
+* add shared UI state and theme utility modules for command palette ([89a94d8](https://github.com/jlai403/excalihub/commit/89a94d835e88d05986ec70349f7cfce646fa4734))
+* **hub:** add shadcn-svelte Command component ([5d8a90f](https://github.com/jlai403/excalihub/commit/5d8a90fee20c20194787bfa98edfabc5379f0bc8))
+* **hub:** register CommandPalette in Layout and wire create-space shared state ([c170596](https://github.com/jlai403/excalihub/commit/c170596c8b4f302277dd42b41f26e6785ff09b7b))
+* **hub:** surface command palette trigger as clickable shortcut hint in sidebar ([b7ea9b8](https://github.com/jlai403/excalihub/commit/b7ea9b8dc70a873e6dfe573f8f9a627ed5f9391c))
+
+
+### Bug Fixes
+
+* close palette after pin/unpin sidebar action ([5d5d1c5](https://github.com/jlai403/excalihub/commit/5d5d1c576ed830f8eea95dc79642193f9ad97208))
+* close palette after theme selection ([51d7ba9](https://github.com/jlai403/excalihub/commit/51d7ba971f865cee9fe779cce2a88104afdbc9b0))
+* **hub:** render create-space dialog once (dedupe Sidebar/SpacesList) ([70c9f5b](https://github.com/jlai403/excalihub/commit/70c9f5b7cc8e170127cbfecc9639925a82359b90))
+* restore Cmd+K/Super+K/Ctrl+K palette trigger with capture-phase listener ([d456155](https://github.com/jlai403/excalihub/commit/d4561556044c679d9b997aa63e1fc371abfee6d2))
+* sync ThemeToggle icon when command palette changes theme ([65d3107](https://github.com/jlai403/excalihub/commit/65d310757ca006fe69d1c47afb8760cc8c0a2ada))
+* trigger command palette on Ctrl+K only (not Cmd+K on macOS) ([10e73fd](https://github.com/jlai403/excalihub/commit/10e73fdb70d6d48127f396f8cb6804f59f45f2e1))
+
 ## [0.1.15](https://github.com/jlai403/excalihub/compare/v0.1.14...v0.1.15) (2026-09-03)
 
 
