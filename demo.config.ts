@@ -8,25 +8,23 @@ killStalePorts();
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: "**/*.e2e.ts",
+  testMatch: "demo.ts",
   fullyParallel: false,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: 0,
   workers: 1,
-  reporter: process.env.CI ? "dot" : "list",
-  outputDir: "./tests/e2e/test-results",
+  reporter: "list",
+  outputDir: "./tests/e2e/demo-results",
   globalSetup: "./tests/e2e/globalSetup.ts",
 
   use: {
     baseURL: "http://excalihub.localhost:8081",
-    trace: "on-first-retry",
-    screenshot: "only-on-failure",
+    screenshot: "off",
+    video: "off",
+    viewport: { width: 1280, height: 720 },
   },
 
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
-    { name: "webkit", use: { ...devices["Desktop Safari"] } },
   ],
 
   webServer: [

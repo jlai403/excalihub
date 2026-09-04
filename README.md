@@ -11,7 +11,7 @@
 
 <br>
 
-![ExcaliHub Demo](demo.gif)
+![ExcaliHub Demo](docs/demo.gif)
 
 <br>
 

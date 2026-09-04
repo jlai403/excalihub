@@ -12,30 +12,6 @@ import { execSync } from "child_process";
 
 const DATA_DIR = "./data-e2e";
 
-function killPort(port: number) {
-  const kill = () => {
-    try {
-      const pid = execSync(`lsof -ti :${port}`, { stdio: "pipe" })
-        .toString()
-        .trim();
-      if (pid) process.kill(Number(pid), "SIGTERM");
-    } catch {
-      // nothing listening on the port
-    }
-  };
-
-  kill();
-  const deadline = Date.now() + 5000;
-  while (Date.now() < deadline) {
-    try {
-      execSync(`lsof -ti :${port}`, { stdio: "pipe" });
-      execSync("sleep 0.2");
-    } catch {
-      return;
-    }
-  }
-}
-
 const IMAGE = "excalihub:e2e";
 const CONTAINER = "excalihub-e2e";
 
@@ -175,7 +151,7 @@ function pruneRemoteSpaces(privateKey: string) {
 
   const tmp = mkdtempSync(join(resolve(DATA_DIR), "prune-"));
   try {
-    const sshKey = join(DATA_DIR, "git-config", "id_ed25519");
+    const sshKey = resolve(DATA_DIR, "git-config", "id_ed25519");
     // IdentityAgent=none: macOS ssh offers agent keys before -i despite
     // IdentitiesOnly=yes, authenticating as the wrong user. Matches git.e2e.ts.
     const sshCommand = `ssh -i ${sshKey} -o IdentitiesOnly=yes -o IdentityAgent=none -o StrictHostKeyChecking=no`;
@@ -228,8 +204,6 @@ function pruneRemoteSpaces(privateKey: string) {
 }
 
 export default async function globalSetup() {
-  killPort(8081);
-  killPort(4321);
   rmSync(DATA_DIR, { recursive: true, force: true });
   mkdirSync(DATA_DIR, { recursive: true });
 

@@ -1,6 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import { killStalePorts } from "./tests/e2e/cleanup";
 
 process.env.E2E_DOCKER = "1";
+
+// Runs at config load, before Playwright starts webServers. Docker mode skips
+// :8081 (the container owns it via docker-proxy) and still clears :4321/:8099.
+killStalePorts();
 
 export default defineConfig({
   testDir: "./tests/e2e",

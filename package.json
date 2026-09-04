@@ -19,7 +19,7 @@
     "test:e2e:ui": "bun playwright test --ui",
     "test:e2e:debug": "bun playwright test --debug",
     "test:report": "bun playwright show-report",
-    "demo": "bun playwright test --config tests/e2e/demo.config.ts",
+    "demo": "varlock run -- bun playwright test --config demo.config.ts",
     "demo:gif": "bun run demo && bash scripts/build-demo-gif.sh",
     "typecheck": "bun run typecheck:server && bun run typecheck:hub",
     "typecheck:server": "tsc --noEmit -p server/tsconfig.json",
