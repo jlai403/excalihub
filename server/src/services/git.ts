@@ -56,6 +56,28 @@ export async function prepareSpacesRepo(
   }
 }
 
+// Sync local main to the remote branch after init/remote setup. A plain
+// pull aborts when the worktree already holds untracked space dirs the
+// remote also tracks (stable subdomains collide across connects), silently
+// leaving an empty unborn main — the next commit/push was then rejected
+// non-fast-forward. The remote is the source of truth at connect; live
+// scene data lives in the gitignored backups/ dirs and is re-committed on
+// top afterwards.
+export async function syncRemoteHistory(git: SimpleGit): Promise<void> {
+  await git.fetch(['origin']);
+  // Existence must come from the branch list, not rev-parse: simple-git's
+  // raw() resolves missing-ref rev-parses when --quiet suppresses stderr.
+  const remoteBranches = await git.raw(['branch', '-r']);
+  const hasRemoteMain = remoteBranches
+    .split('\n')
+    .some((b) => b.trim() === 'origin/main');
+  if (hasRemoteMain) {
+    await git.reset(['--hard', 'origin/main']);
+  } else {
+    log.info('Remote has no main history to sync');
+  }
+}
+
 export async function connectGitRepo(
   repoUrl: string
 ): Promise<{ success: boolean; error?: string }> {
@@ -125,21 +147,13 @@ ${portLine}  User git
       log.info(`Initializing git repo with remote ${repoUrl}...`);
       await git.init(['-b', 'main']);
       await git.addRemote('origin', repoUrl);
-      try {
-        await git.pull(['origin', 'main', '--allow-unrelated-histories']);
-      } catch {
-        log.info('Remote has no history to pull');
-      }
     } else {
-      log.info('Git repo already initialized, pulling latest...');
+      log.info('Git repo already initialized, re-syncing remote...');
       await git.remote(['rm', 'origin']).catch(() => {});
       await git.addRemote('origin', repoUrl);
-      try {
-        await git.pull(['origin', 'main']);
-      } catch {
-        log.info('No changes to pull');
-      }
     }
+
+    await syncRemoteHistory(git);
 
     await prepareSpacesRepo(git, spacesDir);
 

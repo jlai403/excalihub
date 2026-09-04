@@ -13,6 +13,7 @@ import {
   parseRepoUrl,
   deleteSpaceFromGit,
   pruneOrphanedSpaces,
+  syncRemoteHistory,
 } from '~/services/git.js';
 
 beforeEach(() => {
@@ -217,6 +218,89 @@ describe('commitAndPush', () => {
     expect(remoteTree).toContain('.gitignore');
     expect(remoteTree).toContain('testspace/testspace.excalidraw');
     expect(remoteTree.some((f) => f.includes('backups'))).toBe(false);
+  });
+});
+
+describe('syncRemoteHistory', () => {
+  it('syncs remote history even when the worktree holds a colliding untracked space dir', async () => {
+    const dataDir = getDataDir();
+    const spacesDir = join(dataDir, 'spaces');
+    const remoteDir = join(dataDir, 'remote.git');
+    await simpleGit({ baseDir: dataDir }).raw(['init', '--bare', remoteDir]);
+
+    // A previous run's remote state: the same stable subdomain is tracked.
+    const seedDir = join(dataDir, 'seed');
+    mkdirSync(join(seedDir, 'my-project'), { recursive: true });
+    writeFileSync(join(seedDir, 'my-project', 'meta.json'), '{"stale":true}\n');
+    writeFileSync(
+      join(seedDir, 'my-project', 'my-project.excalidraw'),
+      '{"elements":[]}\n',
+    );
+    const seed = simpleGit({ baseDir: seedDir });
+    await seed.init(['-b', 'main']);
+    await seed.raw(['config', 'user.name', 'Test']);
+    await seed.raw(['config', 'user.email', 'test@example.com']);
+    await seed.add('.');
+    await seed.commit('previous run');
+    await seed.addRemote('origin', remoteDir);
+    await seed.push('origin', 'main');
+
+    // The live worktree already holds the same space dir (created before
+    // connect), with different content — a plain pull aborts here and used
+    // to silently leave an empty unborn main.
+    mkdirSync(join(spacesDir, 'my-project'), { recursive: true });
+    writeFileSync(join(spacesDir, 'my-project', 'meta.json'), '{"fresh":true}\n');
+
+    const git = simpleGit({ baseDir: spacesDir });
+    await git.init(['-b', 'main']);
+    await git.raw(['config', 'user.name', 'Test']);
+    await git.raw(['config', 'user.email', 'test@example.com']);
+    await git.addRemote('origin', remoteDir);
+
+    await syncRemoteHistory(git);
+
+    expect((await git.raw(['rev-parse', 'HEAD'])).trim()).toBe(
+      (await git.raw(['rev-parse', 'origin/main'])).trim(),
+    );
+    expect((await git.log()).latest?.message).toBe('previous run');
+    expect(readFileSync(join(spacesDir, 'my-project', 'meta.json'), 'utf-8')).toBe(
+      '{"stale":true}\n',
+    );
+
+    // The next commit must fast-forward instead of being rejected.
+    writeFileSync(
+      join(spacesDir, 'my-project', 'my-project.excalidraw'),
+      '{"elements":[1]}\n',
+    );
+    await git.add(['my-project/']);
+    await git.commit('Update my-project');
+    await git.push('origin', 'main');
+    expect((await git.raw(['rev-parse', 'HEAD'])).trim()).toBe(
+      (await git.raw(['rev-parse', 'origin/main'])).trim(),
+    );
+  });
+
+  it('keeps unborn main when the remote has no main branch', async () => {
+    const dataDir = getDataDir();
+    const spacesDir = join(dataDir, 'spaces');
+    const remoteDir = join(dataDir, 'remote.git');
+    await simpleGit({ baseDir: dataDir }).raw(['init', '--bare', remoteDir]);
+
+    mkdirSync(join(spacesDir, 'fresh-space'), { recursive: true });
+    writeFileSync(join(spacesDir, 'fresh-space', 'meta.json'), '{}\n');
+
+    const git = simpleGit({ baseDir: spacesDir });
+    await git.init(['-b', 'main']);
+    await git.addRemote('origin', remoteDir);
+
+    await syncRemoteHistory(git);
+
+    // No --quiet: simple-git resolves quiet rev-parses of missing refs.
+    const hasMain = await git
+      .raw(['rev-parse', '--verify', 'main'])
+      .then(() => true)
+      .catch(() => false);
+    expect(hasMain).toBe(false);
   });
 });
 
