@@ -169,7 +169,7 @@
           <div class="mt-3 flex gap-2">
             {#if gitConnected && gitConfig.webUrl}
               <Button variant="outline" size="sm" asChild>
-                <a href={gitConfig.webUrl} target="_blank" rel="noopener noreferrer">
+                <a href={gitConfig.webUrl} target="_blank" rel="noopener noreferrer" class="whitespace-nowrap">
                   <ExternalLink class="size-4" /> Repo
                 </a>
               </Button>
@@ -177,7 +177,7 @@
             <Dialog.Root open={archiveTarget === space.id} onOpenChange={(open) => { if (!open) archiveTarget = null; }}>
               <Dialog.Trigger>
                 {#snippet child({ props })}
-                  <Button variant="outline" size="sm" {...props} onclick={() => (archiveTarget = space.id)}>
+                  <Button variant="outline" size="sm" {...props} onclick={() => (archiveTarget = space.id)} class="whitespace-nowrap">
                     <Archive class="size-4" />
                     Archive
                   </Button>
