@@ -2,6 +2,7 @@ import type { GitConfig } from "$lib/types";
 
 let _gitConfig = $state<GitConfig>({
   repoUrl: "",
+  webUrl: null,
   connected: false,
   connectedAt: null,
 });

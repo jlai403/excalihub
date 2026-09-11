@@ -16,6 +16,7 @@ export type Backup = {
 
 export type GitConfig = {
   repoUrl: string;
+  webUrl: string | null;
   connected: boolean;
   connectedAt: string | null;
 };
