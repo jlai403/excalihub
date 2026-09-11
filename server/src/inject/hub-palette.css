@@ -1,0 +1,81 @@
+.ex-palette-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.45);
+  z-index: 9999;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  padding: 16px;
+}
+
+.ex-palette {
+  background: hsl(var(--hub-card));
+  border: 1px solid hsl(var(--hub-border));
+  border-radius: 10px;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+  width: 90%;
+  max-width: 480px;
+  max-height: 60vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  color: hsl(var(--hub-fg));
+}
+
+.ex-palette__input {
+  width: calc(100% - 24px);
+  margin: 12px 12px 0;
+  padding: 10px 12px;
+  border: 1px solid hsl(var(--hub-border));
+  border-radius: 6px;
+  background: transparent;
+  color: hsl(var(--hub-fg));
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+  box-sizing: border-box;
+}
+.ex-palette__input:focus {
+  border-color: hsl(var(--hub-primary));
+  box-shadow: 0 0 0 3px hsl(var(--hub-primary) / 0.15);
+}
+.ex-palette__input::placeholder {
+  color: hsl(var(--hub-muted));
+}
+
+.ex-palette__list {
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.ex-palette__heading {
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--hub-muted));
+}
+
+.ex-palette__item {
+  display: flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.ex-palette__item:hover,
+.ex-palette__item--active {
+  background: hsl(var(--hub-accent));
+}
+.ex-palette__item--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.ex-palette__item--disabled:hover {
+  background: transparent;
+}

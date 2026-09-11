@@ -76,6 +76,8 @@ let injectedScript: string | null = null;
 let injectedMenuCss: string | null = null;
 let injectedMenuScript: string | null = null;
 let injectedCommitModalScript: string | null = null;
+let injectedPaletteCss: string | null = null;
+let injectedPaletteScript: string | null = null;
 
 function getInjectedScript(): string {
   if (!injectedScript) {
@@ -115,6 +117,26 @@ function getInjectedCommitModalScript(): string {
     );
   }
   return injectedCommitModalScript;
+}
+
+function getInjectedPaletteCss(): string {
+  if (!injectedPaletteCss) {
+    injectedPaletteCss = readFileSync(
+      resolve(import.meta.dirname, '../inject/hub-palette.css'),
+      'utf-8'
+    );
+  }
+  return injectedPaletteCss;
+}
+
+function getInjectedPaletteScript(): string {
+  if (!injectedPaletteScript) {
+    injectedPaletteScript = readFileSync(
+      resolve(import.meta.dirname, '../inject/hub-palette.js'),
+      'utf-8'
+    );
+  }
+  return injectedPaletteScript;
 }
 
 async function proxyToExcalidraw(c: Context, subdomain: string) {
@@ -167,9 +189,11 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
   const menuCss = `<style data-excalihub-menu>${getInjectedMenuCss()}</style>`;
   const menuScript = `<script data-excalihub-menu>window.__GIT_ENABLED = '${gitEnabled}';window.__hubHost = '${hubHostFor(envSchema.parse(process.env))}';${getInjectedMenuScript()}</script>`;
   const commitModalScript = `<script data-excalihub-commit-modal>${getInjectedCommitModalScript()}</script>`;
+  const paletteCss = `<style data-excalihub-palette>${getInjectedPaletteCss()}</style>`;
+  const paletteScript = `<script data-excalihub-palette>${getInjectedPaletteScript()}</script>`;
 
   const syncScript = `<script data-excalihub-sync>${debugFlag}window.__SPACE_NAME = ${JSON.stringify(space.name)};${getInjectedScript()}</script>`;
-  const injection = `${menuCss}${menuScript}${commitModalScript}${syncScript}`;
+  const injection = `${menuCss}${menuScript}${commitModalScript}${paletteCss}${paletteScript}${syncScript}`;
   const injected = html.includes('</body>')
     ? html.replace('</body>', `${injection}</body>`)
     : html + injection;

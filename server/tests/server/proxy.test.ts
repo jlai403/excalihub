@@ -312,6 +312,42 @@ describe('proxyMiddleware', () => {
       expect(body).toContain('hub-menu-container');
     });
 
+    it('injects palette CSS into HTML responses', async () => {
+      createSpace('Space', 'space');
+      fetchMock = mock(() =>
+        new Response('<html><body></body></html>', {
+          headers: { 'content-type': 'text/html' },
+        })
+      );
+      globalThis.fetch = fetchMock as typeof globalThis.fetch;
+
+      const res = await makeApp().request('/', {
+        headers: { host: 'space.excalihub.example.com' },
+      });
+      const body = await res.text();
+      expect(body).toContain('data-excalihub-palette');
+      expect(body).toContain('<style');
+      expect(body).toContain('hub-palette-overlay');
+    });
+
+    it('injects palette JS into HTML responses', async () => {
+      createSpace('Space', 'space');
+      fetchMock = mock(() =>
+        new Response('<html><body></body></html>', {
+          headers: { 'content-type': 'text/html' },
+        })
+      );
+      globalThis.fetch = fetchMock as typeof globalThis.fetch;
+
+      const res = await makeApp().request('/', {
+        headers: { host: 'space.excalihub.example.com' },
+      });
+      const body = await res.text();
+      expect(body).toContain('data-excalihub-palette');
+      expect(body).toContain('<script');
+      expect(body).toContain('hub-open-palette');
+    });
+
     it('does not inject into non-HTML responses', async () => {
       createSpace('Space', 'space');
       fetchMock = mock(() =>
@@ -327,6 +363,7 @@ describe('proxyMiddleware', () => {
       const body = await res.text();
       expect(body).not.toContain('excalihub-sync');
       expect(body).not.toContain('excalihub-menu');
+      expect(body).not.toContain('data-excalihub-palette');
     });
   });
 
