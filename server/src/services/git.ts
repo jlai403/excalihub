@@ -39,6 +39,22 @@ export function parseRepoUrl(url: string): RepoUrl | null {
   return null;
 }
 
+export function repoUrlToWebUrl(sshUrl: string): string | null {
+  const scp = sshUrl.match(/^git@([\w.-]+):([\w.\/-]+)\.git$/);
+  if (scp) {
+    return `https://${scp[1]}/${scp[2]}`;
+  }
+
+  const sshUrlForm = sshUrl.match(
+    /^ssh:\/\/git@([\w.-]+)(?::\d+)?\/([\w.\/-]+)\.git$/,
+  );
+  if (sshUrlForm) {
+    return `https://${sshUrlForm[1]}/${sshUrlForm[2]}`;
+  }
+
+  return null;
+}
+
 export async function prepareSpacesRepo(
   git: SimpleGit,
   spacesDir: string,

@@ -3,9 +3,11 @@
   import { getSpaces } from "$lib/stores/spaces.svelte";
   import { setCreateSpaceOpen, getPaletteOpen, setPaletteOpen } from "$lib/stores/ui.svelte";
   import { setThemeState } from "$lib/stores/theme.svelte";
-  import { LayoutGrid, Archive, Settings, Plus, Globe, Monitor, Sun, Moon, Pin, PinOff, GitBranch } from "@lucide/svelte";
+  import { getGitConfig } from "$lib/stores/git.svelte";
+  import { LayoutGrid, Archive, Settings, Plus, Globe, Monitor, Sun, Moon, Pin, PinOff, GitBranch, ExternalLink } from "@lucide/svelte";
 
   const spaces = $derived(getSpaces());
+  const gitConfig = $derived(getGitConfig());
   let open = $state(getPaletteOpen());
 
   $effect(() => {
@@ -18,7 +20,12 @@
   }
 
   function handleKeydown(e: KeyboardEvent) {
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k" && !e.shiftKey) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      handleOpenChange(!getPaletteOpen());
+    }
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === "k") {
       e.preventDefault();
       e.stopImmediatePropagation();
       handleOpenChange(!getPaletteOpen());
@@ -131,6 +138,11 @@
       <Command.Item onSelect={goToSettings}>
         <GitBranch class="mr-2 size-4" /> Git Settings
       </Command.Item>
+      {#if gitConfig.connected && gitConfig.webUrl}
+        <Command.Item onSelect={() => { window.open(gitConfig.webUrl, '_blank'); close(); }}>
+          <ExternalLink class="mr-2 size-4" /> Open Repository
+        </Command.Item>
+      {/if}
     </Command.Group>
   </Command.List>
 </Command.Dialog>

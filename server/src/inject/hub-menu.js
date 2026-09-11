@@ -3,7 +3,9 @@
 
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
-  const hubHost = window.__hubHost || `excalihub.${hostname.split('.').slice(-2).join('.')}`;
+  const port = window.location.port;
+  const hubBase = window.__hubHost || `excalihub.${hostname.split('.').slice(-2).join('.')}`;
+  const hubHost = port ? `${hubBase}:${port}` : hubBase;
   const gitEnabled = window.__GIT_ENABLED === 'true';
 
   const items = [
@@ -19,6 +21,11 @@
       action: gitEnabled
         ? () => { window.dispatchEvent(new CustomEvent('hub-open-commit-modal')); }
         : () => { window.location.href = `${protocol}//${hubHost}/settings`; },
+    },
+    {
+      label: 'Command palette',
+      icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>',
+      action: () => { window.dispatchEvent(new CustomEvent('hub-open-palette')); },
     },
   ];
 

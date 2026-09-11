@@ -2,6 +2,7 @@ import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Hono } from 'hono';
 import { proxyMiddleware } from '../../src/middleware/proxy.js';
 import { createSpace } from '../../src/repos/space.js';
+import { setGitConfig } from '../../src/repos/git.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import api from '../../src/routes/api.js';
 import { mkdirSync, writeFileSync, rmSync } from 'fs';
@@ -176,6 +177,27 @@ describe('proxyMiddleware', () => {
       expect(fetchMock).not.toHaveBeenCalled();
     });
 
+    it('includes webUrl in /api/git/config response', async () => {
+      createSpace('My Project', 'myproject');
+
+      const disconnected = await makeApp().request('/api/git/config', {
+        headers: { host: 'myproject.excalihub.example.com' },
+      });
+      expect(await disconnected.json()).toHaveProperty('webUrl', null);
+
+      setGitConfig({
+        repoUrl: 'git@github.com:user/repo.git',
+        connected: true,
+        connectedAt: '2026-01-01T00:00:00.000Z',
+      });
+      const connected = await makeApp().request('/api/git/config', {
+        headers: { host: 'myproject.excalihub.example.com' },
+      });
+      const body = await connected.json();
+      expect(body).toHaveProperty('connected', true);
+      expect(body).toHaveProperty('webUrl', 'https://github.com/user/repo');
+    });
+
     it('proxies to Excalidraw when space exists', async () => {
       createSpace('My Project', 'myproject');
 
@@ -288,6 +310,43 @@ describe('proxyMiddleware', () => {
       expect(body).toContain('data-excalihub-menu');
       expect(body).toContain('<script');
       expect(body).toContain('hub-menu-container');
+      expect(body).toContain(`const hubHost = port ? \`\${hubBase}:\${port}\` : hubBase;`);
+    });
+
+    it('injects palette CSS into HTML responses', async () => {
+      createSpace('Space', 'space');
+      fetchMock = mock(() =>
+        new Response('<html><body></body></html>', {
+          headers: { 'content-type': 'text/html' },
+        })
+      );
+      globalThis.fetch = fetchMock as typeof globalThis.fetch;
+
+      const res = await makeApp().request('/', {
+        headers: { host: 'space.excalihub.example.com' },
+      });
+      const body = await res.text();
+      expect(body).toContain('data-excalihub-palette');
+      expect(body).toContain('<style');
+      expect(body).toContain('hub-palette-overlay');
+    });
+
+    it('injects palette JS into HTML responses', async () => {
+      createSpace('Space', 'space');
+      fetchMock = mock(() =>
+        new Response('<html><body></body></html>', {
+          headers: { 'content-type': 'text/html' },
+        })
+      );
+      globalThis.fetch = fetchMock as typeof globalThis.fetch;
+
+      const res = await makeApp().request('/', {
+        headers: { host: 'space.excalihub.example.com' },
+      });
+      const body = await res.text();
+      expect(body).toContain('data-excalihub-palette');
+      expect(body).toContain('<script');
+      expect(body).toContain('hub-open-palette');
     });
 
     it('does not inject into non-HTML responses', async () => {
@@ -305,6 +364,7 @@ describe('proxyMiddleware', () => {
       const body = await res.text();
       expect(body).not.toContain('excalihub-sync');
       expect(body).not.toContain('excalihub-menu');
+      expect(body).not.toContain('data-excalihub-palette');
     });
   });
 

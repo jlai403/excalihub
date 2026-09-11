@@ -4,8 +4,9 @@
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Tooltip from "$lib/components/ui/tooltip";
-  import { Archive, CircleCheckBig, GitBranch, GitCommitHorizontal } from "@lucide/svelte";
+  import { Archive, CircleCheckBig, ExternalLink, GitBranch, GitCommitHorizontal } from "@lucide/svelte";
   import { getSpaces, loadSpaces, archiveSpace } from "$lib/stores/spaces.svelte";
+  import { getGitConfig, loadGitConnection } from "$lib/stores/git.svelte";
   import { setCreateSpaceOpen } from "$lib/stores/ui.svelte";
 
   type SpaceGitStatus = {
@@ -22,6 +23,7 @@
   let gitConnected = $state(false);
   let gitStatuses = $state(new Map<string, SpaceGitStatus>());
 
+  const gitConfig = $derived(getGitConfig());
   const spaces = $derived(getSpaces());
 
   onMount(async () => {
@@ -34,10 +36,14 @@
       return;
     }
 
-    const gitConfig = await fetch("/api/git/config")
-      .then((r) => r.json())
-      .catch(() => null);
-    if (gitConfig?.connected) {
+    try {
+      await loadGitConnection();
+    } catch {
+      loading = false;
+      return;
+    }
+    const gitConfig = getGitConfig();
+    if (gitConfig.connected) {
       gitConnected = true;
       const statuses = await Promise.all(
         spaces.map(async (space) => {
@@ -160,11 +166,16 @@
               {/if}
             </p>
           {/if}
-          <div class="mt-3">
+          <div class="mt-3 flex gap-2">
+            {#if gitConnected && gitConfig.webUrl}
+              <Button variant="outline" size="sm" href={gitConfig.webUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink class="size-4" /> Repo
+              </Button>
+            {/if}
             <Dialog.Root open={archiveTarget === space.id} onOpenChange={(open) => { if (!open) archiveTarget = null; }}>
               <Dialog.Trigger>
                 {#snippet child({ props })}
-                  <Button variant="outline" size="sm" {...props} onclick={() => (archiveTarget = space.id)}>
+                  <Button variant="outline" size="sm" {...props} onclick={() => (archiveTarget = space.id)} class="whitespace-nowrap">
                     <Archive class="size-4" />
                     Archive
                   </Button>
