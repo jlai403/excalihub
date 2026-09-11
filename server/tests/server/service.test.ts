@@ -14,6 +14,7 @@ import {
   deleteSpaceFromGit,
   pruneOrphanedSpaces,
   syncRemoteHistory,
+  repoUrlToWebUrl,
 } from '~/services/git.js';
 
 beforeEach(() => {
@@ -452,5 +453,43 @@ describe('parseRepoUrl', () => {
 
   it('rejects non-ssh hosts', () => {
     expect(parseRepoUrl('https://git.ts.jlai.ca/jlai/repo.git')).toBeNull();
+  });
+});
+
+describe('repoUrlToWebUrl', () => {
+  it('derives a web url from a GitHub scp-style url', () => {
+    expect(repoUrlToWebUrl('git@github.com:user/repo.git')).toBe(
+      'https://github.com/user/repo',
+    );
+  });
+
+  it('derives a web url from a self-hosted scp-style url', () => {
+    expect(repoUrlToWebUrl('git@git.ts.jlai.ca:jlai/excalihub.git')).toBe(
+      'https://git.ts.jlai.ca/jlai/excalihub',
+    );
+  });
+
+  it('derives a web url from an ssh:// url with an explicit port', () => {
+    expect(
+      repoUrlToWebUrl('ssh://git@git.ts.jlai.ca:443/jlai/excalihub.git'),
+    ).toBe('https://git.ts.jlai.ca/jlai/excalihub');
+  });
+
+  it('derives a web url from an ssh:// url without an explicit port', () => {
+    expect(repoUrlToWebUrl('ssh://git@git.ts.jlai.ca/jlai/repo.git')).toBe(
+      'https://git.ts.jlai.ca/jlai/repo',
+    );
+  });
+
+  it('rejects https urls', () => {
+    expect(repoUrlToWebUrl('https://github.com/foo/bar')).toBeNull();
+  });
+
+  it('rejects urls without a .git suffix', () => {
+    expect(repoUrlToWebUrl('git@github.com:user/repo')).toBeNull();
+  });
+
+  it('rejects empty strings', () => {
+    expect(repoUrlToWebUrl('')).toBeNull();
   });
 });

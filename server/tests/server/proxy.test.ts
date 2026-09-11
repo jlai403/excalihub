@@ -2,6 +2,7 @@ import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Hono } from 'hono';
 import { proxyMiddleware } from '../../src/middleware/proxy.js';
 import { createSpace } from '../../src/repos/space.js';
+import { setGitConfig } from '../../src/repos/git.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import api from '../../src/routes/api.js';
 import { mkdirSync, writeFileSync, rmSync } from 'fs';
@@ -174,6 +175,27 @@ describe('proxyMiddleware', () => {
       expect(body).toHaveProperty('repoUrl');
       expect(body).toHaveProperty('connected', false);
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('includes webUrl in /api/git/config response', async () => {
+      createSpace('My Project', 'myproject');
+
+      const disconnected = await makeApp().request('/api/git/config', {
+        headers: { host: 'myproject.excalihub.example.com' },
+      });
+      expect(await disconnected.json()).toHaveProperty('webUrl', null);
+
+      setGitConfig({
+        repoUrl: 'git@github.com:user/repo.git',
+        connected: true,
+        connectedAt: '2026-01-01T00:00:00.000Z',
+      });
+      const connected = await makeApp().request('/api/git/config', {
+        headers: { host: 'myproject.excalihub.example.com' },
+      });
+      const body = await connected.json();
+      expect(body).toHaveProperty('connected', true);
+      expect(body).toHaveProperty('webUrl', 'https://github.com/user/repo');
     });
 
     it('proxies to Excalidraw when space exists', async () => {

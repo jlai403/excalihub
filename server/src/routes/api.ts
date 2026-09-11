@@ -10,6 +10,7 @@ import {
   commitAndPush,
   disconnectGitRepo,
   getSpaceGitStatus,
+  repoUrlToWebUrl,
 } from '~/services/git.js';
 
 const api = new Hono();
@@ -158,9 +159,9 @@ api.get('/backups/:filename', async (c) => {
 api.get('/git/config', (c) => {
   const config = GitRepo.getGitConfig();
   if (!config) {
-    return c.json({ repoUrl: '', connected: false, connectedAt: null });
+    return c.json({ repoUrl: '', connected: false, connectedAt: null, webUrl: null });
   }
-  return c.json(config);
+  return c.json({ ...config, webUrl: repoUrlToWebUrl(config.repoUrl) });
 });
 
 api.get('/git/ssh-key', (c) => {
