@@ -121,7 +121,7 @@ test.describe.serial("ExcaliHub palette", () => {
     await openPalette(page);
     await expect(page.locator("#hub-palette-overlay")).toBeVisible();
     await expect(
-      page.locator(".ex-palette__item").filter({ hasText: "Repo" })
+      page.locator(".ex-palette__item").filter({ hasText: /^Repo$/ })
     ).toHaveCount(0);
   });
 
@@ -173,7 +173,7 @@ test.describe.serial("ExcaliHub palette", () => {
       await expect(page.locator("#hub-palette-overlay")).toBeVisible();
       const repoItem = page
         .locator(".ex-palette__item")
-        .filter({ hasText: "Repo" });
+        .filter({ hasText: /^Repo$/ });
       await expect(repoItem).toBeVisible();
       await repoItem.dispatchEvent("mousedown");
       const urls = await page.evaluate(
