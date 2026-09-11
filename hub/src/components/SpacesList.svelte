@@ -168,10 +168,8 @@
           {/if}
           <div class="mt-3 flex gap-2">
             {#if gitConnected && gitConfig.webUrl}
-              <Button variant="outline" size="sm" asChild>
-                <a href={gitConfig.webUrl} target="_blank" rel="noopener noreferrer" class="whitespace-nowrap">
-                  <ExternalLink class="size-4" /> Repo
-                </a>
+              <Button variant="outline" size="sm" href={gitConfig.webUrl} target="_blank" rel="noopener noreferrer">
+                <ExternalLink class="size-4" /> Repo
               </Button>
             {/if}
             <Dialog.Root open={archiveTarget === space.id} onOpenChange={(open) => { if (!open) archiveTarget = null; }}>

@@ -142,7 +142,7 @@
         title="Open command palette"
         class="inline-flex items-center rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground/70 hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
       >
-        <kbd class="font-sans">{isMac ? "⌘K" : "Ctrl K"}</kbd>
+        <kbd class="font-sans">{isMac ? "⌘⇧K" : "Ctrl Shift K"}</kbd>
       </button>
     </span>
     <ThemeToggle />
