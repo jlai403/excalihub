@@ -310,6 +310,7 @@ describe('proxyMiddleware', () => {
       expect(body).toContain('data-excalihub-menu');
       expect(body).toContain('<script');
       expect(body).toContain('hub-menu-container');
+      expect(body).toContain(`const hubHost = port ? \`\${hubBase}:\${port}\` : hubBase;`);
     });
 
     it('injects palette CSS into HTML responses', async () => {

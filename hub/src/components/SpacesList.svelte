@@ -6,7 +6,7 @@
   import * as Tooltip from "$lib/components/ui/tooltip";
   import { Archive, CircleCheckBig, ExternalLink, GitBranch, GitCommitHorizontal } from "@lucide/svelte";
   import { getSpaces, loadSpaces, archiveSpace } from "$lib/stores/spaces.svelte";
-  import { getGitConfig, loadGitConfig } from "$lib/stores/git.svelte";
+  import { getGitConfig, loadGitConnection } from "$lib/stores/git.svelte";
   import { setCreateSpaceOpen } from "$lib/stores/ui.svelte";
 
   type SpaceGitStatus = {
@@ -37,7 +37,7 @@
     }
 
     try {
-      await loadGitConfig();
+      await loadGitConnection();
     } catch {
       loading = false;
       return;

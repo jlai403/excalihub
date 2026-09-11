@@ -3,7 +3,9 @@
 
   const protocol = window.location.protocol;
   const hostname = window.location.hostname;
-  const hubHost = window.__hubHost || `excalihub.${hostname.split('.').slice(-2).join('.')}`;
+  const port = window.location.port;
+  const hubBase = window.__hubHost || `excalihub.${hostname.split('.').slice(-2).join('.')}`;
+  const hubHost = port ? `${hubBase}:${port}` : hubBase;
   const gitEnabled = window.__GIT_ENABLED === 'true';
 
   const items = [

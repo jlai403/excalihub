@@ -22,10 +22,14 @@ export function getSSHError(): string | null {
   return _sshError;
 }
 
-export async function loadGitConfig(): Promise<void> {
-  _sshError = null;
+export async function loadGitConnection(): Promise<void> {
   const data = await fetch("/api/git/config").then((r) => r.json());
   _gitConfig = data;
+}
+
+export async function loadGitConfig(): Promise<void> {
+  await loadGitConnection();
+  _sshError = null;
 
   const keyRes = await fetch("/api/git/ssh-key");
   const keyData = await keyRes.json().catch(() => ({}));
