@@ -122,7 +122,10 @@
     }
     if (e.key === 'ArrowDown') select(1);
     else if (e.key === 'ArrowUp') select(-1);
-    else if (e.key === 'Enter' && !visibleItems()[highlight]?.disabled) activate(visibleItems()[highlight]);
+    else if (e.key === 'Enter') {
+      const it = visibleItems()[highlight];
+      if (it && !it.disabled) activate(it);
+    }
     else if (e.key === 'Escape') close();
   }
 
