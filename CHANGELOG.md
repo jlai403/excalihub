@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.17](https://github.com/jlai403/excalihub/compare/v0.1.16...v0.1.17) (2026-09-11)
+
+
+### Features
+
+* **e2e:** readme demo gif with git-commit frames and port cleanup ([e1b3301](https://github.com/jlai403/excalihub/commit/e1b330115525e07deb55c8752f6e44daedbb2ff4))
+* **git:** add repoUrlToWebUrl and expose webUrl in config response ([cf3ad24](https://github.com/jlai403/excalihub/commit/cf3ad24b64876ee8417bf074634d58502b706ac2))
+* **git:** prune stale space dirs and harden varlock key handling ([fe9ac49](https://github.com/jlai403/excalihub/commit/fe9ac49266b4bd9f004179beec868ecfe3e7b726))
+* **git:** reset to remote history on connect so pushes fast-forward ([3243fd7](https://github.com/jlai403/excalihub/commit/3243fd707b3e32f28fa19bbaffad672c4fa4267d))
+* **hub:** add demo gif scripts, README image, and demo-results gitignore ([1fc5f47](https://github.com/jlai403/excalihub/commit/1fc5f4707a24e41662fb44bec8d181f4a959d378))
+* **hub:** add git repo button to space cards and command palette ([79281ef](https://github.com/jlai403/excalihub/commit/79281ef1b70acfa327d559fbd31a569141183b68))
+* **inject:** add ExcaliHub command palette for Excalidraw pages ([cd7f58f](https://github.com/jlai403/excalihub/commit/cd7f58fef41700b11e20b8b67d4078cc8714747f))
+
+
+### Bug Fixes
+
+* **hub:** drop ssh-key fetch from dashboard load; port-safe hub-menu nav ([ce0322a](https://github.com/jlai403/excalihub/commit/ce0322a5e67e0f25b33caae1cc955a8716245736))
+* **hub:** keep space-card action buttons on one line ([34fd956](https://github.com/jlai403/excalihub/commit/34fd956f881d41ef80f7eff0075d3c51ce0a3164))
+* **hub:** repo button single-line + sidebar shortcut shows ⌘⇧K ([001ec1d](https://github.com/jlai403/excalihub/commit/001ec1d972864d802aafc6a2fabf187598609600))
+* **inject:** guard palette Enter on empty results ([a7faa02](https://github.com/jlai403/excalihub/commit/a7faa02ca0ad483504c3dfe6c3e544c747b707bb))
+
 ## [0.1.16](https://github.com/jlai403/excalihub/compare/v0.1.15...v0.1.16) (2026-09-04)
 
 
