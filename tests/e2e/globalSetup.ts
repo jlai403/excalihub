@@ -78,6 +78,12 @@ function startContainer(privateKey: string, publicKey: string) {
 // isSSHKeyPairGenerated() requires both, else it regenerates a new key that
 // won't match the GitHub deploy key.
 function seedContainerKey(privateKey: string, publicKey: string) {
+  // Without a key (plain `test:e2e:docker` runs) there is nothing to seed;
+  // writing empty files would make the app report an empty SSH public key.
+  if (!privateKey || !publicKey) {
+    console.log("[globalSetup] no E2E_SSH_PRIVATE_KEY — skipping key seed");
+    return;
+  }
   const key = privateKey.endsWith("\n") ? privateKey : `${privateKey}\n`;
   const pub = publicKey.endsWith("\n") ? publicKey : `${publicKey}\n`;
   execSync(
