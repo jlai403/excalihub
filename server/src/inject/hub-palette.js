@@ -7,6 +7,7 @@
   const hubBase = window.__hubHost || `excalihub.${hostname.split('.').slice(-2).join('.')}`;
   const hubHost = port ? `${hubBase}:${port}` : hubBase;
   const gitEnabled = window.__GIT_ENABLED === 'true';
+  const minimal = window.__PALETTE_MINIMAL === 'true';
   const currentSubdomain = hostname.split('.')[0];
 
   const overlay = document.createElement('div');
@@ -41,13 +42,20 @@
         label: s.name,
         action: () => { window.location.href = `${protocol}//${s.subdomain}.${hubHost}`; },
       }));
-    items.push({
-      group: 'Actions',
-      label: 'Commit to Git',
-      disabled: !gitEnabled,
-      title: 'Configure Git in Settings',
-      action: () => { window.dispatchEvent(new CustomEvent('hub-open-commit-modal')); },
-    });
+    if (!minimal) {
+      items.push({
+        group: 'Actions',
+        label: 'Commit to Git',
+        disabled: !gitEnabled,
+        title: 'Configure Git in Settings',
+        action: () => { window.dispatchEvent(new CustomEvent('hub-open-commit-modal')); },
+      });
+      items.push({
+        group: 'Actions',
+        label: 'Backups',
+        action: () => { window.dispatchEvent(new CustomEvent('hub-open-backups-modal')); },
+      });
+    }
     if (webUrl) {
       items.push({
         group: 'Actions',

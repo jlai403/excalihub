@@ -1,7 +1,7 @@
 import * as SpaceRepo from '~/repos/space.js';
 import type { SpaceMeta, SpaceStatus } from '~/repos/space.js';
 
-const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'dashboard', 'login']);
+const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'dashboard', 'login', 'backup']);
 
 const SUBDOMAIN_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
