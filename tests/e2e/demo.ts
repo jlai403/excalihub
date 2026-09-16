@@ -256,8 +256,10 @@ test("demo", async ({ page, request }) => {
   await page.screenshot({ path: `${FRAMES_DIR}/frame-09.png` });
 
   if (hasGit) {
-    // Frame 7 — settings: connect the real git repository. Must precede the
+    // Frame 10 — settings: connect the real git repository. Must precede the
     // space-page load: the proxy computes __GIT_ENABLED per request.
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await paletteAction(page, "settings", "Settings");
     await expect(page.getByRole("heading", { name: "SSH Public Key" })).toBeVisible();
     await page.getByLabel("Repository URL").fill(repoUrl);
@@ -269,25 +271,25 @@ test("demo", async ({ page, request }) => {
       timeout: 30_000,
     });
     await addCaption(page, "Connect a git repository");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-07.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-10.png` });
 
-    // Frame 8 — open the space: proxy serves the whiteboard subdomain with
+    // Frame 11 — open the space: proxy serves the whiteboard subdomain with
     // the injected ExcaliHub menu / commit modal / sync scripts.
     await gotoSpace(page, request);
     const menuBtn = page.locator(".ex-menu-btn");
     await expect(menuBtn).toBeVisible();
     await addCaption(page, "Open a whiteboard");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-08.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-11.png` });
 
-    // Frame 9 — injected ExcaliHub menu dropdown open (Commit to Git enabled)
+    // Frame 12 — injected ExcaliHub menu dropdown open (Commit to Git enabled)
     await menuBtn.click();
     const commitItem = page.locator(".ex-menu-item").filter({ hasText: "Commit to Git" });
     await expect(commitItem).toBeVisible();
     await expect(commitItem).toBeEnabled();
     await addCaption(page, "ExcaliHub menu");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-09.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-12.png` });
 
-    // Frame 10 — commit modal opens
+    // Frame 13 — commit modal opens
     await commitItem.click();
     const overlay = page.locator("#hub-commit-modal-overlay");
     await expect(overlay).toBeVisible();
@@ -295,9 +297,9 @@ test("demo", async ({ page, request }) => {
       /^Update my-project /
     );
     await addCaption(page, "Commit to git");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-10.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-13.png` });
 
-    // Frame 11 — commit lands, dashboard shows the synced badge
+    // Frame 14 — commit lands, dashboard shows the synced badge
     await overlay.getByRole("button", { name: "Commit", exact: true }).click();
     await expect(overlay.getByText("Committed successfully!")).toBeVisible();
     await page.waitForTimeout(1800);
@@ -305,9 +307,9 @@ test("demo", async ({ page, request }) => {
     const card = page.locator('[data-slot="card"]').filter({ hasText: "My Project" });
     await expect(card.getByText(/Update my-project /)).toBeVisible();
     await addCaption(page, "Changes pushed to git");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-11.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-14.png` });
   } else {
-    // Frame 7 — open the space and show the injected hub menu (Commit to Git
+    // Frame 10 — open the space and show the injected hub menu (Commit to Git
     // stays disabled without a connected repo).
     await gotoSpace(page, request);
     const menuBtn = page.locator(".ex-menu-btn");
@@ -317,12 +319,12 @@ test("demo", async ({ page, request }) => {
     await expect(commitItem).toBeVisible();
     await expect(commitItem).toBeDisabled();
     await addCaption(page, "Open a whiteboard");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-07.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-10.png` });
 
-    // Frame 8 — back to dashboard
+    // Frame 11 — back to dashboard
     await page.goto("/");
     await expect(page.getByRole("link", { name: "My Project", exact: true })).toBeVisible();
     await addCaption(page, "All your spaces at a glance");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-08.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-11.png` });
   }
 });
