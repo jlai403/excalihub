@@ -126,6 +126,12 @@ hub/                  — Astro static site (pages, layouts)
 
 ## Session History
 
+### 2026-09-16 — Demo GIF showcases backups (frames 7–9)
+- Seeded full tier set for My Project (daily via API = previewable + weekly/monthly on disk); scene-pinning `addInitScript` makes the 5s auto-backup dedup against the seeded daily (single Daily row)
+- New frames: hub card dialog (Daily/Weekly/Monthly), in-space Backups modal, backup preview page; git + no-key frames renumbered 10–14 / 10–11
+- Keyed branch now returns to the dashboard (`page.goto("/")`) before the Settings palette action — the preview page ends frame 9, and its minimal palette has no Settings item
+- Agents verify via no-key `bun playwright test --config demo.config.ts`; human rebuilds `docs/demo.gif` via `bun run demo:gif` (varlock/1P boundary)
+
 ### 2026-07-18 — SQLite→flat-file migration
 - Replaced sql.js/Drizzle storage with flat-file repos (`src/server/repos/`)
 - SpaceRepo: in-memory Map, atomic meta.json writes, string nanoid IDs
