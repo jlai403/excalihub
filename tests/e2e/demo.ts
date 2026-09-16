@@ -243,6 +243,18 @@ test("demo", async ({ page, request }) => {
   await addCaption(page, "Restore from the whiteboard");
   await page.screenshot({ path: `${FRAMES_DIR}/frame-08.png` });
 
+  // Frame 9 — backup preview page shows the recovery scene with banner
+  await page.goto(
+    `http://backup.excalihub.localhost:8081/?space=${backupSpace.subdomain}&backup=${dailyBackupFilename}`
+  );
+  await expect(page.locator("#hub-backup-preview")).toContainText("Viewing backup");
+  const previewScene = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("excalidraw") ?? "[]")
+  );
+  expect(previewScene).toContainEqual(expect.objectContaining({ id: "recovery-a" }));
+  await addCaption(page, "Preview any saved version");
+  await page.screenshot({ path: `${FRAMES_DIR}/frame-09.png` });
+
   if (hasGit) {
     // Frame 7 — settings: connect the real git repository. Must precede the
     // space-page load: the proxy computes __GIT_ENABLED per request.
