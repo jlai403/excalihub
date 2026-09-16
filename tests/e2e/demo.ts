@@ -5,7 +5,8 @@ import {
   type APIRequestContext,
   type Page,
 } from "@playwright/test";
-import { rmSync, mkdirSync } from "fs";
+import { rmSync, mkdirSync, writeFileSync } from "fs";
+import { join } from "path";
 
 const FRAMES_DIR = "tests/e2e/demo-results/frames";
 
@@ -23,6 +24,55 @@ const [owner, repo] = (process.env.E2E_GIT_REPO ?? "jlai403/excalihub-ci").split
   "/"
 );
 const repoUrl = `git@github.com:${owner}/${repo}.git`;
+
+const RECOVERY_SCENE = [
+  { id: "recovery-a", type: "text", text: "Design v2 — recovery point", x: 120, y: 130, stroke: "#8364ff", fontSize: 26 },
+  { id: "recovery-b", type: "rectangle", x: 200, y: 240, width: 180, height: 100, stroke: "#1ba1ff", strokeWidth: 2 },
+];
+const WEEKLY_SCENE = [
+  { id: "weekly-a", type: "text", text: "Weekly checkpoint", x: 120, y: 130, stroke: "#da70d6", fontSize: 22 },
+  { id: "weekly-b", type: "ellipse", x: 260, y: 240, width: 140, height: 90, stroke: "#fe9b10", strokeWidth: 2 },
+];
+const MONTHLY_SCENE = [
+  { id: "monthly-a", type: "text", text: "Monthly snapshot", x: 120, y: 130, stroke: "#666666", fontSize: 22 },
+];
+
+const DAYS = 86_400_000;
+
+function writeBackupFile(space: { subdomain: string }, ageMs: number, scene: unknown[]): void {
+  const dir = join(process.cwd(), "data-e2e", "spaces", space.subdomain, "backups");
+  mkdirSync(dir, { recursive: true });
+  const ts = Date.now() - ageMs;
+  const filename = `${ts}-demoabcd-11110000.excalidraw`;
+  writeFileSync(
+    join(dir, filename),
+    JSON.stringify({
+      type: "excalidraw",
+      version: 2,
+      source: "https://excalihub",
+      elements: scene,
+      appState: {},
+      files: {},
+    })
+  );
+}
+
+async function seedBackups(
+  space: { subdomain: string },
+  request: APIRequestContext
+): Promise<string> {
+  const appState = JSON.stringify({ name: null, viewBackgroundColor: "#ffffff" });
+  const res = await request.post("/api/backup", {
+    data: { subdomain: space.subdomain, elements: JSON.stringify(RECOVERY_SCENE), appState },
+  });
+  expect(res.ok()).toBeTruthy();
+  const body = (await res.json()) as { success: true; filename?: string; deduplicated?: boolean };
+  const dailyFilename = body.filename!;
+
+  writeBackupFile(space, 10 * DAYS, WEEKLY_SCENE);
+  writeBackupFile(space, 60 * DAYS, MONTHLY_SCENE);
+  return dailyFilename;
+}
 
 async function openPalette(page: Page) {
   await page.evaluate(() => {
@@ -143,6 +193,29 @@ test("demo", async ({ page, request }) => {
   await expect(page.getByRole("link", { name: "My Project", exact: true })).toBeVisible();
   await addCaption(page, "Isolated workspace ready");
   await page.screenshot({ path: `${FRAMES_DIR}/frame-06.png` });
+
+  // Seed the backup tier set for My Project: one daily backup via the API
+  // (the only previewable one — it's in the in-memory backupIndex) plus
+  // weekly/monthly files written straight to disk. The scene-pinning init
+  // script makes the 5s auto-backup dedup against the seeded daily so the
+  // modal stays at exactly 3 rows.
+  const freshSpaces = await (await request.get("/api/spaces")).json();
+  const backupSpace = freshSpaces.find(
+    (s: { name: string }) => s.name === "My Project"
+  );
+  await page.addInitScript(
+    (arg: { subdomain: string; scene: unknown[] }) => {
+      if (location.hostname.startsWith(arg.subdomain + ".")) {
+        localStorage.setItem("excalidraw", JSON.stringify(arg.scene));
+        localStorage.setItem(
+          "excalidraw-state",
+          '{"name":null,"viewBackgroundColor":"#ffffff"}'
+        );
+      }
+    },
+    { subdomain: backupSpace.subdomain, scene: RECOVERY_SCENE }
+  );
+  const dailyBackupFilename = await seedBackups(backupSpace, request);
 
   if (hasGit) {
     // Frame 7 — settings: connect the real git repository. Must precede the
