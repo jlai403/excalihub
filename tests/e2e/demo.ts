@@ -217,6 +217,18 @@ test("demo", async ({ page, request }) => {
   );
   const dailyBackupFilename = await seedBackups(backupSpace, request);
 
+  // Frame 7 — hub card backups dialog grouped by retention tier
+  const card = page.locator('[data-slot="card"]').filter({ hasText: "My Project" });
+  await card.locator('[data-backups-button="true"]').click();
+  const backupsDialog = page.getByRole("dialog");
+  await expect(backupsDialog).toBeVisible();
+  await expect(backupsDialog.locator('[data-backup-tier="daily"]')).toHaveText("Daily");
+  await expect(backupsDialog.locator('[data-backup-tier="weekly"]')).toHaveText("Weekly");
+  await expect(backupsDialog.locator('[data-backup-tier="monthly"]')).toHaveText("Monthly");
+  await expect(backupsDialog.locator("[data-backup-row]")).toHaveCount(3);
+  await addCaption(page, "Every save is versioned");
+  await page.screenshot({ path: `${FRAMES_DIR}/frame-07.png` });
+
   if (hasGit) {
     // Frame 7 — settings: connect the real git repository. Must precede the
     // space-page load: the proxy computes __GIT_ENABLED per request.
