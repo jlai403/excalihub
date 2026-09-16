@@ -229,6 +229,20 @@ test("demo", async ({ page, request }) => {
   await addCaption(page, "Every save is versioned");
   await page.screenshot({ path: `${FRAMES_DIR}/frame-07.png` });
 
+  // Frame 8 — open the space, ExcaliHub menu → Backups modal (tiered)
+  await page.keyboard.press("Escape");
+  await gotoSpace(page, request);
+  const menuBtn = page.locator(".ex-menu-btn");
+  await expect(menuBtn).toBeVisible();
+  await menuBtn.click();
+  await page.locator(".ex-menu-item").filter({ hasText: "Backups", exact: true }).click();
+  const backupsOverlay = page.locator("#hub-backups-overlay");
+  await expect(backupsOverlay).toBeVisible();
+  await expect(backupsOverlay.locator("[data-backup-tier='daily']")).toHaveText("Daily");
+  await expect(backupsOverlay.locator(".ex-backups__row")).toHaveCount(3);
+  await addCaption(page, "Restore from the whiteboard");
+  await page.screenshot({ path: `${FRAMES_DIR}/frame-08.png` });
+
   if (hasGit) {
     // Frame 7 — settings: connect the real git repository. Must precede the
     // space-page load: the proxy computes __GIT_ENABLED per request.
