@@ -52,11 +52,6 @@ function startContainer(privateKey: string, publicKey: string) {
     CONTAINER,
     "-p 8081:8081",
     "--add-host host.docker.internal:host-gateway",
-    // Make dirs/files the app creates (owned by container UID 1000) writable by
-    // the host test process (different UID on Linux CI / macOS), so spec seeding
-    // that writes straight to /data (backups.e2e seedOldBackup, demo writeBackupFile)
-    // works. Explicit chmods (seeded SSH key 0600/0644) override the umask.
-    "--umask=000",
     `-v ${dataDir}:/data`,
     "-e NODE_ENV=production",
     "-e PORT=8081",
@@ -66,6 +61,18 @@ function startContainer(privateKey: string, publicKey: string) {
     "-e HUB_SUBDOMAIN=excalihub",
     "-e EXCALIDRAW_CONTAINER=http://host.docker.internal:8099",
     IMAGE,
+    // Override the image CMD (["bun","run","dist/index.js"]) so the app starts
+    // under `umask 000`. The docker `--umask` run flag is not honored by every
+    // daemon (Docker Desktop ignores it; Linux honors it), so instead we set the
+    // umask inside the container via the shell — works on any daemon. The app's
+    // mkdirSync/writeFileSync then create dirs/files (owned by container UID
+    // 1000) that are world-writable, so the host test process (different UID on
+    // Linux CI / macOS) can seed straight into /data (backups.e2e seedOldBackup,
+    // demo writeBackupFile). Explicit chmods (seeded SSH key 0600/0644) override
+    // the umask. Runs as the image's USER bun, as before.
+    "sh",
+    "-c",
+    "'umask 000 && exec bun run dist/index.js'",
   ].join(" ");
   execSync(run, { stdio: "inherit" });
 
