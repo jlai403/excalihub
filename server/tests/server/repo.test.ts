@@ -12,6 +12,7 @@ import {
   createBackup,
   getBackupsBySpaceId,
   getBackupById,
+  backupTier,
 } from '../../src/repos/backup.js';
 import { getLatestBackupHash } from '../../src/repos/space.js';
 
@@ -196,6 +197,50 @@ describe('getBackupsBySpaceId', () => {
   it('returns empty array for space with no backups', () => {
     createSpace('Test', 'test');
     expect(getBackupsBySpaceId('test')).toEqual([]);
+  });
+
+  it('includes a retention tier for each backup', async () => {
+    process.env.BACKUP_RETENTION_DISABLED = '1';
+    try {
+      const space = createSpace('Test', 'test');
+      const hash = (n: string) => createHash('sha256').update(n).digest('hex');
+
+      await createBackup(space.subdomain, '{"a":1}', hash('a'));
+      await createBackup(space.subdomain, '{"b":2}', hash('b'));
+
+      const backups = getBackupsBySpaceId(space.subdomain);
+      expect(backups).toHaveLength(2);
+      for (const b of backups) {
+        expect(b.tier).toBe('daily');
+      }
+    } finally {
+      delete process.env.BACKUP_RETENTION_DISABLED;
+    }
+  });
+});
+
+describe('backupTier', () => {
+  const NOW = new Date('2026-01-01T00:00:00Z').getTime();
+  const day = 86_400_000;
+  const week = 7 * day;
+
+  it('classifies backups under 7 days as daily', () => {
+    expect(backupTier(NOW - 0, NOW)).toBe('daily');
+    expect(backupTier(NOW - 6 * day, NOW)).toBe('daily');
+  });
+
+  it('classifies backups between 7 and 28 days as weekly', () => {
+    expect(backupTier(NOW - 8 * day, NOW)).toBe('weekly');
+    expect(backupTier(NOW - 4 * week, NOW)).toBe('weekly');
+  });
+
+  it('classifies backups between 28 and 365 days as monthly', () => {
+    expect(backupTier(NOW - 30 * day, NOW)).toBe('monthly');
+    expect(backupTier(NOW - 364 * day, NOW)).toBe('monthly');
+  });
+
+  it('returns null for backups older than a year', () => {
+    expect(backupTier(NOW - 366 * day, NOW)).toBeNull();
   });
 });
 

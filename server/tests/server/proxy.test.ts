@@ -2,6 +2,7 @@ import { describe, it, expect, mock, beforeEach, afterEach } from 'bun:test';
 import { Hono } from 'hono';
 import { proxyMiddleware } from '../../src/middleware/proxy.js';
 import { createSpace } from '../../src/repos/space.js';
+import * as BackupRepo from '../../src/repos/backup.js';
 import { setGitConfig } from '../../src/repos/git.js';
 import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import api from '../../src/routes/api.js';
@@ -346,7 +347,9 @@ describe('proxyMiddleware', () => {
       const body = await res.text();
       expect(body).toContain('data-excalihub-palette');
       expect(body).toContain('<script');
+      expect(body).toContain('<script');
       expect(body).toContain('hub-open-palette');
+      expect(body).not.toContain("window.__PALETTE_MINIMAL = 'true'");
     });
 
     it('does not inject into non-HTML responses', async () => {
@@ -365,6 +368,101 @@ describe('proxyMiddleware', () => {
       expect(body).not.toContain('excalihub-sync');
       expect(body).not.toContain('excalihub-menu');
       expect(body).not.toContain('data-excalihub-palette');
+    });
+  });
+
+  describe('backup preview routing', () => {
+    async function createSpaceWithBackup(subdomain: string, name = 'My Project') {
+      createSpace(name, subdomain);
+      const result = await BackupRepo.createBackup(
+        subdomain,
+        JSON.stringify({ type: 'excalidraw', elements: [], appState: {} }),
+        'aabbccddeeff0011',
+      );
+      return result.filename;
+    }
+
+    it('injects the backup preview script (and not the space scripts) for backup.{hub}', async () => {
+      const filename = await createSpaceWithBackup('myproject');
+      fetchMock = mock(() =>
+        new Response('<html><body><h1>Hi</h1></body></html>', {
+          headers: { 'content-type': 'text/html' },
+        })
+      );
+      globalThis.fetch = fetchMock as typeof globalThis.fetch;
+
+      const res = await makeApp().request(`/?space=myproject&backup=${filename}`, {
+        headers: { host: 'backup.excalihub.example.com' },
+      });
+      const body = await res.text();
+      expect(res.status).toBe(200);
+      expect(body).toContain('data-excalihub-backup-preview');
+      expect(body).toContain('window.__BACKUP_PREVIEW');
+      expect(body).toContain(`"space":"myproject"`);
+      expect(body).toContain(filename);
+      expect(body).toContain('data-excalihub-palette');
+      expect(body).toContain('window.__hubHost');
+expect(body).toContain("window.__PALETTE_MINIMAL = 'true'");
+      expect(body).not.toContain("__GIT_ENABLED = '");
+      expect(body).not.toContain('data-excalihub-menu');
+      expect(body).not.toContain('data-excalihub-commit-modal');
+    });
+
+    it('proxies without injection when no params are present', async () => {
+      const res = await makeApp().request('/', {
+        headers: { host: 'backup.excalihub.example.com' },
+      });
+      expect(res.status).toBe(200);
+      expect(await res.text()).toBe('ok');
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it('returns 404 for an unknown space', async () => {
+      const res = await makeApp().request('/?space=nope&backup=123-abc-aabbccdd.excalidraw', {
+        headers: { host: 'backup.excalihub.example.com' },
+      });
+      expect(res.status).toBe(404);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when the backup belongs to a different space', async () => {
+      createSpace('My Project', 'myproject');
+      const otherFilename = await createSpaceWithBackup('other', 'Other Project');
+      const res = await makeApp().request(`/?space=myproject&backup=${otherFilename}`, {
+        headers: { host: 'backup.excalihub.example.com' },
+      });
+      expect(res.status).toBe(404);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 for an unknown backup filename', async () => {
+      await createSpaceWithBackup('myproject');
+      const res = await makeApp().request('/?space=myproject&backup=missing.excalidraw', {
+        headers: { host: 'backup.excalihub.example.com' },
+      });
+      expect(res.status).toBe(404);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('serves a noop service worker for backup.{hub} (never the container sw)', async () => {
+      const res = await makeApp().request('/sw.js', {
+        headers: { host: 'backup.excalihub.example.com' },
+      });
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toContain('application/javascript');
+      expect(res.headers.get('cache-control')).toBe('no-store');
+      expect(await res.text()).toContain('skipWaiting');
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('serves an empty /sw.js.map for backup.{hub}', async () => {
+      const res = await makeApp().request('/sw.js.map', {
+        headers: { host: 'backup.excalihub.example.com' },
+      });
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('application/json');
+      expect(await res.text()).toBe('');
+      expect(fetchMock).not.toHaveBeenCalled();
     });
   });
 

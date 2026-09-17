@@ -15,9 +15,26 @@ const JS = `
     document.documentElement.classList.add('theme--dark');
   }
 
-  const scene = ${JSON.stringify(SCENE)};
+  const DEFAULT_SCENE = ${JSON.stringify(SCENE)};
+
+  // Keep an existing scene (e.g. one applied by a backup preview/restore)
+  // instead of clobbering it back to the default on every load.
+  let scene;
+  try {
+    const raw = localStorage.getItem('excalidraw');
+    scene = raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    scene = null;
+  }
+  if (!Array.isArray(scene)) scene = DEFAULT_SCENE;
   localStorage.setItem('excalidraw', JSON.stringify(scene));
-  localStorage.setItem('excalidraw-state', JSON.stringify({ name: null, viewBackgroundColor: theme === 'dark' ? '#1e1e1e' : '#ffffff' }));
+
+  let appState = { name: null, viewBackgroundColor: theme === 'dark' ? '#1e1e1e' : '#ffffff' };
+  try {
+    const raw = localStorage.getItem('excalidraw-state');
+    if (raw) appState = JSON.parse(raw);
+  } catch (e) { /* keep default */ }
+  localStorage.setItem('excalidraw-state', JSON.stringify(appState));
 
   const canvas = document.querySelector('#excalidraw-canvas');
   canvas.width = 900;

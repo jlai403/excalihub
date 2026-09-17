@@ -4,10 +4,11 @@
   import { Button } from "$lib/components/ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import * as Tooltip from "$lib/components/ui/tooltip";
-  import { Archive, CircleCheckBig, ExternalLink, GitBranch, GitCommitHorizontal } from "@lucide/svelte";
+  import { Archive, CircleCheckBig, Download, ExternalLink, Eye, GitBranch, GitCommitHorizontal, History, Trash2 } from "@lucide/svelte";
   import { getSpaces, loadSpaces, archiveSpace } from "$lib/stores/spaces.svelte";
   import { getGitConfig, loadGitConnection } from "$lib/stores/git.svelte";
   import { setCreateSpaceOpen } from "$lib/stores/ui.svelte";
+  import type { Backup } from "$lib/types";
 
   type SpaceGitStatus = {
     lastCommitAt: string | null;
@@ -22,6 +23,26 @@
   let actionLoading = $state(false);
   let gitConnected = $state(false);
   let gitStatuses = $state(new Map<string, SpaceGitStatus>());
+  let backupsTarget = $state<{ id: string; name: string; subdomain: string } | null>(null);
+  let backups = $state<Backup[]>([]);
+  let backupsLoading = $state(false);
+  let backupsError: string | null = $state(null);
+
+  const backupTierOrder = [
+    { tier: "daily" as const, label: "Daily" },
+    { tier: "weekly" as const, label: "Weekly" },
+    { tier: "monthly" as const, label: "Monthly" },
+    { tier: "older" as const, label: "Older" },
+  ];
+  let backupsByTier = $derived(
+    backupTierOrder
+      .map(({ tier, label }) => ({
+        tier,
+        label,
+        items: tier === "older" ? backups.filter((b) => !b.tier) : backups.filter((b) => b.tier === tier),
+      }))
+      .filter((group) => group.items.length > 0)
+  );
 
   const gitConfig = $derived(getGitConfig());
   const spaces = $derived(getSpaces());
@@ -71,6 +92,42 @@
     const match = filename.match(/^(\d+)-/);
     if (!match) return "Unknown";
     return new Date(parseInt(match[1])).toLocaleDateString();
+  }
+
+  function formatBackupDateTime(iso: string): string {
+    const date = new Date(iso);
+    return isNaN(date.getTime()) ? iso : date.toLocaleString();
+  }
+
+  async function openBackups(space: { id: string; name: string; subdomain: string }) {
+    backupsTarget = { id: space.id, name: space.name, subdomain: space.subdomain };
+    backups = [];
+    backupsError = null;
+    backupsLoading = true;
+    try {
+      const res = await fetch(`/api/spaces/${space.id}/backups`);
+      if (!res.ok) throw new Error("Failed to load backups");
+      backups = await res.json();
+    } catch {
+      backupsError = "Failed to load backups";
+    }
+    backupsLoading = false;
+  }
+
+  async function deleteBackup(filename: string) {
+    const res = await fetch(
+      `/api/spaces/${backupsTarget?.id}/backups/${encodeURIComponent(filename)}`,
+      { method: "DELETE" }
+    );
+    if (res.ok) {
+      backups = backups.filter((b) => b.filename !== filename);
+    }
+  }
+
+  function previewUrl(subdomain: string, filename: string): string {
+    const port = window.location.port;
+    const host = port ? `${hubHost}:${port}` : hubHost;
+    return `http://backup.${host}/?space=${subdomain}&backup=${filename}`;
   }
 
   function formatRelativeTime(iso: string): string {
@@ -172,6 +229,58 @@
                 <ExternalLink class="size-4" /> Repo
               </Button>
             {/if}
+            <Dialog.Root open={backupsTarget?.id === space.id} onOpenChange={(open) => { if (!open) backupsTarget = null; }}>
+              <Dialog.Trigger>
+                {#snippet child({ props })}
+                  <Button variant="outline" size="sm" {...props} onclick={() => openBackups(space)} class="whitespace-nowrap" data-backups-button="true">
+                    <History class="size-4" />
+                    Backups
+                  </Button>
+                {/snippet}
+              </Dialog.Trigger>
+              <Dialog.Content>
+                <Dialog.Header>
+                  <Dialog.Title>Backups — {space.name}</Dialog.Title>
+                  <Dialog.Description>
+                    Preview and download backups. Restore opens inside the space.
+                  </Dialog.Description>
+                </Dialog.Header>
+                <div class="space-y-2">
+                  {#if backupsLoading}
+                    <p class="text-sm text-muted-foreground">Loading backups...</p>
+                  {:else if backupsError}
+                    <p class="text-sm text-destructive">{backupsError}</p>
+                  {:else if backups.length === 0}
+                    <p class="text-sm text-muted-foreground">No backups yet</p>
+                  {:else}
+                    {#each backupsByTier as group (group.tier)}
+                      <div class="space-y-2" data-backup-group={group.tier}>
+                        <div class="text-xs font-semibold uppercase tracking-wide text-muted-foreground" data-backup-tier={group.tier}>{group.label}</div>
+                        {#each group.items as backup (backup.filename)}
+                          <div class="flex items-center justify-between gap-3 rounded-md border px-3 py-2" data-backup-row={backup.filename}>
+                        <span class="truncate text-sm" title={backup.filename}>
+                          {formatBackupDateTime(backup.createdAt)}
+                        </span>
+                        <span class="flex shrink-0 gap-1.5">
+                          <Button variant="ghost" size="sm" href={`/api/backups/${encodeURIComponent(backup.filename)}`} download={backup.filename} data-backup-download="true">
+                            <Download class="size-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" href={previewUrl(space.subdomain, backup.filename)} target="_blank" rel="noopener noreferrer" data-backup-preview="true">
+                            <Eye class="size-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onclick={() => deleteBackup(backup.filename)} data-backup-delete="true">
+                            <Trash2 class="size-4" />
+                          </Button>
+                        </span>
+</div>
+                        {/each}
+                      </div>
+                    {/each}
+                  {/if}
+                </div>
+                <Dialog.Footer />
+              </Dialog.Content>
+            </Dialog.Root>
             <Dialog.Root open={archiveTarget === space.id} onOpenChange={(open) => { if (!open) archiveTarget = null; }}>
               <Dialog.Trigger>
                 {#snippet child({ props })}

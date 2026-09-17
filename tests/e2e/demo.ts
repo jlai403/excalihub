@@ -5,7 +5,8 @@ import {
   type APIRequestContext,
   type Page,
 } from "@playwright/test";
-import { rmSync, mkdirSync } from "fs";
+import { rmSync, mkdirSync, writeFileSync } from "fs";
+import { join } from "path";
 
 const FRAMES_DIR = "tests/e2e/demo-results/frames";
 
@@ -23,6 +24,55 @@ const [owner, repo] = (process.env.E2E_GIT_REPO ?? "jlai403/excalihub-ci").split
   "/"
 );
 const repoUrl = `git@github.com:${owner}/${repo}.git`;
+
+const RECOVERY_SCENE = [
+  { id: "recovery-a", type: "text", text: "Design v2 — recovery point", x: 120, y: 130, stroke: "#8364ff", fontSize: 26 },
+  { id: "recovery-b", type: "rectangle", x: 200, y: 240, width: 180, height: 100, stroke: "#1ba1ff", strokeWidth: 2 },
+];
+const WEEKLY_SCENE = [
+  { id: "weekly-a", type: "text", text: "Weekly checkpoint", x: 120, y: 130, stroke: "#da70d6", fontSize: 22 },
+  { id: "weekly-b", type: "ellipse", x: 260, y: 240, width: 140, height: 90, stroke: "#fe9b10", strokeWidth: 2 },
+];
+const MONTHLY_SCENE = [
+  { id: "monthly-a", type: "text", text: "Monthly snapshot", x: 120, y: 130, stroke: "#666666", fontSize: 22 },
+];
+
+const DAYS = 86_400_000;
+
+function writeBackupFile(space: { subdomain: string }, ageMs: number, scene: unknown[]): void {
+  const dir = join(process.cwd(), "data-e2e", "spaces", space.subdomain, "backups");
+  mkdirSync(dir, { recursive: true });
+  const ts = Date.now() - ageMs;
+  const filename = `${ts}-demoabcd-11110000.excalidraw`;
+  writeFileSync(
+    join(dir, filename),
+    JSON.stringify({
+      type: "excalidraw",
+      version: 2,
+      source: "https://excalihub",
+      elements: scene,
+      appState: {},
+      files: {},
+    })
+  );
+}
+
+async function seedBackups(
+  space: { subdomain: string },
+  request: APIRequestContext
+): Promise<string> {
+  const appState = JSON.stringify({ name: null, viewBackgroundColor: "#ffffff" });
+  const res = await request.post("/api/backup", {
+    data: { subdomain: space.subdomain, elements: JSON.stringify(RECOVERY_SCENE), appState },
+  });
+  expect(res.ok()).toBeTruthy();
+  const body = (await res.json()) as { success: true; filename?: string; deduplicated?: boolean };
+  const dailyFilename = body.filename!;
+
+  writeBackupFile(space, 10 * DAYS, WEEKLY_SCENE);
+  writeBackupFile(space, 60 * DAYS, MONTHLY_SCENE);
+  return dailyFilename;
+}
 
 async function openPalette(page: Page) {
   await page.evaluate(() => {
@@ -144,9 +194,72 @@ test("demo", async ({ page, request }) => {
   await addCaption(page, "Isolated workspace ready");
   await page.screenshot({ path: `${FRAMES_DIR}/frame-06.png` });
 
+  // Seed the backup tier set for My Project: one daily backup via the API
+  // (the only previewable one — it's in the in-memory backupIndex) plus
+  // weekly/monthly files written straight to disk. The scene-pinning init
+  // script makes the 5s auto-backup dedup against the seeded daily so the
+  // modal stays at exactly 3 rows.
+  const freshSpaces = await (await request.get("/api/spaces")).json();
+  const backupSpace = freshSpaces.find(
+    (s: { name: string }) => s.name === "My Project"
+  );
+  await page.addInitScript(
+    (arg: { subdomain: string; scene: unknown[] }) => {
+      if (location.hostname.startsWith(arg.subdomain + ".")) {
+        localStorage.setItem("excalidraw", JSON.stringify(arg.scene));
+        localStorage.setItem(
+          "excalidraw-state",
+          '{"name":null,"viewBackgroundColor":"#ffffff"}'
+        );
+      }
+    },
+    { subdomain: backupSpace.subdomain, scene: RECOVERY_SCENE }
+  );
+  const dailyBackupFilename = await seedBackups(backupSpace, request);
+
+  // Frame 7 — hub card backups dialog grouped by retention tier
+  const card = page.locator('[data-slot="card"]').filter({ hasText: "My Project" });
+  await card.locator('[data-backups-button="true"]').click();
+  const backupsDialog = page.getByRole("dialog");
+  await expect(backupsDialog).toBeVisible();
+  await expect(backupsDialog.locator('[data-backup-tier="daily"]')).toHaveText("Daily");
+  await expect(backupsDialog.locator('[data-backup-tier="weekly"]')).toHaveText("Weekly");
+  await expect(backupsDialog.locator('[data-backup-tier="monthly"]')).toHaveText("Monthly");
+  await expect(backupsDialog.locator("[data-backup-row]")).toHaveCount(3);
+  await addCaption(page, "Every save is versioned");
+  await page.screenshot({ path: `${FRAMES_DIR}/frame-07.png` });
+
+  // Frame 8 — open the space, ExcaliHub menu → Backups modal (tiered)
+  await page.keyboard.press("Escape");
+  await gotoSpace(page, request);
+  const menuBtn = page.locator(".ex-menu-btn");
+  await expect(menuBtn).toBeVisible();
+  await menuBtn.click();
+  await page.locator(".ex-menu-item").filter({ hasText: "Backups", exact: true }).click();
+  const backupsOverlay = page.locator("#hub-backups-overlay");
+  await expect(backupsOverlay).toBeVisible();
+  await expect(backupsOverlay.locator("[data-backup-tier='daily']")).toHaveText("Daily");
+  await expect(backupsOverlay.locator(".ex-backups__row")).toHaveCount(3);
+  await addCaption(page, "Restore from the whiteboard");
+  await page.screenshot({ path: `${FRAMES_DIR}/frame-08.png` });
+
+  // Frame 9 — backup preview page shows the recovery scene with banner
+  await page.goto(
+    `http://backup.excalihub.localhost:8081/?space=${backupSpace.subdomain}&backup=${dailyBackupFilename}`
+  );
+  await expect(page.locator("#hub-backup-preview")).toContainText("Viewing backup");
+  const previewScene = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("excalidraw") ?? "[]")
+  );
+  expect(previewScene).toContainEqual(expect.objectContaining({ id: "recovery-a" }));
+  await addCaption(page, "Preview any saved version");
+  await page.screenshot({ path: `${FRAMES_DIR}/frame-09.png` });
+
   if (hasGit) {
-    // Frame 7 — settings: connect the real git repository. Must precede the
+    // Frame 10 — settings: connect the real git repository. Must precede the
     // space-page load: the proxy computes __GIT_ENABLED per request.
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
     await paletteAction(page, "settings", "Settings");
     await expect(page.getByRole("heading", { name: "SSH Public Key" })).toBeVisible();
     await page.getByLabel("Repository URL").fill(repoUrl);
@@ -158,25 +271,25 @@ test("demo", async ({ page, request }) => {
       timeout: 30_000,
     });
     await addCaption(page, "Connect a git repository");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-07.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-10.png` });
 
-    // Frame 8 — open the space: proxy serves the whiteboard subdomain with
+    // Frame 11 — open the space: proxy serves the whiteboard subdomain with
     // the injected ExcaliHub menu / commit modal / sync scripts.
     await gotoSpace(page, request);
     const menuBtn = page.locator(".ex-menu-btn");
     await expect(menuBtn).toBeVisible();
     await addCaption(page, "Open a whiteboard");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-08.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-11.png` });
 
-    // Frame 9 — injected ExcaliHub menu dropdown open (Commit to Git enabled)
+    // Frame 12 — injected ExcaliHub menu dropdown open (Commit to Git enabled)
     await menuBtn.click();
     const commitItem = page.locator(".ex-menu-item").filter({ hasText: "Commit to Git" });
     await expect(commitItem).toBeVisible();
     await expect(commitItem).toBeEnabled();
     await addCaption(page, "ExcaliHub menu");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-09.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-12.png` });
 
-    // Frame 10 — commit modal opens
+    // Frame 13 — commit modal opens
     await commitItem.click();
     const overlay = page.locator("#hub-commit-modal-overlay");
     await expect(overlay).toBeVisible();
@@ -184,9 +297,9 @@ test("demo", async ({ page, request }) => {
       /^Update my-project /
     );
     await addCaption(page, "Commit to git");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-10.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-13.png` });
 
-    // Frame 11 — commit lands, dashboard shows the synced badge
+    // Frame 14 — commit lands, dashboard shows the synced badge
     await overlay.getByRole("button", { name: "Commit", exact: true }).click();
     await expect(overlay.getByText("Committed successfully!")).toBeVisible();
     await page.waitForTimeout(1800);
@@ -194,9 +307,9 @@ test("demo", async ({ page, request }) => {
     const card = page.locator('[data-slot="card"]').filter({ hasText: "My Project" });
     await expect(card.getByText(/Update my-project /)).toBeVisible();
     await addCaption(page, "Changes pushed to git");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-11.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-14.png` });
   } else {
-    // Frame 7 — open the space and show the injected hub menu (Commit to Git
+    // Frame 10 — open the space and show the injected hub menu (Commit to Git
     // stays disabled without a connected repo).
     await gotoSpace(page, request);
     const menuBtn = page.locator(".ex-menu-btn");
@@ -206,12 +319,12 @@ test("demo", async ({ page, request }) => {
     await expect(commitItem).toBeVisible();
     await expect(commitItem).toBeDisabled();
     await addCaption(page, "Open a whiteboard");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-07.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-10.png` });
 
-    // Frame 8 — back to dashboard
+    // Frame 11 — back to dashboard
     await page.goto("/");
     await expect(page.getByRole("link", { name: "My Project", exact: true })).toBeVisible();
     await addCaption(page, "All your spaces at a glance");
-    await page.screenshot({ path: `${FRAMES_DIR}/frame-08.png` });
+    await page.screenshot({ path: `${FRAMES_DIR}/frame-11.png` });
   }
 });

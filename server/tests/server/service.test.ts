@@ -46,6 +46,21 @@ describe('createSpace', () => {
       'Subdomain cannot be empty',
     );
   });
+
+  it('rejects the reserved backup subdomain on create', async () => {
+    await expect(SpaceService.createSpace('Backup')).rejects.toThrow(
+      'Subdomain "backup" is reserved',
+    );
+  });
+});
+
+describe('renameSpace', () => {
+  it('rejects the reserved backup subdomain', async () => {
+    const space = await SpaceService.createSpace('My Project');
+    await expect(
+      SpaceService.renameSpace(space.id, { subdomain: 'backup' }),
+    ).rejects.toThrow('Subdomain "backup" is reserved');
+  });
 });
 
 describe('createBackup', () => {

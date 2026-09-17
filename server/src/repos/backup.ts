@@ -235,10 +235,20 @@ export function deleteBackup(
   return true;
 }
 
+export type BackupTier = 'daily' | 'weekly' | 'monthly';
+
+export function backupTier(unixTs: number, now: number = Date.now()): BackupTier | null {
+  if (unixTs >= now - 7 * ONE_DAY) return 'daily';
+  if (unixTs >= now - FOUR_WEEKS) return 'weekly';
+  if (unixTs >= now - TWELVE_MONTHS) return 'monthly';
+  return null;
+}
+
 export function getBackupsBySpaceId(subdomain: string): Array<{
   filename: string;
   hash: string;
   createdAt: string;
+  tier: BackupTier | null;
 }> {
   const dir = backupsDir(subdomain);
   if (!existsSync(dir)) return [];
@@ -253,6 +263,7 @@ export function getBackupsBySpaceId(subdomain: string): Array<{
         filename,
         hash: parsed?.hashPrefix ?? '',
         createdAt: parsed ? new Date(parsed.unixTs).toISOString() : '',
+        tier: parsed ? backupTier(parsed.unixTs) : null,
       };
     });
 }

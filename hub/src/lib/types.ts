@@ -8,10 +8,13 @@ export type Space = {
   status: string;
 };
 
+export type BackupTier = 'daily' | 'weekly' | 'monthly';
+
 export type Backup = {
   filename: string;
   hash: string;
   createdAt: string;
+  tier: BackupTier | null;
 };
 
 export type GitConfig = {
