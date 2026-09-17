@@ -76,8 +76,13 @@ if (typeof module !== 'undefined') {
       });
   }
 
-  renderBanner(`Viewing backup from ${backupTime(config.filename)}`);
-  if (getApplied()?.filename !== config.filename) {
+  // Only render the banner once this backup's scene is actually applied —
+  // otherwise the banner flashes on the pre-reload page while the fetch is
+  // still in flight, and callers (tests, demo) can observe it before the
+  // applied scene is readable from localStorage.
+  if (getApplied()?.filename === config.filename) {
+    renderBanner(`Viewing backup from ${backupTime(config.filename)}`);
+  } else {
     applyAndReload();
   }
 })()

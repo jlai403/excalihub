@@ -52,6 +52,11 @@ function startContainer(privateKey: string, publicKey: string) {
     CONTAINER,
     "-p 8081:8081",
     "--add-host host.docker.internal:host-gateway",
+    // Make dirs/files the app creates (owned by container UID 1000) writable by
+    // the host test process (different UID on Linux CI / macOS), so spec seeding
+    // that writes straight to /data (backups.e2e seedOldBackup, demo writeBackupFile)
+    // works. Explicit chmods (seeded SSH key 0600/0644) override the umask.
+    "--umask=000",
     `-v ${dataDir}:/data`,
     "-e NODE_ENV=production",
     "-e PORT=8081",
