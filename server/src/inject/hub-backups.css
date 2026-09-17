@@ -1,0 +1,86 @@
+#hub-backups-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100000;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+}
+
+.ex-backups__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.ex-backups__tier {
+  margin-top: 4px;
+  padding: 4px 2px 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: hsl(var(--hub-muted));
+}
+
+.ex-backups__tier:not(:first-child) {
+  border-top: 1px solid hsl(var(--hub-border));
+}
+
+.ex-backups__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid hsl(var(--hub-border));
+  border-radius: 8px;
+}
+
+.ex-backups__time {
+  font-size: 13px;
+  color: hsl(var(--hub-fg));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ex-backups__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ex-backups__btn--delete {
+  padding: 8px 12px;
+  border: 1px solid hsl(var(--hub-border));
+  border-radius: 6px;
+  background: transparent;
+  color: hsl(var(--hub-muted));
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.ex-backups__btn--delete:hover {
+  background: hsl(var(--hub-destructive-bg));
+  color: hsl(var(--hub-destructive));
+}
+
+.ex-backups__empty {
+  text-align: center;
+  color: hsl(var(--hub-muted));
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+.ex-backups__note {
+  font-size: 12px;
+  color: hsl(var(--hub-muted));
+}
