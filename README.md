@@ -91,6 +91,21 @@ Any space you create will be at `your-space.excalihub.localhost`.
 5. **Access** — the dashboard is served at `https://excalihub.example.com`. With a `HUB_SUBDOMAIN` set, the bare root (`example.com`) returns `404`, so every space is reached at `your-space.excalihub.example.com`
 6. **Up** — `docker compose up --build -d`
 
+## Security
+
+ExcaliHub is designed for a single operator or trusted team, **not** for
+unauthenticated multi-tenant use:
+
+- **No built-in authentication** — the API and dashboard are open to anyone who
+  can reach the server. Run it behind a trusted network, VPN, or an
+  authenticated reverse proxy (and terminate TLS there for HTTPS).
+- **Subdomain isolation is organizational** — every space gets its own
+  subdomain and browser origin (nice for separating projects and local
+  storage), but it is not a security or authorization boundary between users.
+- **Git integration is powerful** — once connected, scene data is pushed to the
+  configured repository using the app's own deploy key, so point it at a
+  repository only you control.
+
 ## Development
 
 Run without Docker (requires Bun + Excalidraw running separately):
