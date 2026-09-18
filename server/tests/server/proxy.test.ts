@@ -277,6 +277,25 @@ describe('proxyMiddleware', () => {
       expect(body).toContain('</body>');
     });
 
+    it('escapes script-breaking content in the injected space name', async () => {
+      createSpace('</script><script>alert(1)</script>', 'xss');
+      fetchMock = mock(() =>
+        new Response('<html><body></body></html>', {
+          headers: { 'content-type': 'text/html' },
+        })
+      );
+      globalThis.fetch = fetchMock as typeof globalThis.fetch;
+
+      const res = await makeApp().request('/', {
+        headers: { host: 'xss.excalihub.example.com' },
+      });
+      const body = await res.text();
+      expect(body).toContain(
+        'window.__SPACE_NAME = "\\u003c/script>\\u003cscript>alert(1)\\u003c/script>"'
+      );
+      expect(body).not.toContain('window.__SPACE_NAME = "</script>');
+    });
+
     it('injects menu CSS into HTML responses', async () => {
       createSpace('Space', 'space');
       fetchMock = mock(() =>

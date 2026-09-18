@@ -12,6 +12,16 @@ function hubHostFor(e: { HUB_SUBDOMAIN: string; BASE_DOMAIN: string }): string {
 
 const RESERVED_BACKUP_SUBDOMAIN = 'backup';
 
+// JSON.stringify doesn't escape `<`, which lets a `</script>` in a value close
+// an inline script element early (stored XSS). Also neutralises U+2028/2029,
+// which are legal in JSON string literals but not JS string literals.
+function embedJson(value: unknown): string {
+  return JSON.stringify(value)
+    .replace(/</g, '\\u003c')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 export function proxyMiddleware() {
   return async (c: Context, next: Next) => {
     const e = envSchema.parse(process.env);
@@ -234,14 +244,14 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
   const gitConfig = getGitConfig();
   const gitEnabled = gitConfig?.connected ? 'true' : 'false';
   const menuCss = `<style data-excalihub-menu>${getInjectedMenuCss()}</style>`;
-  const menuScript = `<script data-excalihub-menu>window.__GIT_ENABLED = '${gitEnabled}';window.__hubHost = '${hubHostFor(envSchema.parse(process.env))}';${getInjectedMenuScript()}</script>`;
+  const menuScript = `<script data-excalihub-menu>window.__GIT_ENABLED = '${gitEnabled}';window.__hubHost = ${embedJson(hubHostFor(envSchema.parse(process.env)))};${getInjectedMenuScript()}</script>`;
   const commitModalScript = `<script data-excalihub-commit-modal>${getInjectedCommitModalScript()}</script>`;
   const paletteCss = `<style data-excalihub-palette>${getInjectedPaletteCss()}</style>`;
   const paletteScript = `<script data-excalihub-palette>${getInjectedPaletteScript()}</script>`;
   const backupsCss = `<style data-excalihub-backups>${getBackupsCss()}</style>`;
   const backupsScript = `<script data-excalihub-backups>${getBackupsScript()}</script>`;
 
-  const syncScript = `<script data-excalihub-sync>${debugFlag}window.__SPACE_NAME = ${JSON.stringify(space.name)};window.__SPACE_ID = ${JSON.stringify(space.id)};${getInjectedScript()}</script>`;
+  const syncScript = `<script data-excalihub-sync>${debugFlag}window.__SPACE_NAME = ${embedJson(space.name)};window.__SPACE_ID = ${embedJson(space.id)};${getInjectedScript()}</script>`;
   const injection = `${menuCss}${menuScript}${commitModalScript}${paletteCss}${paletteScript}${backupsCss}${backupsScript}${syncScript}`;
 
   return injectIntoHtml(res, html, injection);
@@ -279,9 +289,9 @@ async function serveBackupPreview(c: Context) {
   };
   const injection =
     `<style data-excalihub-backup-preview>${getBackupPreviewCss()}</style>` +
-    `<script data-excalihub-backup-preview>window.__BACKUP_PREVIEW = ${JSON.stringify(previewConfig)};${getBackupPreviewScript()}</script>` +
+    `<script data-excalihub-backup-preview>window.__BACKUP_PREVIEW = ${embedJson(previewConfig)};${getBackupPreviewScript()}</script>` +
     `<style data-excalihub-palette>${getInjectedPaletteCss()}</style>` +
-    `<script data-excalihub-palette>window.__hubHost = ${JSON.stringify(hubHost)};window.__PALETTE_MINIMAL = 'true';${getInjectedPaletteScript()}</script>`;
+    `<script data-excalihub-palette>window.__hubHost = ${embedJson(hubHost)};window.__PALETTE_MINIMAL = 'true';${getInjectedPaletteScript()}</script>`;
 
   return injectIntoHtml(res, html, injection);
 }
