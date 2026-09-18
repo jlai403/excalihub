@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.1.17](https://github.com/jlai403/excalihub/compare/v0.1.16...v0.1.17) (2026-09-18)
+
+
+### Features
+
+* backup preview, restore, tier grouping, and palette on backup p… ([bee1456](https://github.com/jlai403/excalihub/commit/bee1456857571195b6d09813793cdcdb790a3320))
+* backup preview, restore, tier grouping, and palette on backup pages ([a41ae49](https://github.com/jlai403/excalihub/commit/a41ae4911a0dc9130331f386983555d8bd8b468c))
+* **demo:** frame 7 — hub backups dialog with tiers ([2dffdb1](https://github.com/jlai403/excalihub/commit/2dffdb1ceb0cc396ac630994e8ffc7fceb275a8e))
+* **demo:** frame 8 — in-space backups modal ([d2bba8b](https://github.com/jlai403/excalihub/commit/d2bba8b54250e2f1fb5b55d02b54de5072dff187))
+* **demo:** frame 9 — backup preview page ([ae2db2c](https://github.com/jlai403/excalihub/commit/ae2db2ce6f39aa3eaf19ec38e55ad5b1ebfe17a8))
+* **demo:** renumber git frames after backup showcase ([0179fcf](https://github.com/jlai403/excalihub/commit/0179fcf25628aea7ee1207be1a3fd00da04aa533))
+* **demo:** seed backup tier set for My Project ([1373a1d](https://github.com/jlai403/excalihub/commit/1373a1d244e19b191999f93506996a24829c683b))
+* **e2e:** readme demo gif with git-commit frames and port cleanup ([e1b3301](https://github.com/jlai403/excalihub/commit/e1b330115525e07deb55c8752f6e44daedbb2ff4))
+* **git:** add repoUrlToWebUrl and expose webUrl in config response ([cf3ad24](https://github.com/jlai403/excalihub/commit/cf3ad24b64876ee8417bf074634d58502b706ac2))
+* **git:** prune stale space dirs and harden varlock key handling ([fe9ac49](https://github.com/jlai403/excalihub/commit/fe9ac49266b4bd9f004179beec868ecfe3e7b726))
+* **git:** reset to remote history on connect so pushes fast-forward ([3243fd7](https://github.com/jlai403/excalihub/commit/3243fd707b3e32f28fa19bbaffad672c4fa4267d))
+* **hub:** add demo gif scripts, README image, and demo-results gitignore ([1fc5f47](https://github.com/jlai403/excalihub/commit/1fc5f4707a24e41662fb44bec8d181f4a959d378))
+* **hub:** add git repo button to space cards and command palette ([79281ef](https://github.com/jlai403/excalihub/commit/79281ef1b70acfa327d559fbd31a569141183b68))
+* **inject:** add ExcaliHub command palette for Excalidraw pages ([cd7f58f](https://github.com/jlai403/excalihub/commit/cd7f58fef41700b11e20b8b67d4078cc8714747f))
+
+
+### Bug Fixes
+
+* docker e2e UID mismatch + backup-preview banner race ([756f253](https://github.com/jlai403/excalihub/commit/756f25350e7a90a34b98cd6963a6dfee2da00d40))
+* escape space-facing values in injected &lt;script&gt; blocks ([aed6f87](https://github.com/jlai403/excalihub/commit/aed6f87c2b70e920f4f7e420923ea3e6604d343c))
+* escape space-facing values in injected &lt;script&gt; blocks ([25d3c99](https://github.com/jlai403/excalihub/commit/25d3c99cc0cedbe879e163cd53e2e940784a8656))
+* **hub:** drop ssh-key fetch from dashboard load; port-safe hub-menu nav ([ce0322a](https://github.com/jlai403/excalihub/commit/ce0322a5e67e0f25b33caae1cc955a8716245736))
+* **hub:** keep space-card action buttons on one line ([34fd956](https://github.com/jlai403/excalihub/commit/34fd956f881d41ef80f7eff0075d3c51ce0a3164))
+* **hub:** repo button single-line + sidebar shortcut shows ⌘⇧K ([001ec1d](https://github.com/jlai403/excalihub/commit/001ec1d972864d802aafc6a2fabf187598609600))
+* **inject:** guard palette Enter on empty results ([a7faa02](https://github.com/jlai403/excalihub/commit/a7faa02ca0ad483504c3dfe6c3e544c747b707bb))
+* replace --umask docker flag with in-container umask override ([ecee9a9](https://github.com/jlai403/excalihub/commit/ecee9a96c0d6c20879df8ef220b6f65c6e987507))
+* track backup-inject scripts (gitignore was hiding server/src/inject/) ([cecf34f](https://github.com/jlai403/excalihub/commit/cecf34f61a9f6f361c54d9205241bb7c9b1f1659))
+
 ## [0.1.16](https://github.com/jlai403/excalihub/compare/v0.1.15...v0.1.16) (2026-09-04)
 
 
