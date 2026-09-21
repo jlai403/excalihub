@@ -16,9 +16,9 @@ function parseBackupScene(fileData) {
 }
 
 function applyScene(scene) {
-  localStorage.setItem('excalidraw', JSON.stringify(scene.elements));
-  localStorage.setItem('excalidraw-state', JSON.stringify(scene.appState));
-  window.location.reload();
+  // Queued via the boot script and applied on the next page load, so the live
+  // Excalidraw's unload flush can't overwrite it (see hub-scene-boot.js).
+  window.__excalihubQueueScene(scene);
 }
 
 if (typeof module !== 'undefined') {

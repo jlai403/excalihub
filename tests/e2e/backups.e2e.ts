@@ -3,16 +3,54 @@ import { test, expect, type APIRequestContext } from "@playwright/test";
 import { writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 
+// A fully-formed Excalidraw text element. Real Excalidraw runs the scene
+// through restoreElements on boot and silently drops malformed elements, so
+// fixtures must carry every field the app expects or they vanish.
+function textElement(id: string, text: string, y = 100, stroke = "#1e1e1e") {
+  return {
+    id,
+    type: "text",
+    x: 100,
+    y,
+    width: 200,
+    height: 25,
+    angle: 0,
+    strokeColor: stroke,
+    backgroundColor: "transparent",
+    fillStyle: "solid",
+    strokeWidth: 2,
+    strokeStyle: "solid",
+    roughness: 1,
+    opacity: 100,
+    groupIds: [],
+    frameId: null,
+    roundness: null,
+    seed: 1,
+    version: 1,
+    versionNonce: 1,
+    isDeleted: false,
+    boundElements: null,
+    updated: 1,
+    link: null,
+    locked: false,
+    fontSize: 20,
+    fontFamily: 1,
+    text,
+    textAlign: "left",
+    verticalAlign: "top",
+    containerId: null,
+    originalText: text,
+    lineHeight: 1.25,
+    index: `a${y}`,
+  };
+}
+
 function sceneA() {
-  return [
-    { id: "scene-aa", type: "text", text: "BACKUP A SCENE", x: 100, y: 100, stroke: "#1e1e1e" },
-  ];
+  return [textElement("scene-aa", "BACKUP A SCENE", 100)];
 }
 
 function sceneB() {
-  return [
-    { id: "scene-bb", type: "text", text: "BACKUP B SCENE", x: 100, y: 220, stroke: "#ff0000" },
-  ];
+  return [textElement("scene-bb", "BACKUP B SCENE", 220, "#ff0000")];
 }
 
 const DAYS = 86_400_000;
@@ -37,7 +75,7 @@ async function seedOldBackup(space: Space, ageMs: number, id: string, text: stri
       type: "excalidraw",
       version: 2,
       source: "https://excalihub",
-      elements: [{ id, type: "text", text, x: 50, y: 50, stroke: "#1e1e1e" }],
+      elements: [textElement(id, text, 50)],
       appState: {},
       files: {},
     })
@@ -212,12 +250,14 @@ test.describe.serial("backups", () => {
     await page.locator(".ex-backups__row").getByRole("button", { name: "Restore" }).click();
 
     await expect
-      .poll(async () =>
-        page.evaluate(() =>
-          (JSON.parse(localStorage.getItem("excalidraw") ?? "[]") as { id?: string }[]).some(
-            (e) => e.id === "scene-bb"
-          )
-        )
+      .poll(
+        async () =>
+          page.evaluate(() =>
+            (JSON.parse(localStorage.getItem("excalidraw") ?? "[]") as { id?: string }[]).some(
+              (e) => e.id === "scene-bb"
+            )
+          ),
+        { timeout: 15_000 }
       )
       .toBe(true);
   });

@@ -6,6 +6,7 @@
   const parts = window.location.hostname.split('.');
   const subdomain = parts[0];
   const hubDomain = parts.slice(1).join('.');
+  const hubHost = window.location.port ? `${hubDomain}:${window.location.port}` : hubDomain;
 
   const spaceName = window.__SPACE_NAME ?? '';
   const DESIRED_TITLE = spaceName ? `${spaceName} · Excalidraw` : null;
@@ -26,7 +27,7 @@
 
     if (DEBUG) console.log('[ExcaliHub] Sending backup...');
     try {
-      const res = await fetch(`${window.location.protocol}//${hubDomain}/api/backup`, {
+      const res = await fetch(`${window.location.protocol}//${hubHost}/api/backup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subdomain, elements, appState }),

@@ -13,9 +13,11 @@ export function killStalePorts(): void {
   if (process.env.EXCALIHUB_PORTS_CLEANED === "1") return;
   process.env.EXCALIHUB_PORTS_CLEANED = "1";
 
-  // Docker mode owns :8081 via docker-proxy; `docker rm -f` handles the
-  // container. Host-side webServers (:4321 hub, :8099 stub) still need it.
-  const ports = process.env.E2E_DOCKER === "1" ? [4321, 8099] : [8081, 4321, 8099];
+  // Docker mode runs every service inside compose, so no host listener is
+  // owned by this run (`docker compose down` handles the containers). Host
+  // mode runs the server (:8081) and hub (:4321) as webServers; Excalidraw's
+  // published :8080 is docker-proxy's and is left alone.
+  const ports = process.env.E2E_DOCKER === "1" ? [] : [8081, 4321];
 
   for (const port of ports) {
     // Parse the headed output: with -t, lsof drops the -sTCP:LISTEN filter.

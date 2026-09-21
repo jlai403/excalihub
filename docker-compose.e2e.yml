@@ -1,0 +1,39 @@
+# E2E harness: ExcaliHub + the real Excalidraw app on an isolated compose network.
+#
+# Excalidraw is pinned by digest for reproducible runs. The non-blocking
+# "latest" canary leg overrides EXCALIDRAW_IMAGE=excalidraw/excalidraw:latest.
+#
+# Consumers:
+#   - playwright.docker.config.ts / CI: globalSetup runs `up -d --build` (this
+#     doubles as the image build gate) and globalTeardown runs `down`.
+#   - dev-mode e2e + the demo: only the `excalidraw` service runs, published on
+#     the host at :8080 (via `bun run dev:excalidraw`, which uses :latest).
+name: excalihub-e2e
+
+services:
+  excalihub:
+    build: .
+    container_name: excalihub-e2e
+    ports:
+      - "8081:8081"
+    environment:
+      - NODE_ENV=production
+      - PORT=8081
+      - HOST=0.0.0.0
+      - DATA_DIR=/data
+      - BASE_DOMAIN=localhost
+      - HUB_SUBDOMAIN=excalihub
+      - EXCALIDRAW_CONTAINER=http://excalidraw:80
+    volumes:
+      - ./data-e2e:/data
+    depends_on:
+      - excalidraw
+    # umask 000 so the host test process (a different UID on Linux CI) can seed
+    # files into the bind-mounted /data. Runs as the image's USER bun.
+    command: sh -c 'umask 000 && exec bun run dist/index.js'
+
+  excalidraw:
+    image: ${EXCALIDRAW_IMAGE:-excalidraw/excalidraw@sha256:f7ee194addd607bf831d2af0f0a34463dd4225e426cf35199ef0b12a803398e9}
+    container_name: excalidraw-e2e
+    expose:
+      - "80"

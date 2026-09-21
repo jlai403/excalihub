@@ -12,8 +12,13 @@ import { execSync } from "child_process";
 
 const DATA_DIR = "./data-e2e";
 
-const IMAGE = "excalihub:e2e";
 const CONTAINER = "excalihub-e2e";
+
+const COMPOSE_FILE = "docker-compose.e2e.yml";
+
+function compose(args: string, options: { stdio: "inherit" | "pipe" } = { stdio: "inherit" }) {
+  execSync(`docker compose -f ${COMPOSE_FILE} ${args}`, options);
+}
 
 function assertDocker() {
   try {
@@ -40,41 +45,11 @@ function startContainer(privateKey: string, publicKey: string) {
   // this is safe ephemeral test data.
   execSync(`find ${dataDir} -type d -exec chmod 777 {} +`);
 
-  console.log("[globalSetup] building image...");
-  execSync(`docker build . -t ${IMAGE}`, { stdio: "inherit" });
-
-  console.log("[globalSetup] starting container...");
-  execSync(`docker rm -f ${CONTAINER} >/dev/null 2>&1 || true`, {
-    stdio: "pipe",
-  });
-  const run = [
-    "docker run -d --rm --name",
-    CONTAINER,
-    "-p 8081:8081",
-    "--add-host host.docker.internal:host-gateway",
-    `-v ${dataDir}:/data`,
-    "-e NODE_ENV=production",
-    "-e PORT=8081",
-    "-e HOST=0.0.0.0",
-    "-e DATA_DIR=/data",
-    "-e BASE_DOMAIN=localhost",
-    "-e HUB_SUBDOMAIN=excalihub",
-    "-e EXCALIDRAW_CONTAINER=http://host.docker.internal:8099",
-    IMAGE,
-    // Override the image CMD (["bun","run","dist/index.js"]) so the app starts
-    // under `umask 000`. The docker `--umask` run flag is not honored by every
-    // daemon (Docker Desktop ignores it; Linux honors it), so instead we set the
-    // umask inside the container via the shell — works on any daemon. The app's
-    // mkdirSync/writeFileSync then create dirs/files (owned by container UID
-    // 1000) that are world-writable, so the host test process (different UID on
-    // Linux CI / macOS) can seed straight into /data (backups.e2e seedOldBackup,
-    // demo writeBackupFile). Explicit chmods (seeded SSH key 0600/0644) override
-    // the umask. Runs as the image's USER bun, as before.
-    "sh",
-    "-c",
-    "'umask 000 && exec bun run dist/index.js'",
-  ].join(" ");
-  execSync(run, { stdio: "inherit" });
+  console.log("[globalSetup] building + starting compose stack...");
+  // --force-recreate: the app loads spaces/git config into memory at boot, and
+  // data-e2e was just wiped — reusing a running container would serve the
+  // previous run's state.
+  compose(`up -d --build --force-recreate --remove-orphans`);
 
   waitUntilReady();
   seedContainerKey(privateKey, publicKey);

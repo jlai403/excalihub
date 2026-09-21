@@ -3,8 +3,9 @@ import { killStalePorts } from "./tests/e2e/cleanup";
 
 process.env.E2E_DOCKER = "1";
 
-// Runs at config load, before Playwright starts webServers. Docker mode skips
-// :8081 (the container owns it via docker-proxy) and still clears :4321/:8099.
+// Runs at config load, before Playwright starts anything. Docker mode runs
+// every service (app + Excalidraw) inside compose, so there are no host
+// listeners to clear — cleanup is a no-op for :8081/:8080 and skipped.
 killStalePorts();
 
 export default defineConfig({
@@ -31,17 +32,5 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "firefox", use: { ...devices["Desktop Firefox"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
-  ],
-
-  webServer: [
-    // Only the Excalidraw stub runs on the host (Playwright manages it fine).
-    // The excalihub app itself is the Docker container started in globalSetup,
-    // which proxies to this stub via host.docker.internal:8099.
-    {
-      command: "bun run tests/e2e/excalidraw-stub.ts",
-      url: "http://localhost:8099",
-      reuseExistingServer: true,
-      timeout: 15_000,
-    },
   ],
 });

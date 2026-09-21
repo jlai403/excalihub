@@ -89,6 +89,7 @@ async function serveHub(c: Context, next: Next) {
 }
 
 let injectedScript: string | null = null;
+let injectedBootScript: string | null = null;
 let injectedMenuCss: string | null = null;
 let injectedMenuScript: string | null = null;
 let injectedCommitModalScript: string | null = null;
@@ -107,6 +108,18 @@ function getInjectedScript(): string {
     );
   }
   return injectedScript;
+}
+
+// Must be injected before any other script: it applies a queued scene before
+// Excalidraw's (deferred) app bundle boots.
+function getBootScript(): string {
+  if (!injectedBootScript) {
+    injectedBootScript = readFileSync(
+      resolve(import.meta.dirname, '../inject/hub-scene-boot.js'),
+      'utf-8'
+    );
+  }
+  return injectedBootScript;
 }
 
 function getInjectedMenuCss(): string {
@@ -252,7 +265,8 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
   const backupsScript = `<script data-excalihub-backups>${getBackupsScript()}</script>`;
 
   const syncScript = `<script data-excalihub-sync>${debugFlag}window.__SPACE_NAME = ${embedJson(space.name)};window.__SPACE_ID = ${embedJson(space.id)};${getInjectedScript()}</script>`;
-  const injection = `${menuCss}${menuScript}${commitModalScript}${paletteCss}${paletteScript}${backupsCss}${backupsScript}${syncScript}`;
+  const bootScript = `<script data-excalihub-boot>${getBootScript()}</script>`;
+  const injection = `${bootScript}${menuCss}${menuScript}${commitModalScript}${paletteCss}${paletteScript}${backupsCss}${backupsScript}${syncScript}`;
 
   return injectIntoHtml(res, html, injection);
 }
@@ -288,6 +302,7 @@ async function serveBackupPreview(c: Context) {
     hubHost,
   };
   const injection =
+    `<script data-excalihub-boot>${getBootScript()}</script>` +
     `<style data-excalihub-backup-preview>${getBackupPreviewCss()}</style>` +
     `<script data-excalihub-backup-preview>window.__BACKUP_PREVIEW = ${embedJson(previewConfig)};${getBackupPreviewScript()}</script>` +
     `<style data-excalihub-palette>${getInjectedPaletteCss()}</style>` +

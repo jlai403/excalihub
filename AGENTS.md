@@ -29,8 +29,9 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 | `bun run start` | Run production server |
 | `bun test` | Run unit/integration test suite |
 | `bun test --watch` | Run tests in watch mode |
-| `bun test:e2e` | Run Playwright e2e tests (chromium, firefox, webkit) in **dev** mode |
-| `bun run test:e2e:docker` | Build + run Playwright e2e in **production** mode inside the **Docker image** (used by CI) |
+| `bun test:e2e` | Run Playwright e2e (chromium, firefox, webkit) in **dev** mode against a real Excalidraw on :8080 (requires Docker) |
+| `bun run test:e2e:docker` | Build + run Playwright e2e in **production** mode against the pinned Excalidraw image (used by CI) |
+| `bun run test:e2e:docker:chromium` | Same, chromium only (CI `latest` canary) |
 | `docker compose up --build` | Full deployment |
 | `droast Dockerfile` | Lint Dockerfile |
 
@@ -41,9 +42,12 @@ Each "space" gets a subdomain (e.g. `project1.draw.example.com`) backed by a sha
 ## CI/CD
 
 Workflow: `.github/workflows/ci.yml`
-- `test` — bun install + bun test
+- `test` — bun install + typecheck + bun test
+- `e2e` — Playwright against the pinned Excalidraw digest, 3 browsers (blocking gate; PRs + manual dispatch)
+- `e2e-latest` — non-blocking canary against `excalidraw/excalidraw:latest`, chromium only (nightly schedule + manual dispatch); opens/comments an issue labelled `excalidraw-canary` on failure
 - `lint` — droast Dockerfile lint (gated on test)
-- `build` — docker build . (gated on test)
+
+The e2e suite runs the real Excalidraw app via `docker-compose.e2e.yml`; there is no stub. Docker is required for all e2e runs.
 
 ### Release Workflow
 
@@ -333,3 +337,13 @@ hub/                  — Astro static site (pages, layouts)
 - `hub-menu.js` gains a third dropdown item "Command palette" (magnifying-glass icon, dispatches `hub-open-palette`).
 - Dev-mode caveat: hub-palette.js builds hub URLs from `__hubHost` (no port), so space-switch and Back-to-ExcaliHub navigated to port 80 on non-80/443 deployments. Fixed to include port when `window.location.port` is set.
 - Review fixes (commit `ce0322a`): `hub-menu.js` got the same port-safe `hubHost` fix (its Back-to-ExcaliHub + /settings redirects had the same bare-`__hubHost` bug); `SpacesList.svelte` dashboard load now uses `loadGitConnection()` (config only) instead of `loadGitConfig()` — the old path fetched `/api/git/ssh-key` on every dashboard visit, triggering SSH keypair generation as a read-only side effect. `git.svelte.ts` gained `loadGitConnection()`; `loadGitConfig()` = connection + ssh-key (settings-only path).
+
+### 2026-09-21 — E2E harness now runs real Excalidraw (stub deleted)
+- **`tests/e2e/excalidraw-stub.ts` deleted.** Every e2e run (dev, docker/CI, demo) now proxies to the real `excalidraw/excalidraw` app, so the injected UI (menu, palette, commit modal, sync, restore) is finally verified against reality instead of a hand-built mimic.
+- **`docker-compose.e2e.yml`** (new): `excalihub` (build .) + `excalidraw` (pinned digest, `${EXCALIDRAW_IMAGE}` override). `globalSetup` does `compose up -d --build` (doubles as the image build gate) + `waitUntilReady` + `docker exec` key seeding; `globalTeardown` does `compose down`. `container_name`s keep the old `docker exec` logic working. Dev mode + demo use `dev:excalidraw` (`:latest`) on :8080 (`EXCALIDRAW_CONTAINER=http://localhost:8080`); `cleanup.ts` no longer knows :8099 and docker mode has no host listeners.
+- **Real restore race found + fixed** (the whole point of removing the stub): writing `excalidraw`/`excalidraw-state` and calling `location.reload()` is clobbered by the live app — Excalidraw flushes its empty in-memory scene on unload after our write. Fixed by queuing the scene in `sessionStorage` under a key Excalidraw ignores, and applying it on the next boot in a new always-injected `hub-scene-boot.js` (`window.__excalihubQueueScene`). Injected scripts are classic and run during parsing; Excalidraw's bundle is a deferred module that mounts afterwards, so the queued write always lands first. `hub-backups.js` + `hub-backup-preview.js` now queue instead of pre-writing; `proxy.ts` injects the boot script first on space and backup-preview pages.
+- **`excalidraw-sync.js` hub-port bug**: `sendBackup` built the URL from hostname alone, dropping the port — the auto-backup POST went to :80 on any non-80/443 deployment (webkit: "access control checks"). Now includes `window.location.port` (same fix hub-menu/hub-palette already had).
+- **Fixtures must be fully-formed elements**: real Excalidraw runs `restoreElements` on boot and silently drops malformed ones (the old text/rect stubs vanished). `backups.e2e.ts` and `demo.ts` fixtures now carry every field (id/type/geometry/style/version/versionNonce/updated/index/...), verified against the running app.
+- **`demo.ts`** uses real Excalidraw now; valid fixtures added and `addCaption` falls back to neutral colors on space pages (the real app doesn't define the hub's `--background/--foreground/--border`). **`docs/demo.gif` still needs a human rebuild** (`bun run demo:gif`, 1P boundary) — frame timing/counts may need a pass because the real app autosaves appState.
+- **CI matrix**: `e2e` (pinned digest, blocking, 3 browsers) + `e2e-latest` (non-blocking canary, `excalidraw/excalidraw:latest`, chromium-only, nightly schedule + `workflow_dispatch`, files/comments an issue labelled `excalidraw-canary` on failure). Image selected via `EXCALIDRAW_IMAGE`; new script `test:e2e:docker:chromium`.
+- **Verified agent-side**: `bun test` 138 pass, `bun run typecheck` clean, `bun run test:e2e` (dev, real Excalidraw) 117 pass + 27 skipped (git-gated), `test:e2e:docker` (pinned digest, 3 browsers) 117 pass + 27 skipped. Demo + keyed git tests not run (1P boundary).

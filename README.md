@@ -115,13 +115,25 @@ bun install
 bun run dev       # Hono (port 80) + Astro (port 4321)
 ```
 
+The e2e suite runs against a **real Excalidraw container**, so Docker is
+required (`docker-compose.e2e.yml`). The Excalidraw image is pinned by digest
+for reproducibility; a non-blocking scheduled CI job runs the same suite
+against `excalidraw/excalidraw:latest` as a canary.
+
+```bash
+bun run test:e2e          # dev mode: app from source + Excalidraw on :8080
+bun run test:e2e:docker   # production mode: built image + pinned Excalidraw
+bun run dev:excalidraw    # just the Excalidraw container on :8080
+```
+
 ## Commands
 
 ```bash
 bun run dev            # Start Hono server + Astro dev dashboard
 bun run build          # Build for production
 bun run start          # Run production server
-bun test               # Run test suite
+bun test               # Run unit/integration test suite
+bun run test:e2e       # Playwright e2e (dev mode, requires Docker)
 ```
 
 ## Architecture
