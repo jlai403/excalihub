@@ -121,10 +121,14 @@ for reproducibility; a non-blocking scheduled CI job runs the same suite
 against `excalidraw/excalidraw:latest` as a canary.
 
 ```bash
-bun run test:e2e          # dev mode: app from source + Excalidraw on :8080
+bun run test:e2e          # dev mode: app from source + Excalidraw on :8099
 bun run test:e2e:docker   # production mode: built image + pinned Excalidraw
 bun run dev:excalidraw    # just the Excalidraw container on :8080
 ```
+
+Dev/demo e2e runs Excalidraw on a dedicated port (default `8099`) so it never
+collides with `bun run dev`'s Excalidraw on `:8080`; override with
+`EXCALIDRAW_PORT` if needed.
 
 ## Commands
 

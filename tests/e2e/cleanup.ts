@@ -13,6 +13,17 @@ export function killStalePorts(): void {
   if (process.env.EXCALIHUB_PORTS_CLEANED === "1") return;
   process.env.EXCALIHUB_PORTS_CLEANED = "1";
 
+  // Host mode starts the e2e Excalidraw container by name (`dev:excalidraw:e2e`);
+  // a stale one from a crashed run would block `docker run` on that name/port.
+  // Docker mode runs its own compose containers and must not touch this one.
+  if (process.env.E2E_DOCKER !== "1") {
+    try {
+      execSync("docker rm -f excalidraw-e2e-dev", { stdio: "pipe" });
+    } catch {
+      // no such container, or Docker not available
+    }
+  }
+
   // Docker mode runs every service inside compose, so no host listener is
   // owned by this run (`docker compose down` handles the containers). Host
   // mode runs the server (:8081) and hub (:4321) as webServers; Excalidraw's

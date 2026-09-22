@@ -9,6 +9,7 @@
     "dev:server": "bun --watch server/src/index.ts",
     "dev:hub": "bun run --filter hub dev -- --force",
     "dev:excalidraw": "docker run --rm -p 8080:80 excalidraw/excalidraw:latest",
+    "dev:excalidraw:e2e": "docker run --rm --name excalidraw-e2e-dev -p ${EXCALIDRAW_PORT:-8099}:80 excalidraw/excalidraw:latest",
     "build": "bun run --filter hub build && bun build server/src/index.ts --outdir dist --target bun",
     "test": "bun test server/tests/",
     "test:watch": "bun test server/tests/ --watch",
