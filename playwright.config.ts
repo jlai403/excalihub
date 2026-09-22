@@ -1,6 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 import { killStalePorts } from "./tests/e2e/cleanup";
 
+// Dev-mode e2e runs a real Excalidraw container on a dedicated port (default
+// 8099) so it never collides with `bun run dev`'s Excalidraw on :8080. Override
+// with EXCALIDRAW_PORT if 8099 is taken.
+const EXCALIDRAW_PORT = process.env.EXCALIDRAW_PORT ?? "8099";
+
 // Runs at config load, before Playwright starts webServers — clears stale
 // listeners from previous sessions so the run can't be served by an orphan
 // server holding previous-session state.
@@ -39,14 +44,17 @@ export default defineConfig({
         PORT: "8081",
         DATA_DIR: "./data-e2e",
         HUB_PORT: "4321",
-        EXCALIDRAW_CONTAINER: "http://localhost:8099",
+        EXCALIDRAW_CONTAINER: `http://localhost:${EXCALIDRAW_PORT}`,
       },
     },
     {
-      command: "bun run tests/e2e/excalidraw-stub.ts",
-      url: "http://localhost:8099",
+      // Real Excalidraw on a dedicated port (not the :8080 `bun run dev` one).
+      // Uses :latest (dev canary); the docker/CI suite pins a digest via
+      // docker-compose.e2e.yml.
+      command: "bun run dev:excalidraw:e2e",
+      url: `http://localhost:${EXCALIDRAW_PORT}`,
       reuseExistingServer: true,
-      timeout: 15_000,
+      timeout: 120_000,
     },
     {
       command: "bun run dev:hub",

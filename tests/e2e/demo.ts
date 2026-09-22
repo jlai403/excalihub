@@ -25,16 +25,103 @@ const [owner, repo] = (process.env.E2E_GIT_REPO ?? "jlai403/excalihub-ci").split
 );
 const repoUrl = `git@github.com:${owner}/${repo}.git`;
 
+// Fully-formed elements: real Excalidraw drops malformed ones on import.
+function textEl(
+  id: string,
+  text: string,
+  x: number,
+  y: number,
+  stroke: string,
+  fontSize = 22
+) {
+  return {
+    id,
+    type: "text",
+    x,
+    y,
+    width: Math.max(120, text.length * fontSize * 0.55),
+    height: fontSize * 1.25,
+    angle: 0,
+    strokeColor: stroke,
+    backgroundColor: "transparent",
+    fillStyle: "solid",
+    strokeWidth: 2,
+    strokeStyle: "solid",
+    roughness: 1,
+    opacity: 100,
+    groupIds: [],
+    frameId: null,
+    roundness: null,
+    seed: 1,
+    version: 1,
+    versionNonce: 1,
+    isDeleted: false,
+    boundElements: null,
+    updated: 1,
+    link: null,
+    locked: false,
+    fontSize,
+    fontFamily: 1,
+    text,
+    textAlign: "left",
+    verticalAlign: "top",
+    containerId: null,
+    originalText: text,
+    lineHeight: 1.25,
+    index: `a${y}`,
+  };
+}
+
+function shapeEl(
+  id: string,
+  type: "rectangle" | "ellipse",
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  stroke: string,
+  strokeWidth = 2
+) {
+  return {
+    id,
+    type,
+    x,
+    y,
+    width,
+    height,
+    angle: 0,
+    strokeColor: stroke,
+    backgroundColor: "transparent",
+    fillStyle: "solid",
+    strokeWidth,
+    strokeStyle: "solid",
+    roughness: 1,
+    opacity: 100,
+    groupIds: [],
+    frameId: null,
+    roundness: type === "rectangle" ? { type: 3 } : null,
+    seed: 2,
+    version: 1,
+    versionNonce: 2,
+    isDeleted: false,
+    boundElements: null,
+    updated: 2,
+    link: null,
+    locked: false,
+    index: `b${y}`,
+  };
+}
+
 const RECOVERY_SCENE = [
-  { id: "recovery-a", type: "text", text: "Design v2 — recovery point", x: 120, y: 130, stroke: "#8364ff", fontSize: 26 },
-  { id: "recovery-b", type: "rectangle", x: 200, y: 240, width: 180, height: 100, stroke: "#1ba1ff", strokeWidth: 2 },
+  textEl("recovery-a", "Design v2 — recovery point", 120, 130, "#8364ff", 26),
+  shapeEl("recovery-b", "rectangle", 200, 240, 180, 100, "#1ba1ff"),
 ];
 const WEEKLY_SCENE = [
-  { id: "weekly-a", type: "text", text: "Weekly checkpoint", x: 120, y: 130, stroke: "#da70d6", fontSize: 22 },
-  { id: "weekly-b", type: "ellipse", x: 260, y: 240, width: 140, height: 90, stroke: "#fe9b10", strokeWidth: 2 },
+  textEl("weekly-a", "Weekly checkpoint", 120, 130, "#da70d6", 22),
+  shapeEl("weekly-b", "ellipse", 260, 240, 140, 90, "#fe9b10"),
 ];
 const MONTHLY_SCENE = [
-  { id: "monthly-a", type: "text", text: "Monthly snapshot", x: 120, y: 130, stroke: "#666666", fontSize: 22 },
+  textEl("monthly-a", "Monthly snapshot", 120, 130, "#666666", 22),
 ];
 
 const DAYS = 86_400_000;
@@ -99,6 +186,11 @@ async function addCaption(page: Page, text: string) {
   await page.evaluate((t) => {
     document.getElementById("demo-caption")?.remove();
     const style = getComputedStyle(document.documentElement);
+    // Space pages run the real Excalidraw, which doesn't define the hub's
+    // --background/--foreground/--border vars; fall back to a neutral pill.
+    const background = style.getPropertyValue("--background").trim() || "220 23% 95%";
+    const foreground = style.getPropertyValue("--foreground").trim() || "234 16% 35%";
+    const border = style.getPropertyValue("--border").trim() || "223 16% 83%";
     const pill = document.createElement("div");
     pill.id = "demo-caption";
     pill.textContent = t;
@@ -115,9 +207,9 @@ async function addCaption(page: Page, text: string) {
       whiteSpace: "nowrap",
       // Inverted from the hub theme: dark theme → light pill with dark text;
       // light theme → dark pill with light text.
-      color: `hsl(${style.getPropertyValue("--background")})`,
-      background: `color-mix(in srgb, hsl(${style.getPropertyValue("--foreground")}) 88%, transparent)`,
-      border: `1px solid hsl(${style.getPropertyValue("--border")})`,
+      color: `hsl(${background})`,
+      background: `color-mix(in srgb, hsl(${foreground}) 88%, transparent)`,
+      border: `1px solid hsl(${border})`,
       borderRadius: "999px",
       padding: "12px 28px",
       backdropFilter: "blur(8px)",

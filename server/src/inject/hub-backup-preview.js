@@ -65,10 +65,9 @@ if (typeof module !== 'undefined') {
       .then((fileData) => {
         const scene = parseBackupScene(fileData);
         if (!scene) throw new Error('invalid backup file');
-        localStorage.setItem('excalidraw', JSON.stringify(scene.elements));
-        localStorage.setItem('excalidraw-state', JSON.stringify(scene.appState));
         localStorage.setItem(MARKER_KEY, JSON.stringify({ filename: config.filename }));
-        window.location.reload();
+        // Applied by hub-scene-boot.js on the next load, before Excalidraw boots.
+        window.__excalihubQueueScene(scene);
       })
       .catch((err) => {
         console.error('[ExcaliHub] Failed to load backup preview:', err);
