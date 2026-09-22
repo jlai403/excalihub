@@ -57,17 +57,26 @@ if (typeof module !== 'undefined') {
   }
 
   function applyAndReload() {
-    fetch(`/api/backups/${encodeURIComponent(config.filename)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
-        return res.text();
-      })
-      .then((fileData) => {
-        const scene = parseBackupScene(fileData);
-        if (!scene) throw new Error('invalid backup file');
+    // The scene endpoint resolves referenced image files from the store; fall
+    // back to the raw backup file when we don't have a space id.
+    const request = config.spaceId
+      ? fetch(
+          `/api/spaces/${encodeURIComponent(config.spaceId)}/scene?filename=${encodeURIComponent(config.filename)}`
+        ).then((res) => {
+          if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+          return res.json();
+        })
+      : fetch(`/api/backups/${encodeURIComponent(config.filename)}`).then((res) => {
+          if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+          return res.text().then(parseBackupScene);
+        });
+
+    request
+      .then((scene) => {
+        if (!scene || !Array.isArray(scene.elements)) throw new Error('invalid backup file');
         localStorage.setItem(MARKER_KEY, JSON.stringify({ filename: config.filename }));
         // Applied by hub-scene-boot.js on the next load, before Excalidraw boots.
-        window.__excalihubQueueScene(scene);
+        window.__excalihub?.queueScene(scene);
       })
       .catch((err) => {
         console.error('[ExcaliHub] Failed to load backup preview:', err);

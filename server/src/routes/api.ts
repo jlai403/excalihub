@@ -5,6 +5,8 @@ import * as BackupRepo from '~/repos/backup.js';
 import * as GitRepo from '~/repos/git.js';
 import * as SpaceService from '~/services/space.js';
 import * as BackupService from '~/services/backup.js';
+import * as FileService from '~/services/file.js';
+import * as SceneService from '~/services/scene.js';
 import {
   connectGitRepo,
   commitAndPush,
@@ -105,9 +107,45 @@ api.get('/spaces/:id/git-status', async (c) => {
   return c.json(status);
 });
 
+api.post('/spaces/:id/files', async (c) => {
+  const id = c.req.param('id');
+  const space = SpaceRepo.getSpaceById(id);
+  if (!space) return c.json({ error: 'Space not found' }, 404);
+
+  const body = await c.req.json().catch(() => ({}));
+  try {
+    const saved = FileService.saveFiles(space.subdomain, body.files);
+    return c.json({ saved });
+  } catch (err: any) {
+    if (err.message?.startsWith('File too large')) {
+      return c.json({ error: err.message }, 413);
+    }
+    if (
+      err.message?.startsWith('Invalid') ||
+      err.message?.startsWith('File id mismatch')
+    ) {
+      return c.json({ error: err.message }, 400);
+    }
+    throw err;
+  }
+});
+
+api.get('/spaces/:id/scene', async (c) => {
+  const id = c.req.param('id');
+  const space = SpaceRepo.getSpaceById(id);
+  if (!space) return c.json({ error: 'Space not found' }, 404);
+
+  const scene = await SceneService.getScene(space.subdomain, {
+    filename: c.req.query('filename'),
+    source: c.req.query('source'),
+  });
+  if (!scene) return c.json({ error: 'No scene available' }, 404);
+  return c.json(scene);
+});
+
 api.post('/backup', async (c) => {
   const body = await c.req.json();
-  const { subdomain, elements, appState } = body;
+  const { subdomain, elements, appState, baseVersion, force } = body;
 
   if (!subdomain || !elements) {
     return c.json({ error: 'Subdomain and elements required' }, 400);
@@ -118,7 +156,14 @@ api.post('/backup', async (c) => {
       subdomain,
       elements,
       appState,
+      { baseVersion, force },
     );
+    if (!result.success) {
+      return c.json(
+        { error: 'Scene changed on the server', currentVersion: result.currentVersion },
+        409,
+      );
+    }
     return c.json(result);
   } catch (err: any) {
     if (err.message === 'Space not found') {

@@ -15,7 +15,9 @@ import {
   pruneOrphanedSpaces,
   syncRemoteHistory,
   repoUrlToWebUrl,
+  getCommittedScene,
 } from '~/services/git.js';
+import * as FileService from '~/services/file.js';
 
 beforeEach(() => {
   setupTestDb();
@@ -94,10 +96,18 @@ describe('createBackup', () => {
   it('deduplicates identical backups', async () => {
     await SpaceService.createSpace('Dedup');
     const r1 = await BackupService.createBackup('dedup', '[{"id":"1"}]', null);
-    expect(r1).toEqual({ success: true, filename: expect.any(String) });
+    expect(r1).toEqual({
+      success: true,
+      filename: expect.any(String),
+      version: expect.any(String),
+    });
 
     const r2 = await BackupService.createBackup('dedup', '[{"id":"1"}]', null);
-    expect(r2).toEqual({ success: true, deduplicated: true });
+    expect(r2).toEqual({
+      success: true,
+      deduplicated: true,
+      version: expect.any(String),
+    });
   });
 
   it('does not deduplicate different content', async () => {
@@ -234,6 +244,49 @@ describe('commitAndPush', () => {
     expect(remoteTree).toContain('.gitignore');
     expect(remoteTree).toContain('testspace/testspace.excalidraw');
     expect(remoteTree.some((f) => f.includes('backups'))).toBe(false);
+  });
+
+  it('embeds referenced files from the store; getCommittedScene returns them', async () => {
+    setGitConfig({
+      repoUrl: 'git@github.com:user/repo.git',
+      connected: true,
+      connectedAt: new Date().toISOString(),
+    });
+
+    const space = await SpaceService.createSpace('Img Space');
+    const file = {
+      id: 'f1',
+      mimeType: 'image/png',
+      dataURL: 'data:image/png;base64,AAAA',
+      created: 1,
+    };
+    FileService.saveFiles(space.subdomain, { f1: file });
+
+    const dataDir = getDataDir();
+    const spacesDir = join(dataDir, 'spaces');
+    const remoteDir = join(dataDir, 'remote.git');
+    await simpleGit({ baseDir: dataDir }).raw(['init', '--bare', remoteDir]);
+
+    const git = simpleGit({ baseDir: spacesDir });
+    await git.init(['-b', 'main']);
+    await git.raw(['config', 'user.name', 'Test']);
+    await git.raw(['config', 'user.email', 'test@example.com']);
+    await git.add('.');
+    await git.commit('initial');
+    await git.addRemote('origin', remoteDir);
+
+    const payload = JSON.stringify({
+      type: 'excalidraw',
+      version: 2,
+      elements: [{ id: 'img', type: 'image', fileId: 'f1' }],
+      appState: {},
+    });
+    const result = await commitAndPush(space.subdomain, payload, null, 'commit images');
+    expect(result).toEqual({ success: true });
+
+    const scene = await getCommittedScene(space.subdomain);
+    expect(scene).not.toBeNull();
+    expect(scene!.files).toEqual({ f1: file });
   });
 });
 
