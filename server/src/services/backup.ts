@@ -3,7 +3,9 @@ import * as BackupRepo from '~/repos/backup.js';
 import * as SpaceRepo from '~/repos/space.js';
 
 export type CreateBackupResult =
-  { success: true; filename: string } | { success: true; deduplicated: true };
+  | { success: true; filename: string; version: string | null }
+  | { success: true; deduplicated: true; version: string | null }
+  | { success: false; conflict: true; currentVersion: string | null };
 
 function buildFileData(elements: string, appState?: string | null): string {
   let parsedElements: unknown;
@@ -43,6 +45,7 @@ export async function createBackup(
   subdomain: string,
   elements: string,
   appState?: string | null,
+  options: { baseVersion?: string | null; force?: boolean } = {},
 ): Promise<CreateBackupResult> {
   const space = SpaceRepo.getSpaceBySubdomain(subdomain);
   if (!space) {
@@ -52,9 +55,17 @@ export async function createBackup(
   const fileData = buildFileData(elements, appState);
   const fileHash = hashFileData(fileData);
 
-  const result = await BackupRepo.createBackup(subdomain, fileData, fileHash);
-  if (result.deduplicated) {
-    return { success: true, deduplicated: true };
+  const result = await BackupRepo.createBackup(
+    subdomain,
+    fileData,
+    fileHash,
+    options,
+  );
+  if ('conflict' in result) {
+    return { success: false, conflict: true, currentVersion: result.currentVersion };
   }
-  return { success: true, filename: result.filename };
+  if (result.deduplicated) {
+    return { success: true, deduplicated: true, version: result.version };
+  }
+  return { success: true, filename: result.filename, version: result.version };
 }

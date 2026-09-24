@@ -124,12 +124,34 @@ if (typeof module !== 'undefined') {
         return;
       }
 
-      const excalidrawData = getExcalidrawData();
+      let excalidrawData = getExcalidrawData();
       if (!excalidrawData) {
         statusEl.textContent = 'No diagram data found';
         statusEl.className = 'ex-modal__status ex-modal__status--error';
         statusEl.style.display = 'block';
         return;
+      }
+
+      // Attach referenced images so a commit made before the 5s auto-backup
+      // upload still lands self-contained.
+      if (window.__excalihub) {
+        try {
+          const parsed = JSON.parse(excalidrawData);
+          const ids = [
+            ...new Set(
+              (parsed.elements || [])
+                .filter((el) => el && typeof el.fileId === 'string')
+                .map((el) => el.fileId)
+            ),
+          ];
+          const files = await window.__excalihub.readFilesFromIDB(ids);
+          excalidrawData = JSON.stringify({
+            ...parsed,
+            files: { ...(parsed.files || {}), ...files },
+          });
+        } catch {
+          // keep the elements-only payload
+        }
       }
 
       submitBtn.disabled = true;

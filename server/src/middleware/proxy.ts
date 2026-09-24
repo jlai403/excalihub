@@ -99,6 +99,8 @@ let injectedBackupsCss: string | null = null;
 let injectedBackupsScript: string | null = null;
 let injectedBackupPreviewCss: string | null = null;
 let injectedBackupPreviewScript: string | null = null;
+let injectedRestoreCss: string | null = null;
+let injectedRestoreScript: string | null = null;
 
 function getInjectedScript(): string {
   if (!injectedScript) {
@@ -212,6 +214,26 @@ function getBackupPreviewScript(): string {
   return injectedBackupPreviewScript;
 }
 
+function getRestoreCss(): string {
+  if (!injectedRestoreCss) {
+    injectedRestoreCss = readFileSync(
+      resolve(import.meta.dirname, '../inject/hub-restore-prompt.css'),
+      'utf-8'
+    );
+  }
+  return injectedRestoreCss;
+}
+
+function getRestoreScript(): string {
+  if (!injectedRestoreScript) {
+    injectedRestoreScript = readFileSync(
+      resolve(import.meta.dirname, '../inject/hub-restore-prompt.js'),
+      'utf-8'
+    );
+  }
+  return injectedRestoreScript;
+}
+
 function noopServiceWorker(url: URL): Response | null {
   if (url.pathname !== '/sw.js' && url.pathname !== '/sw.js.map') return null;
   return new Response(
@@ -266,7 +288,9 @@ async function proxyToExcalidraw(c: Context, subdomain: string) {
 
   const syncScript = `<script data-excalihub-sync>${debugFlag}window.__SPACE_NAME = ${embedJson(space.name)};window.__SPACE_ID = ${embedJson(space.id)};${getInjectedScript()}</script>`;
   const bootScript = `<script data-excalihub-boot>${getBootScript()}</script>`;
-  const injection = `${bootScript}${menuCss}${menuScript}${commitModalScript}${paletteCss}${paletteScript}${backupsCss}${backupsScript}${syncScript}`;
+  const restoreCss = `<style data-excalihub-restore>${getRestoreCss()}</style>`;
+  const restoreScript = `<script data-excalihub-restore>${getRestoreScript()}</script>`;
+  const injection = `${bootScript}${menuCss}${menuScript}${commitModalScript}${paletteCss}${paletteScript}${backupsCss}${backupsScript}${syncScript}${restoreCss}${restoreScript}`;
 
   return injectIntoHtml(res, html, injection);
 }
@@ -279,6 +303,7 @@ async function serveBackupPreview(c: Context) {
 
   const spaceSubdomain = url.searchParams.get('space');
   const filename = url.searchParams.get('backup');
+  let spaceId: string | null = null;
 
   if (spaceSubdomain || filename) {
     const space = getSpaceBySubdomain(spaceSubdomain ?? '');
@@ -287,6 +312,7 @@ async function serveBackupPreview(c: Context) {
     if (!backup || backup.subdomain !== spaceSubdomain) {
       return c.json({ error: 'Backup not found' }, 404);
     }
+    spaceId = space.id;
   }
 
   const res = await fetchContainer(c, url);
@@ -298,6 +324,7 @@ async function serveBackupPreview(c: Context) {
   const hubHost = hubHostFor(envSchema.parse(process.env));
   const previewConfig = {
     space: spaceSubdomain,
+    spaceId,
     filename,
     hubHost,
   };

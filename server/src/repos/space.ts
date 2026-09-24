@@ -21,6 +21,10 @@ export type SpaceMeta = {
   updatedAt: string;
   latest_backup: string | null;
   status: SpaceStatus;
+  // Fingerprint of the latest backup's elements + which file it came from.
+  // Older meta.json files lack these; initSpaces normalizes them to null.
+  scene_version: string | null;
+  scene_version_source: string | null;
 };
 
 let dataDir = './data';
@@ -52,6 +56,8 @@ export function initSpaces(dir: string): void {
     try {
       const meta: SpaceMeta = JSON.parse(readFileSync(mp, 'utf-8'));
       if (!meta.status) meta.status = 'active';
+      meta.scene_version ??= null;
+      meta.scene_version_source ??= null;
       index.set(meta.subdomain, meta);
     } catch {
       // skip corrupted meta.json
@@ -82,6 +88,8 @@ export function createSpace(name: string, subdomain: string): SpaceMeta {
     updatedAt: now,
     latest_backup: null,
     status: 'active',
+    scene_version: null,
+    scene_version_source: null,
   };
 
   const dir = spaceDir(subdomain);
@@ -177,10 +185,25 @@ export function updateSpaceMeta(
   return updated;
 }
 
-export function updateLatestBackup(subdomain: string, filename: string): void {
+export function updateLatestBackup(
+  subdomain: string,
+  filename: string | null,
+): void {
   const space = index.get(subdomain);
   if (!space) return;
   space.latest_backup = filename;
+  writeMetaAtomic(space);
+}
+
+export function updateSceneVersion(
+  subdomain: string,
+  version: string | null,
+  source: string | null,
+): void {
+  const space = index.get(subdomain);
+  if (!space) return;
+  space.scene_version = version;
+  space.scene_version_source = source;
   writeMetaAtomic(space);
 }
 

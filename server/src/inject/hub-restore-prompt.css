@@ -1,0 +1,31 @@
+#hub-restore-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+#hub-restore-overlay .ex-modal {
+  max-width: 440px;
+}
+
+#hub-restore-overlay .hub-restore__text {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  opacity: 0.85;
+}
+
+#hub-restore-overlay .hub-restore__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#hub-restore-overlay .hub-restore__actions .ex-modal__btn {
+  width: 100%;
+  justify-content: center;
+}

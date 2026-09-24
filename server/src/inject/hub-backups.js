@@ -18,7 +18,20 @@ function parseBackupScene(fileData) {
 function applyScene(scene) {
   // Queued via the boot script and applied on the next page load, so the live
   // Excalidraw's unload flush can't overwrite it (see hub-scene-boot.js).
-  window.__excalihubQueueScene(scene);
+  window.__excalihub?.queueScene(scene);
+}
+
+async function fetchScene(spaceId, filename) {
+  const res = await fetch(
+    `/api/spaces/${encodeURIComponent(spaceId)}/scene?filename=${encodeURIComponent(filename)}`
+  );
+  return res.ok ? res.json() : null;
+}
+
+async function currentServerVersion(spaceId) {
+  const res = await fetch(`/api/spaces/${encodeURIComponent(spaceId)}`);
+  if (!res.ok) return null;
+  return (await res.json()).scene_version ?? null;
 }
 
 if (typeof module !== 'undefined') {
@@ -100,8 +113,8 @@ if (typeof module !== 'undefined') {
     restoreBtn.disabled = true;
     statusEl.style.display = 'none';
 
-    const res = await fetch(`/api/backups/${encodeURIComponent(backup.filename)}`);
-    if (!res.ok) {
+    const scene = await fetchScene(spaceId, backup.filename);
+    if (!scene) {
       statusEl.textContent = 'Failed to load backup';
       statusEl.className = 'ex-modal__status ex-modal__status--error';
       statusEl.style.display = 'block';
@@ -109,15 +122,13 @@ if (typeof module !== 'undefined') {
       return;
     }
 
-    const scene = parseBackupScene(await res.text());
-    if (!scene) {
-      statusEl.textContent = 'Invalid backup file';
-      statusEl.className = 'ex-modal__status ex-modal__status--error';
-      statusEl.style.display = 'block';
-      restoreBtn.disabled = false;
-      return;
+    // Adopt the server's current version so the next load neither re-prompts
+    // nor auto-pulls over the restore; the sync loop then pushes it.
+    const hub = window.__excalihub;
+    if (hub) {
+      hub.writeBase((await currentServerVersion(spaceId)) ?? '');
+      hub.writeLocalHash(hub.hashElements(scene.elements));
     }
-
     applyScene(scene);
   }
 

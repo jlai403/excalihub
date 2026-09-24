@@ -239,6 +239,12 @@ test.describe.serial("backups", () => {
     page.on("dialog", (dialog) => dialog.accept());
 
     await page.goto(`http://${space.subdomain}.excalihub.localhost:8081/`);
+    // The restore prompt fires because the server has a scene and this browser
+    // is empty; close it so it doesn't cover the Backups modal under test.
+    const restoreOverlay = page.locator("#hub-restore-overlay");
+    await restoreOverlay.waitFor({ state: "visible", timeout: 10_000 }).catch(() => {});
+    await restoreOverlay.locator(".ex-modal__close").click().catch(() => {});
+
     let stored = await page.evaluate(() => JSON.parse(localStorage.getItem("excalidraw") ?? "[]"));
     expect(stored).not.toContainEqual(expect.objectContaining({ id: "scene-bb" }));
 

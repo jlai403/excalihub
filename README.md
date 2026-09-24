@@ -23,6 +23,8 @@ ExcaliHub gives you a self-hosted dashboard where every whiteboard lives on its 
 
 - Subdomain isolation per space
 - Automatic backups with retention policy (7 daily, 4 weekly, 12 monthly)
+- Cross-device restore — open a space anywhere and pick up the latest scene (embedded images included)
+- Conflict protection — a stale or idle tab can't silently overwrite newer work
 - Dashboard to create, rename, and manage spaces
 - Single `docker compose up` to run
 - No database — just flat files on disk

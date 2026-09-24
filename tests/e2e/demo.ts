@@ -225,6 +225,10 @@ async function gotoSpace(page: Page, request: APIRequestContext) {
   const space = spaces.find((s: { name: string }) => s.name === "My Project");
   await page.goto(`http://${space.subdomain}.excalihub.localhost:8081/`);
   await expect(page).toHaveTitle("My Project · Excalidraw");
+  // Dismiss the sync prompt so it doesn't appear in the recorded frames.
+  const restoreOverlay = page.locator("#hub-restore-overlay");
+  await restoreOverlay.waitFor({ state: "visible", timeout: 8000 }).catch(() => {});
+  await restoreOverlay.locator(".ex-modal__close").click().catch(() => {});
 }
 
 test("demo", async ({ page, request }) => {

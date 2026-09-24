@@ -94,7 +94,8 @@ hub/                  — Astro static site (pages, layouts)
 
 ```
 /data/spaces/{subdomain}/
-  meta.json          — { id, name, subdomain, createdAt, updatedAt, latest_backup }
+  meta.json          — { id, name, subdomain, createdAt, updatedAt, latest_backup, scene_version, scene_version_source }
+  files/             — per-space binary image store: {fileId}.json (BinaryFileData)
   backups/
     {unix_ts}-{nanoid}-{hash_prefix}.excalidraw
 ```
@@ -126,7 +127,9 @@ hub/                  — Astro static site (pages, layouts)
 | `DELETE` | `/api/spaces/:id` | Delete space + all backups |
 | `GET` | `/api/spaces/:id/backups` | List backups (metadata only) |
 | `DELETE` | `/api/spaces/:id/backups/:filename` | Delete a specific backup |
-| `POST` | `/api/backup` | Create backup (body: `{ subdomain, elements, appState? }`) |
+| `GET` | `/api/spaces/:id/scene` | Scene for restore: latest backup, `?filename=`, or `?source=git`; resolves referenced image files |
+| `POST` | `/api/spaces/:id/files` | Store referenced images (body: `{ files: { [fileId]: BinaryFileData } }`) |
+| `POST` | `/api/backup` | Create backup (body: `{ subdomain, elements, appState?, baseVersion?, force? }`); `409 { currentVersion }` when `baseVersion` is stale |
 | `GET` | `/api/backups/:filename` | Download backup file |
 
 ## Session History
@@ -348,3 +351,14 @@ hub/                  — Astro static site (pages, layouts)
 - **`demo.ts`** uses real Excalidraw now; valid fixtures added and `addCaption` falls back to neutral colors on space pages (the real app doesn't define the hub's `--background/--foreground/--border`). **`docs/demo.gif` still needs a human rebuild** (`bun run demo:gif`, 1P boundary) — frame timing/counts may need a pass because the real app autosaves appState.
 - **CI matrix**: `e2e` (pinned digest, blocking, 3 browsers) + `e2e-latest` (non-blocking canary, `excalidraw/excalidraw:latest`, chromium-only, nightly schedule + `workflow_dispatch`, files/comments an issue labelled `excalidraw-canary` on failure). Image selected via `EXCALIDRAW_IMAGE`; new script `test:e2e:docker:chromium`.
 - **Verified agent-side**: `bun test` 138 pass, `bun run typecheck` clean, `bun run test:e2e` (dev, real Excalidraw) 117 pass + 27 skipped (git-gated), `test:e2e:docker` (pinned digest, 3 browsers) 117 pass + 27 skipped. Demo + keyed git tests not run (1P boundary).
+
+### 2026-09-21 — Cross-device scene restore + versioned save guard
+- **The gap**: scene state lived only in each browser's localStorage/IndexedDB, so a space opened on another device/browser was blank. The server held backups but nothing ever read one back into a client.
+- **Version fingerprint** (`server/src/scene-fingerprint.ts` + mirrored in `hub-scene-boot.js`): order-preserving canonical hash of the elements array (z-order matters), dropping only `version`/`versionNonce`/`updated`. AppState excluded, so pan/zoom isn't a change. Server stores `meta.scene_version` + `scene_version_source`; boot backfill recomputes for pre-existing spaces and repairs dangling `latest_backup` pointers (`backfillSceneVersions`).
+- **Save guard**: `POST /api/backup` accepts `baseVersion` + `force`; a stale base returns `409 { currentVersion }`. The client stores its last-known server version and local hash, so a long-open idle tab can't silently overwrite a newer device's work.
+- **Restore prompt** (`hub-restore-prompt.js`): empty device → restore latest backup / from git / start fresh; stale-but-clean local → auto-pull; both changed → conflict prompt (load latest / overwrite server). Bootstrap (no marker) prompts once. Re-prompts until chosen.
+- **Images**: per-space content store `spaces/{sub}/files/{fileId}.json`, uploaded once by the sync loop for fileIds referenced by image elements; `GET /api/spaces/:id/scene` resolves them, restore writes them into IndexedDB (`files-db`/`files-store`), and `commitAndPush` embeds them into the committed `.excalidraw` (new commits only). Git commits are not version-guarded (explicit + revertable).
+- **Normalization subtlety**: Excalidraw re-serializes the scene on import, so a hash taken from raw server elements won't match post-boot. `hub-scene-boot.js` marks an "adopting" state, waits for localStorage to stabilize, then records the real hash; `reconcile` waits out that window.
+- **`deleteBackup` fix**: recomputes `latest_backup` + scene version from disk; `createBackup` verifies the pointer's file exists before deduping (a dangling pointer used to silently drop backups).
+- **e2e** (`tests/e2e/scene-sync.e2e.ts`, 7 tests × 3 browsers): empty prompt + restore, IDB image restore, fresh tab never backs up, auto-pull when clean, conflict when dirty, idle-tab 409 conflict, images survive a second browser context. `backups.e2e`/`demo` dismiss the new prompt.
+- **Verified**: `bun test` 173 pass, `bun run typecheck` clean, `bun run test:e2e` (dev) 138 pass + 27 skipped, `test:e2e:docker` (pinned) 138 pass + 27 skipped.

@@ -15,6 +15,7 @@ import {
   getSpaceBySubdomain,
   getAllSpaces,
 } from '~/repos/space.js';
+import * as FileService from '~/services/file.js';
 
 const SPACES_GITIGNORE = '*/backups/\n';
 
@@ -193,6 +194,27 @@ ${portLine}  User git
   }
 }
 
+// The committed .excalidraw should be self-contained, so embed the referenced
+// binary files (images) from the per-space store into the payload. The client
+// only sends elements/appState; the store already holds the images from
+// auto-backup.
+function embedReferencedFiles(subdomain: string, excalidrawData: string): string {
+  try {
+    const parsed = JSON.parse(excalidrawData);
+    const elements = parsed?.elements ?? [];
+    const files = FileService.getFiles(
+      subdomain,
+      FileService.referencedFileIds(elements),
+    );
+    return JSON.stringify({
+      ...parsed,
+      files: { ...(parsed?.files ?? {}), ...files },
+    });
+  } catch {
+    return excalidrawData;
+  }
+}
+
 export async function commitAndPush(
   subdomain: string,
   excalidrawData: string,
@@ -214,7 +236,7 @@ export async function commitAndPush(
 
   try {
     const excalidrawPath = join(spaceDir, `${subdomain}.excalidraw`);
-    writeFileSync(excalidrawPath, excalidrawData);
+    writeFileSync(excalidrawPath, embedReferencedFiles(subdomain, excalidrawData));
 
     if (pngBase64) {
       const pngPath = join(spaceDir, `${subdomain}.png`);
@@ -329,6 +351,37 @@ export async function pruneOrphanedSpaces(): Promise<{
   } catch (err: any) {
     log.error('Git prune failed:', err);
     return { pruned: 0, deleted: [] };
+  }
+}
+
+// The scene as committed to git (HEAD), or null when git is disconnected or
+// the space has never been committed. Used for "restore from git".
+export async function getCommittedScene(subdomain: string): Promise<{
+  elements: unknown;
+  appState: unknown;
+  files: Record<string, unknown>;
+} | null> {
+  const config = getGitConfig();
+  if (!config?.connected) return null;
+
+  const spacesDir = join(getDataDir(), 'spaces');
+  if (!existsSync(join(spacesDir, '.git'))) return null;
+
+  try {
+    const git = simpleGit({ baseDir: spacesDir });
+    const raw = await git.raw([
+      'show',
+      `HEAD:${subdomain}/${subdomain}.excalidraw`,
+    ]);
+    const parsed = JSON.parse(raw);
+    return {
+      elements: parsed?.elements ?? [],
+      appState: parsed?.appState ?? {},
+      files:
+        parsed?.files && typeof parsed.files === 'object' ? parsed.files : {},
+    };
+  } catch {
+    return null;
   }
 }
 

@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync } from 'fs';
 import { resolve, join } from 'path';
 import { initSpaces } from './space.js';
-import { initBackups } from './backup.js';
+import { initBackups, backfillSceneVersions } from './backup.js';
+import { initFiles } from './file.js';
 import { initGitConfig } from './git.js';
 
 export function initRepos(dataDir: string): void {
@@ -12,9 +13,12 @@ export function initRepos(dataDir: string): void {
   }
   initSpaces(dataDir);
   initBackups(dataDir);
+  backfillSceneVersions();
+  initFiles(dataDir);
   initGitConfig(dataDir);
 }
 
 export * from './space.js';
 export * from './backup.js';
+export * from './file.js';
 export * from './git.js';

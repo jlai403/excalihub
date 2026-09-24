@@ -6,8 +6,15 @@ import {
   unlinkSync,
 } from 'fs';
 import { join } from 'path';
-import { updateLatestBackup, getSpaceBySubdomain } from './space.js';
+import {
+  updateLatestBackup,
+  updateSceneVersion,
+  getSpaceBySubdomain,
+  getAllSpaces,
+} from './space.js';
 import { backupId as nanoid } from './nanoid.js';
+import { sceneFingerprint } from '../scene-fingerprint.js';
+import { log } from '../logger.js';
 
 let dataDir = './data';
 
@@ -74,6 +81,67 @@ function buildFilename(unixTs: number, hash: string): string {
 
 function hashPrefix(filename: string): string | null {
   return parseFilename(filename)?.hashPrefix ?? null;
+}
+
+// The newest backup on disk, independent of the (possibly dangling) meta
+// pointer. Directory-listing order is chronological because filenames are
+// `{unixTs}-{nanoid}-{hash}.excalidraw`.
+export function getLatestBackupFilename(subdomain: string): string | null {
+  const dir = backupsDir(subdomain);
+  if (!existsSync(dir)) return null;
+  const files = readdirSync(dir)
+    .filter((f) => f.endsWith('.excalidraw') && parseFilename(f))
+    .sort();
+  return files.length > 0 ? files[files.length - 1] : null;
+}
+
+function readSceneVersion(subdomain: string, filename: string): string | null {
+  try {
+    const data = readFileSync(join(backupsDir(subdomain), filename), 'utf-8');
+    return sceneFingerprint(JSON.parse(data)?.elements);
+  } catch {
+    return null;
+  }
+}
+
+// Re-point latest_backup at the newest file on disk and recompute its scene
+// version. Used after a delete and at boot.
+function reconcileLatestBackup(subdomain: string): void {
+  const latest = getLatestBackupFilename(subdomain);
+  updateLatestBackup(subdomain, latest);
+  updateSceneVersion(
+    subdomain,
+    latest ? readSceneVersion(subdomain, latest) : null,
+    latest,
+  );
+}
+
+// Backfills scene_version for spaces that predate the field (or whose latest
+// backup changed since it was written). Idempotent; best-effort per space.
+export function backfillSceneVersions(): void {
+  for (const space of getAllSpaces()) {
+    try {
+      const latest = getLatestBackupFilename(space.subdomain);
+      if (!latest) {
+        if (space.latest_backup) updateLatestBackup(space.subdomain, null);
+        if (space.scene_version || space.scene_version_source) {
+          updateSceneVersion(space.subdomain, null, null);
+        }
+        continue;
+      }
+      if (space.latest_backup !== latest) {
+        updateLatestBackup(space.subdomain, latest);
+      }
+      if (space.scene_version && space.scene_version_source === latest) continue;
+      updateSceneVersion(
+        space.subdomain,
+        readSceneVersion(space.subdomain, latest),
+        latest,
+      );
+    } catch (err: any) {
+      log.warn(`Scene version backfill failed for ${space.subdomain}: ${err.message}`);
+    }
+  }
 }
 
 const ONE_DAY = 86_400_000;
@@ -185,21 +253,51 @@ export function initBackups(dir: string): void {
   }
 }
 
+export type CreateBackupResult =
+  | { filename: string; deduplicated?: boolean; version: string | null }
+  | { conflict: true; currentVersion: string | null };
+
 export async function createBackup(
   subdomain: string,
   fileData: string,
   fileHash: string,
-): Promise<{ filename: string; deduplicated?: boolean }> {
+  options: { baseVersion?: string | null; force?: boolean } = {},
+): Promise<CreateBackupResult> {
   const lock = getLock(subdomain);
   const release = await lock.acquire();
   try {
     const space = getSpaceBySubdomain(subdomain);
     if (!space) throw new Error('Space not found');
 
-    if (space.latest_backup) {
+    // Optimistic-concurrency guard: a client whose base version doesn't match
+    // the current scene is writing from stale content and must reconcile first.
+    const currentVersion = space.scene_version ?? null;
+    if (
+      !options.force &&
+      options.baseVersion &&
+      currentVersion &&
+      options.baseVersion !== currentVersion
+    ) {
+      return { conflict: true, currentVersion };
+    }
+
+    let version: string | null = null;
+    try {
+      version = sceneFingerprint(JSON.parse(fileData)?.elements);
+    } catch {
+      version = null;
+    }
+
+    if (
+      space.latest_backup &&
+      existsSync(join(backupsDir(subdomain), space.latest_backup))
+    ) {
       const prefix = hashPrefix(space.latest_backup);
       if (prefix && fileHash.startsWith(prefix)) {
-        return { filename: space.latest_backup, deduplicated: true };
+        if (space.scene_version !== version) {
+          updateSceneVersion(subdomain, version, space.latest_backup);
+        }
+        return { filename: space.latest_backup, deduplicated: true, version };
       }
     }
 
@@ -209,12 +307,13 @@ export async function createBackup(
 
     writeFileSync(filePath, fileData, 'utf-8');
     updateLatestBackup(subdomain, filename);
+    updateSceneVersion(subdomain, version, filename);
     const parsed = parseFilename(filename);
     if (parsed) backupIndex.set(parsed.nanoid, subdomain);
 
     cleanupOldBackups(subdomain);
 
-    return { filename };
+    return { filename, version };
   } finally {
     release();
   }
@@ -232,6 +331,7 @@ export function deleteBackup(
 
   unlinkSync(filePath);
   backupIndex.delete(parsed.nanoid);
+  reconcileLatestBackup(subdomain);
   return true;
 }
 
