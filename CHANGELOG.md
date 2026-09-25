@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.1.18](https://github.com/jlai403/excalihub/compare/v0.1.17...v0.1.18) (2026-09-24)
+
+
+### Features
+
+* cross-device scene restore with versioned save guard ([ba171ba](https://github.com/jlai403/excalihub/commit/ba171baf12224fc6b5bf53b593161ef5e275d13d))
+* cross-device scene restore with versioned save guard ([9f5fde4](https://github.com/jlai403/excalihub/commit/9f5fde4706895887af53d03482b0fd2f75aa8088))
+
+
+### Bug Fixes
+
+* apply restored scenes before Excalidraw boots ([72cfe92](https://github.com/jlai403/excalihub/commit/72cfe92b258ef5b9627cc957a17510fe7614107e))
+* apply restored scenes before Excalidraw boots ([d3713fd](https://github.com/jlai403/excalihub/commit/d3713fdd7c94f907431dceaab181e7867cfc48fb))
+
 ## [0.1.17](https://github.com/jlai403/excalihub/compare/v0.1.16...v0.1.17) (2026-09-18)
 
 
