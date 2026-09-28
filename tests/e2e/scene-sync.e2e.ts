@@ -202,7 +202,20 @@ test.describe.serial("cross-device scene sync", () => {
     await createBackup(request, space.subdomain, [textElement("pull-b", "B", 200)]);
 
     await page.reload();
-    await expect.poll(() => storedIds(page), { timeout: 15_000 }).toContain("pull-b");
+    // The auto-pull reloads the page (queueScene → location.reload), which can
+    // tear down the execution context mid-evaluate. expect.poll does not retry a
+    // thrown evaluate error; waitForFunction survives the navigation.
+    await page.waitForFunction(
+      () => {
+        if (localStorage.getItem("excalihub-adopting")) return false;
+        const ids = (JSON.parse(localStorage.getItem("excalidraw") ?? "[]") as { id?: string }[]).map(
+          (e) => e.id,
+        );
+        return ids.includes("pull-b");
+      },
+      undefined,
+      { timeout: 15_000 },
+    );
     await expect(page.locator("#hub-restore-overlay")).toHaveCount(0);
   });
 
