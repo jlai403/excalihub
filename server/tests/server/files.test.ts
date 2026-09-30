@@ -4,6 +4,7 @@ import { setupTestDb, cleanupTestDb } from '../helpers/db.js';
 import { createApiHelper, type ApiHelper } from '../helpers/request.js';
 import * as SpaceService from '~/services/space.js';
 import * as FileService from '~/services/file.js';
+import * as FileRepo from '~/repos/file.js';
 
 function binaryFile(id: string) {
   return {
@@ -65,6 +66,17 @@ describe('file store service', () => {
 
   it('throws for an unknown space', () => {
     expect(() => FileService.saveFiles('nope', {})).toThrow('Space not found');
+  });
+
+  it('ignores file ids that could escape the store', async () => {
+    await SpaceService.createSpace('Traversal');
+    FileService.saveFiles('traversal', { ok: binaryFile('ok') });
+
+    expect(
+      FileService.getFiles('traversal', ['ok', '../../../git-config/config']),
+    ).toEqual({ ok: binaryFile('ok') });
+    expect(FileRepo.getFile('traversal', '../../../git-config/config')).toBeNull();
+    expect(FileRepo.hasFile('traversal', '../../../git-config/config')).toBe(false);
   });
 });
 

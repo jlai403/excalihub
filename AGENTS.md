@@ -370,3 +370,12 @@ hub/                  — Astro static site (pages, layouts)
 - Fix: the auto-pull assertion now uses `page.waitForFunction`, waiting for `excalihub-adopting` to clear and `excalidraw` to contain `pull-b`. The other `storedIds` polls stay as-is (their paths don't navigate).
 - Verified: `bun test` 173 pass, typecheck clean, `bun run test:e2e` dev 138 pass + 27 skipped, `bun run test:e2e:docker:chromium` 46 pass + 9 skipped (canary mirror). The fixed test passed 10x dev + 8x docker. The pre-fix test also passed 18x locally, so the flake is CI-runner timing; the fix removes the unsafe construct rather than a locally reproduced failure.
 - Issue #44 still needs a comment and close (no `gh` auth in the agent session).
+
+### 2026-09-30 — Pre-launch security hardening
+- **Path traversal fixes**: `/api/git/commit` resolves the space by subdomain before calling `commitAndPush` (404 otherwise); `commitAndPush` gained an `isInsideDir(spacesDir, spaceDir)` backstop (`services/git.ts`). `repos/file.ts` validates `fileId` against `FILE_ID` on read (`getFile`/`getFiles`/`hasFile`), mirroring the write-side check — a crafted element `fileId` could otherwise read any `*.json` under the data dir. Tests added (`api.test.ts`, `files.test.ts`, `service.test.ts`).
+- **TLS-safe links**: the dashboard built space/preview links with a hardcoded `http://`; now uses `window.location.protocol` (`Sidebar`, `SpacesList`, `CommandPalette`).
+- **Hardening**: `Bun.serve` `maxRequestBodySize` 64 MiB; `saveFiles` caps file count (200) + total payload (32 MB); commit message ≤500 chars; space name ≤100 chars; `X-Frame-Options: SAMEORIGIN`; `.env*` in `.dockerignore`; GitHub Actions pinned to commit SHAs; the `StrictHostKeyChecking no` TOFU tradeoff is documented in `git.ts`.
+- **Deps**: `hono` → `^4.13.5` (4.13.12), `astro` → `^7.2.8` (7.3.5), removed unused `@astrojs/node`; `bun audit` 22 → 1 (root `concurrently` pins `shell-quote@1.8.4` exactly — dev-only, not runtime-exposed). `astro check` still green on the bump.
+- **Docs**: new `SECURITY.md` (threat model: no auth, open API, deploy-key risk), top-of-README warning callout, `CONTRIBUTING.md`, bug-report issue template.
+- CORS intentionally kept: the injected sync script posts auto-backups to the hub origin (cross-subdomain), so `cors()` is required.
+- Verified: `bun test` 176 pass, `bun run typecheck` clean.

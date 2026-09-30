@@ -10,6 +10,8 @@
   import { setCreateSpaceOpen } from "$lib/stores/ui.svelte";
   import type { Backup } from "$lib/types";
 
+  const protocol = window.location.protocol;
+
   type SpaceGitStatus = {
     lastCommitAt: string | null;
     lastCommitMessage: string | null;
@@ -127,7 +129,7 @@
   function previewUrl(subdomain: string, filename: string): string {
     const port = window.location.port;
     const host = port ? `${hubHost}:${port}` : hubHost;
-    return `http://backup.${host}/?space=${subdomain}&backup=${filename}`;
+    return `${protocol}backup.${host}/?space=${subdomain}&backup=${filename}`;
   }
 
   function formatRelativeTime(iso: string): string {
@@ -169,7 +171,7 @@
       <Card.Root>
         <Card.Header>
           <Card.Title>
-            <a href="http://{space.subdomain}.{hubHost}" class="hover:underline">
+            <a href="{protocol}//{space.subdomain}.{hubHost}" class="hover:underline">
               {space.name}
             </a>
           </Card.Title>

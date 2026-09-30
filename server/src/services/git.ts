@@ -1,6 +1,6 @@
 import simpleGit, { type SimpleGit } from 'simple-git';
 import { existsSync, writeFileSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, resolve, sep } from 'path';
 import { log } from '~/logger.js';
 import {
   getGitConfig,
@@ -18,6 +18,10 @@ import {
 import * as FileService from '~/services/file.js';
 
 const SPACES_GITIGNORE = '*/backups/\n';
+
+function isInsideDir(dir: string, target: string): boolean {
+  return resolve(target).startsWith(resolve(dir) + sep);
+}
 
 export type RepoUrl = { host: string; port?: number };
 
@@ -138,6 +142,9 @@ export async function connectGitRepo(
 
   const sshConfigPath = join(sshDir, 'config');
   const portLine = port ? `  Port ${port}\n` : '';
+  // StrictHostKeyChecking is off so self-hosted hosts work without a known_hosts
+  // entry (TOFU). The deploy key still authenticates the app; the tradeoff is
+  // that this does not detect a MITM on first connect.
   const sshConfig = `Host ${host}
   HostName ${host}
 ${portLine}  User git
@@ -226,10 +233,15 @@ export async function commitAndPush(
     return { success: false, error: 'Git not connected' };
   }
 
+  // Backstop against a caller-supplied subdomain escaping the spaces dir (the
+  // API route also resolves the space by subdomain before calling this).
   const dataDir = getDataDir();
   const spacesDir = join(dataDir, 'spaces');
   const spaceDir = join(spacesDir, subdomain);
 
+  if (!isInsideDir(spacesDir, spaceDir)) {
+    return { success: false, error: `Invalid subdomain: ${subdomain}` };
+  }
   if (!existsSync(spaceDir)) {
     return { success: false, error: `Space directory not found: ${subdomain}` };
   }

@@ -12,6 +12,7 @@ export function createApp(): Hono {
   app.use('*', async (c, next) => {
     await next();
     c.header('X-Content-Type-Options', 'nosniff');
+    c.header('X-Frame-Options', 'SAMEORIGIN');
   });
   app.use('*', proxyMiddleware());
   app.route('/api', api);

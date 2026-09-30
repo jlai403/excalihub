@@ -246,6 +246,23 @@ describe('commitAndPush', () => {
     expect(remoteTree.some((f) => f.includes('backups'))).toBe(false);
   });
 
+  it('rejects a subdomain that escapes the spaces dir', async () => {
+    setGitConfig({
+      repoUrl: 'git@github.com:user/repo.git',
+      connected: true,
+      connectedAt: new Date().toISOString(),
+    });
+
+    const result = await commitAndPush(
+      '../../../git-config',
+      '{"elements":[]}',
+      null,
+      'pwn',
+    );
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('Invalid subdomain');
+  });
+
   it('embeds referenced files from the store; getCommittedScene returns them', async () => {
     setGitConfig({
       repoUrl: 'git@github.com:user/repo.git',

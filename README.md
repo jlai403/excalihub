@@ -19,6 +19,12 @@ Self-hosted hub for isolated Excalidraw whiteboards with automatic backup.
 
 ExcaliHub gives you a self-hosted dashboard where every whiteboard lives on its own subdomain. Think `project-a.excalihub.example.com`, `team-b.excalihub.example.com` — each backed by a shared Excalidraw instance with automatic backups. Great for homelabs, small teams, or anyone who wants segregated boards without the SaaS.
 
+> [!WARNING]
+> ExcaliHub has **no built-in authentication**. Anyone who can reach the server
+> can read and modify every whiteboard and control the Git integration. Run it
+> behind a VPN or an authenticating reverse proxy — never port-forward it
+> directly to the internet. See [Security](#security) for the full threat model.
+
 ## Features
 
 - Subdomain isolation per space

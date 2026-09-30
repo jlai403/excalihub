@@ -46,13 +46,26 @@ if (typeof module !== 'undefined') {
 
     const banner = document.createElement('div');
     banner.id = 'hub-backup-preview';
-    banner.innerHTML = `
-      <span class="hub-preview__text">${text}</span>
-      <span class="hub-preview__actions">
-        <a class="hub-preview__btn" href="${protocol}//${config.space}.${hubHost}">Open ${config.space}</a>
-        <a class="hub-preview__btn" href="${protocol}//${hubHost}">Back to ExcaliHub</a>
-      </span>
-    `;
+
+    const label = document.createElement('span');
+    label.className = 'hub-preview__text';
+    label.textContent = text;
+
+    const actions = document.createElement('span');
+    actions.className = 'hub-preview__actions';
+
+    const openLink = document.createElement('a');
+    openLink.className = 'hub-preview__btn';
+    openLink.href = `${protocol}//${config.space}.${hubHost}`;
+    openLink.textContent = `Open ${config.space}`;
+
+    const backLink = document.createElement('a');
+    backLink.className = 'hub-preview__btn';
+    backLink.href = `${protocol}//${hubHost}`;
+    backLink.textContent = 'Back to ExcaliHub';
+
+    actions.append(openLink, backLink);
+    banner.append(label, actions);
     document.body.appendChild(banner);
   }
 

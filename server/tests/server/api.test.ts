@@ -329,3 +329,15 @@ describe('GET /api/backups/:filename', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('POST /api/git/commit', () => {
+  it('404s when the subdomain is not a known space', async () => {
+    const res = await api.post('/api/git/commit', {
+      subdomain: '../../../git-config',
+      excalidrawData: '{"elements":[]}',
+      message: 'pwn',
+    });
+    expect(res.status).toBe(404);
+    expect(await api.json(res)).toEqual({ error: 'Space not found' });
+  });
+});

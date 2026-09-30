@@ -52,7 +52,10 @@ api.post('/spaces', async (c) => {
     if (err.message?.includes('already exists')) {
       return c.json({ error: 'Space name already exists' }, 409);
     }
-    if (err.message?.includes('Subdomain')) {
+    if (
+      err.message?.includes('Subdomain') ||
+      err.message?.includes('Name must be')
+    ) {
       return c.json({ error: err.message }, 400);
     }
     throw err;
@@ -72,6 +75,7 @@ api.patch('/spaces/:id', async (c) => {
     }
     if (
       err.message?.includes('Subdomain') ||
+      err.message?.includes('Name must be') ||
       err.message?.includes('is already taken')
     ) {
       return c.json({ error: err.message }, 400);
@@ -118,6 +122,12 @@ api.post('/spaces/:id/files', async (c) => {
     return c.json({ saved });
   } catch (err: any) {
     if (err.message?.startsWith('File too large')) {
+      return c.json({ error: err.message }, 413);
+    }
+    if (
+      err.message?.startsWith('Too many files') ||
+      err.message?.startsWith('Files payload too large')
+    ) {
       return c.json({ error: err.message }, 413);
     }
     if (
@@ -245,8 +255,15 @@ api.post('/git/commit', async (c) => {
     return c.json({ error: 'Missing required fields' }, 400);
   }
 
+  if (typeof message !== 'string' || message.length > 500) {
+    return c.json({ error: 'Commit message must be 500 characters or fewer' }, 400);
+  }
+
+  const space = SpaceRepo.getSpaceBySubdomain(subdomain);
+  if (!space) return c.json({ error: 'Space not found' }, 404);
+
   const result = await commitAndPush(
-    subdomain,
+    space.subdomain,
     excalidrawData,
     pngBase64,
     message
