@@ -40,7 +40,9 @@ services:
     ports:
       - "80:80"
     environment:
-      - BASE_DOMAIN=example.com
+      - BASE_DOMAIN=localhost
+      - EXCALIDRAW_CONTAINER=http://excalidraw:80
+      - DATA_DIR=/data
     volumes:
       - excalihub-data:/data
     depends_on:
@@ -67,6 +69,8 @@ Open `http://excalihub.localhost` — no DNS setup needed.
 `*.localhost` resolves to `127.0.0.1` on macOS and Linux out of the box.
 Any space you create will be at `your-space.excalihub.localhost`.
 
+To run on a real domain, see [Homelab Deployment](#homelab-deployment).
+
 > **Note:** when `HUB_SUBDOMAIN` is set (the default is `excalihub`), the
 > dashboard is reachable **only** via the hub subdomain. The bare root domain
 > (`localhost` here) returns `404` — always load the dashboard through
@@ -77,9 +81,9 @@ Any space you create will be at `your-space.excalihub.localhost`.
 
 | Variable | Default | Description |
 |---|---|---|
-| `BASE_DOMAIN` | `example.com` | Root domain (e.g. `example.com` → `*.example.com`) |
+| `BASE_DOMAIN` | `localhost` | Root domain (e.g. `example.com` → `*.example.com`) |
 | `HUB_SUBDOMAIN` | `excalihub` | Hub subdomain prefix |
-| `EXCALIDRAW_CONTAINER` | `http://excalidraw:80` | Excalidraw backend URL |
+| `EXCALIDRAW_CONTAINER` | `http://localhost:8080` | Excalidraw backend URL |
 | `PORT` | `80` | Server port |
 | `HOST` | `0.0.0.0` | Bind address |
 | `DATA_DIR` | `./data` | Data directory (spaces, backups) |

@@ -380,3 +380,9 @@ hub/                  — Astro static site (pages, layouts)
 - The action, workflow, manifest, tags, and Docker-publish trigger are unchanged; `release-type` only selects which files the release PR edits.
 - Verified: config + `package.json` parse (`release-type: node`, both `0.1.18`), `bun test` 173 pass, `bun run typecheck` clean.
 - PR creation blocked agent-side: the only `gh` account (`jlai-stellar`) has read-only access to `jlai403/excalihub` (SSH push works, API PR create does not). Branch `chore/release-please-node` pushed; PR opened manually.
+
+### 2026-09-30 — Quick Start actually works + config table defaults
+- The README Quick Start contradicted itself: the compose snippet set `BASE_DOMAIN=example.com` but the prose told users to open `http://excalihub.localhost` (only valid when `BASE_DOMAIN=localhost`). The snippet also omitted `EXCALIDRAW_CONTAINER` (fell back to the `http://localhost:8080` default, unreachable from inside the container) and `DATA_DIR=/data` (wrote to `/app/data`, not the mounted volume — data lost on restart).
+- Fixed the snippet to `BASE_DOMAIN=localhost` + `EXCALIDRAW_CONTAINER=http://excalidraw:80` + `DATA_DIR=/data` (mirrors the repo's own `docker-compose.yml`), added a pointer to Homelab Deployment for real domains, and corrected the config-table defaults (`BASE_DOMAIN` → `localhost`, `EXCALIDRAW_CONTAINER` → `http://localhost:8080`; both match `server/src/env.ts`).
+- Verified end-to-end with the exact snippet as a throwaway compose project against `ghcr.io/jlai403/excalihub:latest`: `/health` 200, hub 200, bare root 404 (as documented), space created via API, proxied whiteboard 200 (title injected), and the space survived a `docker compose restart` (volume works). Torn down after.
+- Docs-only; no code change.
