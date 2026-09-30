@@ -73,7 +73,9 @@ Uses [release-please](https://github.com/googleapis/release-please) for automate
 - `ghcr.io/jlai/excalihub:latest` — most recent stable release
 
 **Config Files:**
-- `.github/release-please-config.json` — release-please configuration
+- `.github/release-please-config.json` — release-please configuration. Uses
+  `release-type: node`, so a release PR bumps the root `package.json` `version`
+  alongside `CHANGELOG.md` (previously `simple`, which left `package.json` stale).
 - `.github/.release-please-manifest.json` — version tracking
 
 ## Project Structure
@@ -370,3 +372,11 @@ hub/                  — Astro static site (pages, layouts)
 - Fix: the auto-pull assertion now uses `page.waitForFunction`, waiting for `excalihub-adopting` to clear and `excalidraw` to contain `pull-b`. The other `storedIds` polls stay as-is (their paths don't navigate).
 - Verified: `bun test` 173 pass, typecheck clean, `bun run test:e2e` dev 138 pass + 27 skipped, `bun run test:e2e:docker:chromium` 46 pass + 9 skipped (canary mirror). The fixed test passed 10x dev + 8x docker. The pre-fix test also passed 18x locally, so the flake is CI-runner timing; the fix removes the unsafe construct rather than a locally reproduced failure.
 - Issue #44 still needs a comment and close (no `gh` auth in the agent session).
+
+### 2026-09-30 — release-please now bumps package.json
+- Switched `.github/release-please-config.json` `release-type` `simple` → `node` so release PRs bump the root `package.json` `version`. `simple` only wrote `CHANGELOG.md` + the manifest, leaving `package.json` frozen at `0.1.0` while the manifest tracked the real release (`0.1.18`).
+- Reconciled the drift: root `package.json` `version` `0.1.0` → `0.1.18` so the next release PR is a clean `0.1.18 → 0.1.19` rather than a jump. Committed as `chore(ci):`, which triggers no release itself.
+- Only the root `package.json` carries a `version` (`server/` + `hub/` are `private`); `bun.lock` has no root version, and there's no `package-lock.json`/`npm-shrinkwrap.json`, so `node` touches only `CHANGELOG.md`, the manifest, and `package.json` — no lockfile churn.
+- The action, workflow, manifest, tags, and Docker-publish trigger are unchanged; `release-type` only selects which files the release PR edits.
+- Verified: config + `package.json` parse (`release-type: node`, both `0.1.18`), `bun test` 173 pass, `bun run typecheck` clean.
+- PR creation blocked agent-side: the only `gh` account (`jlai-stellar`) has read-only access to `jlai403/excalihub` (SSH push works, API PR create does not). Branch `chore/release-please-node` pushed; PR opened manually.
