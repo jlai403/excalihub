@@ -13,6 +13,7 @@
 
   const spaces = $derived(getSpaces());
   const createSpaceOpen = $derived(getCreateSpaceOpen());
+  const protocol = window.location.protocol;
 
   onMount(async () => {
     hubHost = window.__hubHost;
@@ -100,7 +101,7 @@
     </span>
     {#each spaces as space (space.id)}
       <a
-        href="http://{space.subdomain}.{hubHost}"
+        href="{protocol}//{space.subdomain}.{hubHost}"
         target="_blank"
         rel="noopener noreferrer"
         class="flex items-center gap-2 h-7 px-2 rounded-md text-sm text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"

@@ -53,7 +53,7 @@
 
   function openSpace(space: { subdomain: string }) {
     const hubHost = window.__hubHost;
-    window.open(`http://${space.subdomain}.${hubHost}`, "_blank");
+    window.open(`${window.location.protocol}//${space.subdomain}.${hubHost}`, "_blank");
     close();
   }
   function createSpace() {

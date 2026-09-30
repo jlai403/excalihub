@@ -376,3 +376,12 @@ hub/                  — Astro static site (pages, layouts)
 - Fixed the snippet to `BASE_DOMAIN=localhost` + `EXCALIDRAW_CONTAINER=http://excalidraw:80` + `DATA_DIR=/data` (mirrors the repo's own `docker-compose.yml`), added a pointer to Homelab Deployment for real domains, and corrected the config-table defaults (`BASE_DOMAIN` → `localhost`, `EXCALIDRAW_CONTAINER` → `http://localhost:8080`; both match `server/src/env.ts`).
 - Verified end-to-end with the exact snippet as a throwaway compose project against `ghcr.io/jlai403/excalihub:latest`: `/health` 200, hub 200, bare root 404 (as documented), space created via API, proxied whiteboard 200 (title injected), and the space survived a `docker compose restart` (volume works). Torn down after.
 - Docs-only; no code change.
+
+### 2026-09-30 — Pre-launch security hardening
+- **Path traversal fixes**: `/api/git/commit` resolves the space by subdomain before calling `commitAndPush` (404 otherwise); `commitAndPush` gained an `isInsideDir(spacesDir, spaceDir)` backstop (`services/git.ts`). `repos/file.ts` validates `fileId` against `FILE_ID` on read (`getFile`/`getFiles`/`hasFile`), mirroring the write-side check — a crafted element `fileId` could otherwise read any `*.json` under the data dir. Tests added (`api.test.ts`, `files.test.ts`, `service.test.ts`).
+- **TLS-safe links**: the dashboard built space/preview links with a hardcoded `http://`; now uses `window.location.protocol` (`Sidebar`, `SpacesList`, `CommandPalette`).
+- **Hardening**: `Bun.serve` `maxRequestBodySize` 64 MiB; `saveFiles` caps file count (200) + total payload (32 MB); commit message ≤500 chars; space name ≤100 chars; `X-Frame-Options: SAMEORIGIN`; `.env*` in `.dockerignore`; GitHub Actions pinned to commit SHAs; the `StrictHostKeyChecking no` TOFU tradeoff is documented in `git.ts`.
+- **Deps**: `hono` → `^4.13.5` (4.13.12), `astro` → `^7.2.8` (7.3.5), removed unused `@astrojs/node`; `bun audit` 22 → 1 (root `concurrently` pins `shell-quote@1.8.4` exactly — dev-only, not runtime-exposed). `astro check` still green on the bump.
+- **Docs**: new `SECURITY.md` (threat model: no auth, open API, deploy-key risk), top-of-README warning callout, `CONTRIBUTING.md`, bug-report issue template.
+- CORS intentionally kept: the injected sync script posts auto-backups to the hub origin (cross-subdomain), so `cors()` is required.
+- Verified: `bun test` 176 pass, `bun run typecheck` clean.

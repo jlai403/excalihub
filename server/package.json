@@ -4,7 +4,7 @@
   "type": "module",
   "dependencies": {
     "consola": "^3.4.2",
-    "hono": "^4.4.0",
+    "hono": "^4.13.5",
     "nanoid": "^6.0.0",
     "simple-git": "^3.27.0",
     "zod": "^4.4.3"

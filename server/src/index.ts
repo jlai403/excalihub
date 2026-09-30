@@ -9,7 +9,15 @@ function main() {
 
   const app = createApp();
 
-  Bun.serve({ fetch: app.fetch, port: env.PORT, hostname: env.HOST });
+  // Cap request bodies so a single unauthenticated request can't exhaust memory.
+  // Excalidraw uploads are capped at 4 MiB per image; 64 MiB leaves headroom for
+  // multi-image scenes while still bounding the worst case.
+  Bun.serve({
+    fetch: app.fetch,
+    port: env.PORT,
+    hostname: env.HOST,
+    maxRequestBodySize: 64 * 1024 * 1024,
+  });
   log.success(`ExcaliHub listening on http://${env.HOST}:${env.PORT}`);
 }
 
