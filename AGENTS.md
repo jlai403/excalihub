@@ -371,6 +371,12 @@ hub/                  — Astro static site (pages, layouts)
 - Verified: `bun test` 173 pass, typecheck clean, `bun run test:e2e` dev 138 pass + 27 skipped, `bun run test:e2e:docker:chromium` 46 pass + 9 skipped (canary mirror). The fixed test passed 10x dev + 8x docker. The pre-fix test also passed 18x locally, so the flake is CI-runner timing; the fix removes the unsafe construct rather than a locally reproduced failure.
 - Issue #44 still needs a comment and close (no `gh` auth in the agent session).
 
+### 2026-09-30 — Quick Start actually works + config table defaults
+- The README Quick Start contradicted itself: the compose snippet set `BASE_DOMAIN=example.com` but the prose told users to open `http://excalihub.localhost` (only valid when `BASE_DOMAIN=localhost`). The snippet also omitted `EXCALIDRAW_CONTAINER` (fell back to the `http://localhost:8080` default, unreachable from inside the container) and `DATA_DIR=/data` (wrote to `/app/data`, not the mounted volume — data lost on restart).
+- Fixed the snippet to `BASE_DOMAIN=localhost` + `EXCALIDRAW_CONTAINER=http://excalidraw:80` + `DATA_DIR=/data` (mirrors the repo's own `docker-compose.yml`), added a pointer to Homelab Deployment for real domains, and corrected the config-table defaults (`BASE_DOMAIN` → `localhost`, `EXCALIDRAW_CONTAINER` → `http://localhost:8080`; both match `server/src/env.ts`).
+- Verified end-to-end with the exact snippet as a throwaway compose project against `ghcr.io/jlai403/excalihub:latest`: `/health` 200, hub 200, bare root 404 (as documented), space created via API, proxied whiteboard 200 (title injected), and the space survived a `docker compose restart` (volume works). Torn down after.
+- Docs-only; no code change.
+
 ### 2026-09-30 — Pre-launch security hardening
 - **Path traversal fixes**: `/api/git/commit` resolves the space by subdomain before calling `commitAndPush` (404 otherwise); `commitAndPush` gained an `isInsideDir(spacesDir, spaceDir)` backstop (`services/git.ts`). `repos/file.ts` validates `fileId` against `FILE_ID` on read (`getFile`/`getFiles`/`hasFile`), mirroring the write-side check — a crafted element `fileId` could otherwise read any `*.json` under the data dir. Tests added (`api.test.ts`, `files.test.ts`, `service.test.ts`).
 - **TLS-safe links**: the dashboard built space/preview links with a hardcoded `http://`; now uses `window.location.protocol` (`Sidebar`, `SpacesList`, `CommandPalette`).
