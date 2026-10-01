@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.19](https://github.com/jlai403/excalihub/compare/v0.1.18...v0.1.19) (2026-10-01)
+
+
+### Bug Fixes
+
+* pre-launch security hardening ([7c6e831](https://github.com/jlai403/excalihub/commit/7c6e8315c83903522a1558e9fb0e7902c3026b8c))
+* pre-launch security hardening ([7bf2cc3](https://github.com/jlai403/excalihub/commit/7bf2cc3d8eb552cf881feeaf9da18926842d6d22))
+
 ## [0.1.18](https://github.com/jlai403/excalihub/compare/v0.1.17...v0.1.18) (2026-09-24)
 
 
